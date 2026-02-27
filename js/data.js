@@ -441,6 +441,12 @@ const VIP_MEMBERS = [
   { id: 'retired_athlete', name: 'Atleta Retirado', icon: '🏅', request: 'Necesito un gym completo y staff de calidad', requires: ['trainer', 'physio'], reward: { money: 12000, rep: 120, xp: 250 }, stayDuration: 1000 },
   { id: 'family', name: 'Familia Fitness', icon: '👨‍👩‍👧‍👦', request: 'Queremos pileta y clases para todos', requires: ['pool', 'spinning_class'], reward: { money: 7000, rep: 70, xp: 130 }, stayDuration: 800 },
   { id: 'strongman', name: 'Strongman', icon: '🦍', request: 'Solo entreno en sótanos con pesas reales', requires: ['basement'], reward: { money: 20000, rep: 200, xp: 300 }, stayDuration: 1200 },
+  { id: 'politician', name: 'Político Local', icon: '🏛️', request: 'Necesito privacidad. ¿Tienen Spa?', requires: ['spa'], reward: { money: 25000, rep: 250, xp: 350 }, stayDuration: 800 },
+  { id: 'doctor', name: 'Médico Deportivo', icon: '🩺', request: 'Me interesa un gym con Kinesiólogo y Sauna', requires: ['physio', 'sauna'], reward: { money: 18000, rep: 180, xp: 280 }, stayDuration: 900 },
+  { id: 'model', name: 'Modelo Internacional', icon: '👗', request: 'Pilates y Yoga son mi vida. ¿Tienen?', requires: ['pilates_class', 'yoga_class'], reward: { money: 12000, rep: 300, xp: 200 }, stayDuration: 700 },
+  { id: 'footballer', name: 'Futbolista Profesional', icon: '⚽', request: 'Necesito CrossFit y Ring para complementar', requires: ['crossfit', 'boxing'], reward: { money: 30000, rep: 350, xp: 400 }, stayDuration: 1000 },
+  { id: 'grandma', name: 'Abuela Fitness', icon: '👵', request: 'A mis 75 quiero empezar. ¿Tienen Cinta y clases de Zumba?', requires: ['treadmill', 'zumba_class'], reward: { money: 5000, rep: 500, xp: 150 }, stayDuration: 600 },
+  { id: 'esports', name: 'Gamer Pro', icon: '🎮', request: 'Necesito desengancharme de la silla. HIIT y Spinning.', requires: ['hiit_class', 'spinning_class'], reward: { money: 8000, rep: 100, xp: 250 }, stayDuration: 500 },
 ];
 
 const TUTORIAL_STEPS = [
