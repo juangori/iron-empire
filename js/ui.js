@@ -260,6 +260,13 @@ function renderCompetitions() {
 
     var rewardMult = 1;
     if (game.staff.champion?.hired) rewardMult = STAFF.find(function(s) { return s.id === 'champion'; }).compMult;
+    rewardMult *= getSkillEffect('compRewardMult');
+    var compRepMult = getSkillEffect('compRepMult');
+    var compXpMult = getSkillEffect('compXpMult');
+    var cooldownMult = getSkillEffect('compCooldownMult');
+    var displayCooldown = Math.ceil(c.cooldown * cooldownMult);
+    var winBonus = getSkillEffect('compWinChanceBonus', 0);
+    var displayChance = Math.min(0.95, c.winChance + winBonus);
 
     var actionHTML = '';
     if (locked) {
@@ -277,15 +284,15 @@ function renderCompetitions() {
           '<div class="comp-name">' + c.name + '</div>' +
           '<div class="comp-desc">' + c.desc + '</div>' +
           '<div class="comp-reward">' +
-            '<span style="color:var(--green);">💰 ' + fmtMoney(c.reward * rewardMult) + '</span> · ' +
-            '<span style="color:var(--purple);">⭐ +' + c.repReward + ' rep</span> · ' +
-            '<span style="color:var(--cyan);">✨ +' + c.xpReward + ' XP</span>' +
+            '<span style="color:var(--green);">💰 ' + fmtMoney(Math.ceil(c.reward * rewardMult)) + '</span> · ' +
+            '<span style="color:var(--purple);">⭐ +' + Math.ceil(c.repReward * compRepMult) + ' rep</span> · ' +
+            '<span style="color:var(--cyan);">✨ +' + Math.ceil(c.xpReward * compXpMult) + ' XP</span>' +
           '</div>' +
           '<div style="font-size:12px;color:var(--text-muted);margin-top:4px;">' +
             'Record: ' + (state.wins || 0) + 'W - ' + (state.losses || 0) + 'L · ' +
-            '<span style="color:' + (c.winChance >= 0.5 ? 'var(--green)' : c.winChance >= 0.3 ? 'var(--orange)' : 'var(--red)') + ';">' +
-            '🎯 ' + Math.round(c.winChance * 100) + '% chance</span>' +
-            ' · ⏱️ CD: ' + fmtTime(c.cooldown) +
+            '<span style="color:' + (displayChance >= 0.5 ? 'var(--green)' : displayChance >= 0.3 ? 'var(--orange)' : 'var(--red)') + ';">' +
+            '🎯 ' + Math.round(displayChance * 100) + '% chance</span>' +
+            ' · ⏱️ CD: ' + fmtTime(displayCooldown) +
           '</div>' +
         '</div>' +
         '<div class="comp-actions">' + actionHTML + '</div>' +

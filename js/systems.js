@@ -457,6 +457,7 @@ function launchCampaign(id) {
 
   let cost = mc.cost;
   if (game.staff.manager?.hired) cost = Math.ceil(cost * 0.8);
+  cost = Math.ceil(cost * getSkillEffect('campaignCostMult'));
 
   if (game.money < cost) {
     showToast('❌', '¡No tenés suficiente plata!');
@@ -464,11 +465,13 @@ function launchCampaign(id) {
   }
 
   game.money -= cost;
+  var durationMult = getSkillEffect('campaignDurationMult');
   game.marketing[id] = {
-    activeUntil: Date.now() + mc.duration * 1000
+    activeUntil: Date.now() + mc.duration * durationMult * 1000
   };
 
-  game.reputation += mc.repBoost;
+  var repBoost = Math.ceil(mc.repBoost * getSkillEffect('campaignRepMult'));
+  game.reputation += repBoost;
   game.stats.campaignsLaunched++;
   game.dailyTracking.campaignsLaunched++;
   game.dailyTracking.reputationGained += mc.repBoost;
@@ -524,6 +527,7 @@ function renderMarketing() {
 
     let cost = mc.cost;
     if (game.staff.manager?.hired) cost = Math.ceil(cost * 0.8);
+    cost = Math.ceil(cost * getSkillEffect('campaignCostMult'));
     const canAfford = game.money >= cost;
 
     let timerHTML = '';
@@ -1025,7 +1029,8 @@ function buyZone(zoneId) {
   if (!zone || game.zones[zoneId]) return;
   if (isZoneBuilding(zoneId)) return;
   if (game.level < zone.reqLevel) return;
-  if (game.money < zone.cost) return;
+  var zoneCost = Math.ceil(zone.cost * getSkillEffect('zoneCostMult'));
+  if (game.money < zoneCost) return;
 
   // Check concurrent zone build limit (1, +1 with manager)
   var activeBuilds = getActiveZoneBuilds();
@@ -1035,18 +1040,19 @@ function buyZone(zoneId) {
     return;
   }
 
-  game.money -= zone.cost;
+  game.money -= zoneCost;
 
   const xpGain = 100;
   game.xp += xpGain;
   game.dailyTracking.xpEarned += xpGain;
 
   if (zone.buildTime > 0) {
-    // Start construction timer
+    // Start construction timer (speed mult < 1 = faster)
     if (!game.zoneBuilding) game.zoneBuilding = {};
-    game.zoneBuilding[zoneId] = Date.now() + zone.buildTime * 1000;
-    addLog('🏗️ Construyendo <span class="highlight">' + zone.name + '</span> ' + zone.icon + ' (' + fmtTime(zone.buildTime) + ')');
-    showToast('🏗️', 'Construyendo ' + zone.name + '... ' + fmtTime(zone.buildTime));
+    var buildDuration = Math.ceil(zone.buildTime * getSkillEffect('zoneBuildSpeedMult'));
+    game.zoneBuilding[zoneId] = Date.now() + buildDuration * 1000;
+    addLog('🏗️ Construyendo <span class="highlight">' + zone.name + '</span> ' + zone.icon + ' (' + fmtTime(buildDuration) + ')');
+    showToast('🏗️', 'Construyendo ' + zone.name + '... ' + fmtTime(buildDuration));
   } else {
     // Instant (ground floor)
     game.zones[zoneId] = true;
@@ -1082,7 +1088,8 @@ function renderExpansion() {
     const owned = game.zones[z.id];
     const building = isZoneBuilding(z.id);
     const locked = game.level < z.reqLevel;
-    const canAfford = game.money >= z.cost;
+    const adjustedCost = Math.ceil(z.cost * getSkillEffect('zoneCostMult'));
+    const canAfford = game.money >= adjustedCost;
 
     let btnHTML = '';
     let cardExtra = '';
@@ -1105,8 +1112,9 @@ function renderExpansion() {
     } else if (locked) {
       btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;">🔒 Requiere Nivel ' + z.reqLevel + '</div>';
     } else {
-      var timeStr = z.buildTime >= 3600 ? Math.floor(z.buildTime / 3600) + 'h' : Math.floor(z.buildTime / 60) + 'min';
-      btnHTML = '<button class="btn btn-buy" ' + (canAfford ? '' : 'disabled') + ' onclick="buyZone(\'' + z.id + '\')">🏗️ CONSTRUIR — ' + fmtMoney(z.cost) + (z.buildTime > 0 ? ' (' + timeStr + ')' : '') + '</button>';
+      var adjustedBuildTime = Math.ceil(z.buildTime * getSkillEffect('zoneBuildSpeedMult'));
+      var timeStr = adjustedBuildTime >= 3600 ? Math.floor(adjustedBuildTime / 3600) + 'h' : Math.floor(adjustedBuildTime / 60) + 'min';
+      btnHTML = '<button class="btn btn-buy" ' + (canAfford ? '' : 'disabled') + ' onclick="buyZone(\'' + z.id + '\')">🏗️ CONSTRUIR — ' + fmtMoney(adjustedCost) + (z.buildTime > 0 ? ' (' + timeStr + ')' : '') + '</button>';
     }
 
     cardsHTML += '<div class="expansion-card ' + (owned ? 'owned' : '') + (locked && !owned && !building ? ' locked' : '') + cardExtra + '">';
@@ -1242,12 +1250,13 @@ function acceptVip(vipId) {
   vipState.accepted = true;
 
   const prestigeMult = 1 + (game.prestigeStars * 0.25);
-  const moneyReward = Math.ceil(vipDef.reward.money * prestigeMult);
+  const vipMult = getSkillEffect('vipRewardMult');
+  const moneyReward = Math.ceil(vipDef.reward.money * prestigeMult * vipMult);
 
   game.money += moneyReward;
   game.totalMoneyEarned += moneyReward;
-  game.reputation += vipDef.reward.rep;
-  game.xp += vipDef.reward.xp;
+  game.reputation += Math.ceil(vipDef.reward.rep * vipMult);
+  game.xp += Math.ceil(vipDef.reward.xp * vipMult);
   game.stats.vipsServed++;
   game.dailyTracking.moneyEarned += moneyReward;
   game.dailyTracking.reputationGained += vipDef.reward.rep;

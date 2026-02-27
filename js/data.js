@@ -311,10 +311,11 @@ const SKILL_TREE = {
     icon: '🔧',
     color: 'var(--accent)',
     skills: [
-      { id: 'eq_durability', name: 'Durabilidad', icon: '🛡️', desc: 'Equipos duran más. -15% costo de mejora.', cost: 1000, reqLevel: 3, effect: { equipCostMult: 0.85 } },
-      { id: 'eq_efficiency', name: 'Eficiencia', icon: '⚡', desc: '+25% ingresos de todo el equipamiento.', cost: 3000, reqLevel: 5, requires: 'eq_durability', effect: { equipIncomeMult: 1.25 } },
-      { id: 'eq_premium', name: 'Línea Premium', icon: '💎', desc: '+50% capacidad de equipamiento.', cost: 8000, reqLevel: 8, requires: 'eq_efficiency', effect: { equipCapacityMult: 1.5 } },
-      { id: 'eq_mastery', name: 'Maestría Total', icon: '👑', desc: '+100% ingresos de equipamiento y -25% costos.', cost: 25000, reqLevel: 12, requires: 'eq_premium', effect: { equipIncomeMult: 2.0, equipCostMult: 0.75 } },
+      { id: 'eq_durability', name: 'Durabilidad', icon: '🛡️', desc: '-15% costo de mejora de equipos.', cost: 3000, reqLevel: 3, effect: { equipCostMult: 0.85 } },
+      { id: 'eq_efficiency', name: 'Eficiencia', icon: '⚡', desc: '+25% ingresos de todo el equipamiento.', cost: 25000, reqLevel: 7, requires: 'eq_durability', effect: { equipIncomeMult: 1.25 } },
+      { id: 'eq_premium', name: 'Línea Premium', icon: '💎', desc: '+50% capacidad de equipamiento.', cost: 150000, reqLevel: 12, requires: 'eq_efficiency', effect: { equipCapacityMult: 1.5 } },
+      { id: 'eq_mastery', name: 'Maestría Total', icon: '👑', desc: '+100% ingresos de equipo y -25% costos.', cost: 1000000, reqLevel: 17, requires: 'eq_premium', effect: { equipIncomeMult: 2.0, equipCostMult: 0.75 } },
+      { id: 'eq_reinforced', name: 'Blindaje Industrial', icon: '🔰', desc: '-50% chance de rotura de equipos.', cost: 8000000, reqLevel: 22, requires: 'eq_mastery', effect: { breakdownChanceMult: 0.5 } },
     ]
   },
   marketing: {
@@ -322,10 +323,11 @@ const SKILL_TREE = {
     icon: '📢',
     color: 'var(--cyan)',
     skills: [
-      { id: 'mk_reach', name: 'Mayor Alcance', icon: '📡', desc: '+30% miembros de campañas.', cost: 1500, reqLevel: 4, effect: { campaignMembersMult: 1.3 } },
-      { id: 'mk_viral', name: 'Viralización', icon: '🔥', desc: 'Campañas duran 50% más.', cost: 4000, reqLevel: 6, requires: 'mk_reach', effect: { campaignDurationMult: 1.5 } },
-      { id: 'mk_brand', name: 'Marca Fuerte', icon: '🏷️', desc: '+50% reputación de campañas.', cost: 10000, reqLevel: 9, requires: 'mk_viral', effect: { campaignRepMult: 1.5 } },
-      { id: 'mk_empire', name: 'Imperio Mediático', icon: '📺', desc: '-40% costo de campañas, +100% miembros.', cost: 30000, reqLevel: 13, requires: 'mk_brand', effect: { campaignCostMult: 0.6, campaignMembersMult: 2.0 } },
+      { id: 'mk_reach', name: 'Mayor Alcance', icon: '📡', desc: '+30% miembros de campañas.', cost: 5000, reqLevel: 4, effect: { campaignMembersMult: 1.3 } },
+      { id: 'mk_viral', name: 'Viralización', icon: '🔥', desc: 'Campañas duran 50% más.', cost: 30000, reqLevel: 8, requires: 'mk_reach', effect: { campaignDurationMult: 1.5 } },
+      { id: 'mk_brand', name: 'Marca Fuerte', icon: '🏷️', desc: '+50% reputación de campañas.', cost: 200000, reqLevel: 13, requires: 'mk_viral', effect: { campaignRepMult: 1.5 } },
+      { id: 'mk_empire', name: 'Imperio Mediático', icon: '📺', desc: '-40% costo de campañas, +100% miembros.', cost: 1500000, reqLevel: 18, requires: 'mk_brand', effect: { campaignCostMult: 0.6, campaignMembersMult: 2.0 } },
+      { id: 'mk_monopoly', name: 'Monopolio', icon: '🦈', desc: 'Rivales roban 50% menos miembros.', cost: 10000000, reqLevel: 23, requires: 'mk_empire', effect: { rivalStealMult: 0.5 } },
     ]
   },
   staff: {
@@ -333,10 +335,11 @@ const SKILL_TREE = {
     icon: '👥',
     color: 'var(--purple)',
     skills: [
-      { id: 'st_training', name: 'Capacitación', icon: '📚', desc: '+30% efecto de todo el staff.', cost: 2000, reqLevel: 4, effect: { staffEffectMult: 1.3 } },
-      { id: 'st_motivation', name: 'Motivación', icon: '💪', desc: 'Staff genera +50% reputación.', cost: 5000, reqLevel: 7, requires: 'st_training', effect: { staffRepMult: 1.5 } },
-      { id: 'st_synergy', name: 'Sinergia', icon: '🤝', desc: 'Cada staff contratado da +5% ingreso extra.', cost: 12000, reqLevel: 10, requires: 'st_motivation', effect: { staffSynergyBonus: 0.05 } },
-      { id: 'st_legends', name: 'Staff Legendario', icon: '🌟', desc: '-30% costo staff, duplica auto-miembros.', cost: 35000, reqLevel: 14, requires: 'st_synergy', effect: { staffCostMult: 0.7, autoMembersMult: 2.0 } },
+      { id: 'st_training', name: 'Capacitación', icon: '📚', desc: '+30% efecto de todo el staff.', cost: 4000, reqLevel: 4, effect: { staffEffectMult: 1.3 } },
+      { id: 'st_motivation', name: 'Motivación', icon: '💪', desc: 'Staff genera +50% reputación.', cost: 40000, reqLevel: 9, requires: 'st_training', effect: { staffRepMult: 1.5 } },
+      { id: 'st_synergy', name: 'Sinergia', icon: '🤝', desc: 'Cada staff contratado da +5% ingreso extra.', cost: 250000, reqLevel: 14, requires: 'st_motivation', effect: { staffSynergyBonus: 0.05 } },
+      { id: 'st_legends', name: 'Staff Legendario', icon: '🌟', desc: '-30% costo staff, 2x auto-miembros.', cost: 2000000, reqLevel: 19, requires: 'st_synergy', effect: { staffCostMult: 0.7, autoMembersMult: 2.0 } },
+      { id: 'st_resilience', name: 'Resiliencia', icon: '💊', desc: '-50% enfermedad, training 30% más rápido.', cost: 12000000, reqLevel: 24, requires: 'st_legends', effect: { sickChanceMult: 0.5, trainingSpeedMult: 0.7 } },
     ]
   },
   members: {
@@ -344,10 +347,35 @@ const SKILL_TREE = {
     icon: '🏃',
     color: 'var(--green)',
     skills: [
-      { id: 'mb_welcome', name: 'Bienvenida', icon: '🤗', desc: '+20% miembros atraídos por equipo.', cost: 1200, reqLevel: 3, effect: { memberAttractionMult: 1.2 } },
-      { id: 'mb_retention', name: 'Retención', icon: '🔒', desc: '+40% capacidad máxima.', cost: 4000, reqLevel: 6, requires: 'mb_welcome', effect: { capacityMult: 1.4 } },
-      { id: 'mb_premium_tier', name: 'Membresía Premium', icon: '💳', desc: 'Cada miembro genera +100% ingreso.', cost: 15000, reqLevel: 10, requires: 'mb_retention', effect: { memberIncomeMult: 2.0 } },
-      { id: 'mb_loyalty', name: 'Lealtad Total', icon: '❤️', desc: '+200% rep por miembro, +50% capacidad.', cost: 40000, reqLevel: 15, requires: 'mb_premium_tier', effect: { memberRepMult: 3.0, capacityMult: 1.5 } },
+      { id: 'mb_welcome', name: 'Bienvenida', icon: '🤗', desc: '+20% miembros atraídos por equipo.', cost: 2500, reqLevel: 3, effect: { memberAttractionMult: 1.2 } },
+      { id: 'mb_retention', name: 'Retención', icon: '🔒', desc: '+40% capacidad máxima.', cost: 35000, reqLevel: 8, requires: 'mb_welcome', effect: { capacityMult: 1.4 } },
+      { id: 'mb_premium_tier', name: 'Membresía Premium', icon: '💳', desc: 'Cada miembro genera +100% ingreso.', cost: 180000, reqLevel: 13, requires: 'mb_retention', effect: { memberIncomeMult: 2.0 } },
+      { id: 'mb_loyalty', name: 'Lealtad Total', icon: '❤️', desc: '+200% rep por miembro, +50% capacidad.', cost: 1200000, reqLevel: 18, requires: 'mb_premium_tier', effect: { memberRepMult: 3.0, capacityMult: 1.5 } },
+      { id: 'mb_community', name: 'Comunidad', icon: '🏘️', desc: 'Clases 2x ingresos, VIPs +50% recompensa.', cost: 9000000, reqLevel: 23, requires: 'mb_loyalty', effect: { classIncomeMult: 2.0, vipRewardMult: 1.5 } },
+    ]
+  },
+  infrastructure: {
+    name: 'Infraestructura',
+    icon: '🏗️',
+    color: '#f59e0b',
+    skills: [
+      { id: 'inf_planning', name: 'Planificación', icon: '📐', desc: 'Construcción de zonas 25% más rápida.', cost: 6000, reqLevel: 5, effect: { zoneBuildSpeedMult: 0.75 } },
+      { id: 'inf_contractors', name: 'Contratistas', icon: '👷', desc: 'Mejoras de equipo 30% más rápidas.', cost: 50000, reqLevel: 10, requires: 'inf_planning', effect: { equipUpgradeSpeedMult: 0.7 } },
+      { id: 'inf_logistics', name: 'Logística', icon: '📦', desc: '+1 mejora de equipo simultánea.', cost: 350000, reqLevel: 15, requires: 'inf_contractors', effect: { extraConcurrentUpgrades: 1 } },
+      { id: 'inf_engineering', name: 'Ingeniería', icon: '⚙️', desc: 'Construcciones 50% más rápidas, -20% costo zonas.', cost: 3000000, reqLevel: 20, requires: 'inf_logistics', effect: { zoneBuildSpeedMult: 0.5, zoneCostMult: 0.8 } },
+      { id: 'inf_megaproject', name: 'Megaproyectos', icon: '🏛️', desc: 'Reparaciones 50% más rápidas.', cost: 15000000, reqLevel: 25, requires: 'inf_engineering', effect: { repairSpeedMult: 0.5 } },
+    ]
+  },
+  competitions: {
+    name: 'Competencias',
+    icon: '🏆',
+    color: '#ef4444',
+    skills: [
+      { id: 'comp_prep', name: 'Preparación', icon: '🎯', desc: '+15% chance de ganar competencias.', cost: 5000, reqLevel: 5, effect: { compWinChanceBonus: 0.15 } },
+      { id: 'comp_strategy', name: 'Estrategia', icon: '🧠', desc: '-25% cooldown de competencias.', cost: 45000, reqLevel: 10, requires: 'comp_prep', effect: { compCooldownMult: 0.75 } },
+      { id: 'comp_prize', name: 'Premios Mayores', icon: '💰', desc: '+50% premios de competencias.', cost: 300000, reqLevel: 15, requires: 'comp_strategy', effect: { compRewardMult: 1.5 } },
+      { id: 'comp_reputation', name: 'Prestigio', icon: '🎖️', desc: '+100% rep de competencias.', cost: 2500000, reqLevel: 20, requires: 'comp_prize', effect: { compRepMult: 2.0 } },
+      { id: 'comp_dynasty', name: 'Dinastía', icon: '🏰', desc: '-40% cooldown extra, competencias dan XP doble.', cost: 12000000, reqLevel: 25, requires: 'comp_reputation', effect: { compCooldownMult: 0.6, compXpMult: 2.0 } },
     ]
   }
 };

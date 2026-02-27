@@ -260,7 +260,7 @@ function trainStaff(id, copyIdx) {
   }
 
   game.money -= cost;
-  var duration = getTrainingDuration(level + 1);
+  var duration = Math.ceil(getTrainingDuration(level + 1) * getSkillEffect('trainingSpeedMult'));
   target.trainingUntil = Date.now() + duration * 1000;
 
   addLog('📚 <span class="highlight">' + s.name + '</span> empezó entrenamiento a LVL ' + (level + 1) + ' (' + Math.floor(duration / 60) + ' min)');
@@ -413,7 +413,7 @@ function repairEquipment(id) {
   }
 
   game.money -= cost;
-  var duration = getRepairDuration(state.level);
+  var duration = Math.ceil(getRepairDuration(state.level) * getSkillEffect('repairSpeedMult'));
   state.brokenUntil = Date.now() + duration * 1000;
 
   addLog('🔧 Reparando <span class="highlight">' + eq.name + '</span> (' + Math.floor(duration / 60) + ' min ' + (duration % 60) + 's)');
@@ -451,7 +451,7 @@ function checkEquipmentBreakdown() {
     var baseChance = 0.003; // 0.3% per check
     // More expensive/advanced equipment breaks more often
     var tierBonus = EQUIPMENT.indexOf(eq) * 0.0003;
-    var chance = (baseChance + tierBonus) * (1 - cleanerReduction);
+    var chance = (baseChance + tierBonus) * (1 - cleanerReduction) * getSkillEffect('breakdownChanceMult');
 
     if (Math.random() < chance) {
       state.brokenUntil = -1; // broken, waiting for repair
@@ -497,8 +497,10 @@ function getActiveEquipUpgrades() {
 }
 
 function getMaxConcurrentUpgrades() {
-  if (game.staff.manager?.hired && !isStaffTraining('manager', 0) && !isStaffSick('manager', 0)) return 2;
-  return 1;
+  var max = 1;
+  if (game.staff.manager?.hired && !isStaffTraining('manager', 0) && !isStaffSick('manager', 0)) max = 2;
+  max += getSkillEffect('extraConcurrentUpgrades', 0);
+  return max;
 }
 
 function isZoneBuilding(zoneId) {
@@ -615,7 +617,7 @@ function checkStaffIllness() {
   physioReduction = Math.min(physioReduction, 0.9); // cap at 90%
 
   var baseChance = 0.005; // 0.5% per check per staff
-  var chance = baseChance * (1 - physioReduction);
+  var chance = baseChance * (1 - physioReduction) * getSkillEffect('sickChanceMult');
 
   STAFF.forEach(function(s) {
     var state = game.staff[s.id];
@@ -984,10 +986,11 @@ function getMaxMembers() {
     }
   });
   // Marketing active campaigns
+  var campaignMembersMult = getSkillEffect('campaignMembersMult');
   MARKETING_CAMPAIGNS.forEach(mc => {
     const state = game.marketing[mc.id];
     if (state?.activeUntil && Date.now() < state.activeUntil) {
-      cap += mc.membersBoost;
+      cap += Math.ceil(mc.membersBoost * campaignMembersMult);
     }
   });
   // Supplement capacity bonus
@@ -1007,14 +1010,15 @@ function getMembersAttracted() {
   });
   base *= getSkillEffect('memberAttractionMult');
   // Marketing boost
+  var campaignMembersMult = getSkillEffect('campaignMembersMult');
   MARKETING_CAMPAIGNS.forEach(mc => {
     const state = game.marketing[mc.id];
     if (state?.activeUntil && Date.now() < state.activeUntil) {
-      base += mc.membersBoost;
+      base += Math.ceil(mc.membersBoost * campaignMembersMult);
     }
   });
-  // Rival gyms steal members
-  base = Math.max(0, base - getRivalMemberSteal());
+  // Rival gyms steal members (reduced by skill)
+  base = Math.max(0, base - Math.ceil(getRivalMemberSteal() * getSkillEffect('rivalStealMult')));
   return Math.min(base, getMaxMembers());
 }
 
@@ -1123,7 +1127,7 @@ function buyEquipment(id) {
     updateMembers();
   } else {
     // Upgrades take time
-    var duration = getEquipUpgradeDuration(state.level) * 1000;
+    var duration = getEquipUpgradeDuration(state.level) * getSkillEffect('equipUpgradeSpeedMult') * 1000;
     game.equipment[id].upgradingUntil = Date.now() + duration;
     var secs = Math.ceil(duration / 1000);
     addLog('🏗️ Mejorando <span class="highlight">' + eq.name + '</span> a nivel ' + nextLevel + ' (' + fmtTime(secs) + ')');
@@ -1175,20 +1179,24 @@ function enterCompetition(id) {
     if (champEffect > 0) rewardMult = champEffect; // level-scaled: 2.0 at lvl1, 2.4 at lvl2, etc.
   }
 
-  let chance = c.winChance + (game.reputation * 0.0001);
+  let chance = c.winChance + (game.reputation * 0.0001) + getSkillEffect('compWinChanceBonus', 0);
   chance = Math.min(chance, 0.95);
 
   const won = Math.random() < chance;
 
   if (!game.competitions[id]) game.competitions[id] = { wins: 0, losses: 0, cooldownUntil: 0 };
-  game.competitions[id].cooldownUntil = Date.now() + c.cooldown * 1000;
+  var cooldownMult = getSkillEffect('compCooldownMult');
+  game.competitions[id].cooldownUntil = Date.now() + c.cooldown * cooldownMult * 1000;
 
   if (won) {
+    rewardMult *= getSkillEffect('compRewardMult');
     const reward = Math.ceil(c.reward * rewardMult);
     game.money += reward;
     game.totalMoneyEarned += reward;
-    game.reputation += c.repReward;
-    game.xp += c.xpReward;
+    var compRepMult = getSkillEffect('compRepMult');
+    game.reputation += Math.ceil(c.repReward * compRepMult);
+    var compXpMult = getSkillEffect('compXpMult');
+    game.xp += Math.ceil(c.xpReward * compXpMult);
     game.competitions[id].wins++;
     game.dailyTracking.competitionsWon++;
     game.dailyTracking.moneyEarned += reward;
@@ -1313,6 +1321,7 @@ function autoMemberTick() {
         autoAdd += getStaffTotalEffect(s, 'autoMembers');
       }
     });
+    autoAdd = Math.ceil(autoAdd * getSkillEffect('autoMembersMult'));
     if (autoAdd > 0 && game.members < game.maxMembers) {
       const prev = game.members;
       game.members = Math.min(game.members + autoAdd, game.maxMembers);
@@ -1325,10 +1334,10 @@ function autoMemberTick() {
 
 // ===== REP TICK =====
 function repTick() {
-  let repGain = game.members * 0.02;
+  let repGain = game.members * 0.02 * getSkillEffect('memberRepMult');
   STAFF.forEach(s => {
     if (game.staff[s.id]?.hired && s.repMult) {
-      repGain *= (1 + getStaffTotalEffect(s, 'repMult'));
+      repGain *= (1 + getStaffTotalEffect(s, 'repMult') * getSkillEffect('staffRepMult'));
     }
   });
   if (repGain > 0) {
@@ -1345,7 +1354,7 @@ function classTick() {
       // Class finished
       game.classes[gc.id].collected = true;
       const prestigeMult = 1 + (game.prestigeStars * 0.25);
-      const income = Math.ceil(gc.income * prestigeMult);
+      const income = Math.ceil(gc.income * prestigeMult * getSkillEffect('classIncomeMult'));
       game.money += income;
       game.totalMoneyEarned += income;
       game.xp += gc.xp;
