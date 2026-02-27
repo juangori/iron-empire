@@ -1441,4 +1441,226 @@ body::before {
   .streak-dots { flex-wrap: wrap; justify-content: center; }
   .daily-bonus-card { justify-content: center; text-align: center; }
   .daily-bonus-info { flex-direction: column; text-align: center; }
+  .auth-container { padding: 20px; }
+  .auth-title { font-size: 32px; }
+}
+
+/* ===== AUTH SCREEN ===== */
+.auth-screen {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--bg-dark);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+}
+.auth-screen.hidden { display: none; }
+
+.auth-container {
+  width: 100%;
+  max-width: 420px;
+  padding: 40px 24px;
+}
+
+.auth-logo {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.auth-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 42px;
+  color: var(--accent);
+  letter-spacing: 3px;
+}
+
+.auth-subtitle {
+  color: var(--text-dim);
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.auth-form {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+.auth-form.hidden { display: none; }
+
+.auth-form h3 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  text-align: center;
+  color: var(--text);
+}
+
+.auth-social-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.auth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  font-family: 'Barlow', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.auth-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.auth-btn.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.auth-btn-google {
+  background: #fff;
+  color: #333;
+}
+.auth-btn-google:hover { background: #f0f0f0; }
+
+.auth-btn-facebook {
+  background: #1877F2;
+  color: #fff;
+}
+.auth-btn-facebook:hover { background: #166fe5; }
+
+.auth-btn-primary {
+  background: var(--accent);
+  color: #000;
+  font-size: 15px;
+  padding: 14px;
+  letter-spacing: 1px;
+}
+.auth-btn-primary:hover { background: var(--accent-dark); color: #fff; }
+
+.auth-btn-guest {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 13px;
+  padding: 10px;
+}
+.auth-btn-guest:hover { border-color: var(--text-dim); color: var(--text); }
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  margin: 16px 0;
+  gap: 12px;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.auth-divider span {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 12px 14px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-family: 'Barlow', sans-serif;
+  font-size: 14px;
+  margin-bottom: 10px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.auth-input:focus {
+  border-color: var(--accent);
+}
+.auth-input::placeholder {
+  color: var(--text-muted);
+}
+
+.auth-error {
+  color: var(--red);
+  font-size: 13px;
+  margin-bottom: 10px;
+  min-height: 0;
+}
+.auth-error:empty { margin-bottom: 0; }
+
+.auth-success {
+  color: var(--green);
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.auth-links {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 14px;
+}
+.auth-links a {
+  color: var(--cyan);
+  font-size: 13px;
+  text-decoration: none;
+}
+.auth-links a:hover { text-decoration: underline; }
+
+.auth-guest {
+  text-align: center;
+}
+.auth-guest-note {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-top: 6px;
+}
+
+/* ===== ACCOUNT SETTINGS MODAL ===== */
+.account-section {
+  margin-bottom: 16px;
+}
+.account-label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.account-value {
+  color: var(--text);
+  font-size: 14px;
+  padding: 8px 0;
+}
+.account-error {
+  color: var(--red);
+  font-size: 12px;
+  margin-top: 4px;
+}
+.account-success {
+  color: var(--green);
+  font-size: 12px;
+  margin-top: 4px;
 }

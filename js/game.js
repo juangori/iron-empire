@@ -549,10 +549,23 @@ function gameTick() {
 
   if (game.tickCount % 30 === 0) {
     saveGame();
+    // Cloud save every 60 seconds
+    if (game.tickCount % 60 === 0 && typeof saveCloudSave === 'function' && typeof currentUser !== 'undefined' && currentUser) {
+      saveCloudSave();
+    }
   }
 
   updateUI();
   renderCompetitions();
+}
+
+// ===== MANUAL SAVE (button) =====
+function manualSave() {
+  saveGame();
+  if (typeof saveCloudSave === 'function' && typeof currentUser !== 'undefined' && currentUser) {
+    saveCloudSave();
+  }
+  showToast('💾', '¡Partida guardada!');
 }
 
 // ===== SAVE / LOAD =====
@@ -630,6 +643,10 @@ function resetGame() {
   if (!confirm('¿Realmente seguro? No hay vuelta atrás.')) return;
   localStorage.removeItem('ironEmpireSave');
   localStorage.removeItem('ironEmpireLastTick');
+  // Also delete cloud save if logged in
+  if (typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined') {
+    db.collection('saves').doc(currentUser.uid).delete().catch(() => {});
+  }
   location.reload();
 }
 
@@ -680,36 +697,8 @@ function startGame() {
 
 // ===== INIT =====
 window.addEventListener('DOMContentLoaded', () => {
-  const loaded = loadGame();
-
-  if (loaded && game.started) {
-    document.getElementById('nameModal').classList.add('hidden');
-
-    // Check daily reset
-    checkDailyReset();
-
-    renderAll();
-
-    // Calculate offline earnings
-    const lastSave = localStorage.getItem('ironEmpireLastTick');
-    if (lastSave) {
-      const elapsed = Math.floor((Date.now() - parseInt(lastSave)) / 1000);
-      if (elapsed > 5) {
-        const cappedTime = Math.min(elapsed, 7200); // cap at 2 hours
-        const offlineIncome = getIncomePerSecond() * cappedTime;
-        if (offlineIncome > 0) {
-          game.money += offlineIncome;
-          game.totalMoneyEarned += offlineIncome;
-          addLog('💤 Ganaste <span class="money-log">' + fmtMoney(offlineIncome) + '</span> mientras estabas offline (' + fmtTime(cappedTime) + ')');
-          showToast('💤', 'Offline: +' + fmtMoney(offlineIncome));
-          updateUI();
-          saveGame();
-        }
-      }
-    }
-
-    setInterval(gameTick, 1000);
-  }
+  // Hide name modal by default (auth screen shows first)
+  document.getElementById('nameModal').classList.add('hidden');
 
   // Tab switching
   document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -724,5 +713,16 @@ window.addEventListener('DOMContentLoaded', () => {
   // Enter key for name modal
   document.getElementById('gymNameInput').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') startGame();
+  });
+
+  // Enter key for auth forms
+  document.getElementById('loginPassword').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') loginWithEmail();
+  });
+  document.getElementById('regPassword2').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') registerWithEmail();
+  });
+  document.getElementById('resetEmail').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') resetPassword();
   });
 });

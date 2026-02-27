@@ -2,23 +2,26 @@
 
 ## Project Overview
 Browser-based idle/tycoon gym game. Free, no pay-to-win. All text in Argentine Spanish.
-Deployed on GitHub Pages (static files only, no backend).
+Deployed on GitHub Pages with Firebase backend for auth + cloud saves.
 Repo: https://github.com/juangori/iron-empire
 Live: https://ironempiregame.com (custom domain)
 
 ## Tech Stack
 - Pure HTML/CSS/JS (no frameworks, no build step)
-- localStorage for saves
+- Firebase Auth (Google, Facebook, Email/Password)
+- Firebase Firestore (cloud saves, user data)
+- localStorage as local backup
 - GitHub Pages for hosting
 
 ## File Structure
 ```
-index.html          - Main HTML structure, loads all scripts
-css/styles.css      - All styles (CSS variables, responsive)
+index.html          - Main HTML structure, auth screen, account modal, loads all scripts + Firebase SDKs
+css/styles.css      - All styles (CSS variables, responsive, auth styles)
 js/data.js          - Game data: equipment, staff, competitions, achievements, classes, marketing, events, missions, tutorial, daily bonus, skill tree, zones, VIP members
 js/game.js          - Core engine: game state, save/load, tick loop, game actions, utility functions, skill/zone calculations
 js/ui.js            - UI rendering: equipment, staff, competitions, achievements, log, updateUI
 js/systems.js       - Engagement: daily bonus, daily missions, random events, tutorial, classes, marketing, skill tree, expansion, VIP members, tab notifications
+js/auth.js          - Firebase auth: login/register (Google, Facebook, email/password), account settings, cloud save, auth state management
 CNAME               - Custom domain config
 ```
 
@@ -27,9 +30,23 @@ CNAME               - Custom domain config
 - Data definitions are global constants (EQUIPMENT, STAFF, SKILL_TREE, GYM_ZONES, VIP_MEMBERS, etc. in data.js)
 - Game loop runs via `setInterval(gameTick, 1000)` - one tick per second
 - All rendering functions follow pattern: `renderXxx()` reads from `game` state and writes innerHTML
-- Save system: auto-save every 30 ticks to localStorage, deep merge on load to preserve new defaults
+- Save system: auto-save every 30 ticks to localStorage, cloud save every 60 ticks to Firestore
 - Offline earnings calculated on load (capped at 2 hours)
 - Skills persist through prestige, zones do not
+
+## Auth Flow
+1. Page loads → Auth screen (login/register/guest)
+2. Login/Register → Firebase Auth → Check for cloud save
+3. New user → Gym name modal → Tutorial
+4. Returning user → Load cloud save → Game resumes
+5. Guest mode → localStorage only, no cloud sync
+6. Account settings accessible from Settings tab (change username, password)
+
+## Firebase Config
+- Firebase config is in js/auth.js (top of file)
+- Replace placeholder values with actual Firebase project config
+- Required Firebase services: Authentication, Firestore
+- Firestore collections: `users` (profiles), `saves` (game data)
 
 ## Key Game Systems (14 total)
 1. **Equipment** (12 items) - Buy/upgrade, each gives income/members/capacity
@@ -51,7 +68,7 @@ CNAME               - Custom domain config
 - Language: All UI text in Argentine Spanish (vos form: "comprá", "mejorá", "elegí")
 - Functions use camelCase
 - CSS uses BEM-ish naming with kebab-case
-- No external dependencies - everything is vanilla JS
+- No external dependencies besides Firebase SDKs (loaded via CDN)
 - Game must work as static files (GitHub Pages compatible)
 - No pay-to-win mechanics ever
 
@@ -66,7 +83,7 @@ CNAME               - Custom domain config
 - Rival NPC gyms competing for members
 - Training programs (assign routines to members)
 - Seasonal competition leagues
-- Leaderboard (needs backend - Firebase or similar)
+- Leaderboard (Firebase)
 - Player profiles with stats/badges
 - Gym decoration/customization
 - Supplement shop

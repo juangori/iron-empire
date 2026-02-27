@@ -11,14 +11,155 @@
 </head>
 <body>
 
+<!-- AUTH SCREEN -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-container">
+    <div class="auth-logo">
+      <div style="font-size:56px;margin-bottom:8px;">🏋️</div>
+      <h1 class="auth-title">IRON EMPIRE</h1>
+      <p class="auth-subtitle">Construí tu imperio de gimnasios</p>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <div class="auth-form" id="authLoginForm">
+      <h3>Iniciar Sesión</h3>
+
+      <div class="auth-social-buttons">
+        <button class="auth-btn auth-btn-google" onclick="loginWithGoogle()">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continuar con Google
+        </button>
+        <button class="auth-btn auth-btn-facebook" onclick="loginWithFacebook()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          Continuar con Facebook
+        </button>
+      </div>
+
+      <div class="auth-divider"><span>o con email</span></div>
+
+      <input type="email" id="loginEmail" class="auth-input" placeholder="Email" autocomplete="email">
+      <input type="password" id="loginPassword" class="auth-input" placeholder="Contraseña" autocomplete="current-password">
+
+      <div class="auth-error" id="loginError"></div>
+
+      <button class="auth-btn auth-btn-primary" onclick="loginWithEmail()">INICIAR SESIÓN</button>
+
+      <div class="auth-links">
+        <a href="#" onclick="showResetForm(); return false;">¿Olvidaste tu contraseña?</a>
+        <a href="#" onclick="showRegisterForm(); return false;">Crear cuenta nueva</a>
+      </div>
+    </div>
+
+    <!-- REGISTER FORM -->
+    <div class="auth-form hidden" id="authRegisterForm">
+      <h3>Crear Cuenta</h3>
+
+      <div class="auth-social-buttons">
+        <button class="auth-btn auth-btn-google" onclick="loginWithGoogle()">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Registrarse con Google
+        </button>
+        <button class="auth-btn auth-btn-facebook" onclick="loginWithFacebook()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+          Registrarse con Facebook
+        </button>
+      </div>
+
+      <div class="auth-divider"><span>o con email</span></div>
+
+      <input type="text" id="regUsername" class="auth-input" placeholder="Nombre de usuario" maxlength="20" autocomplete="username">
+      <input type="email" id="regEmail" class="auth-input" placeholder="Email" autocomplete="email">
+      <input type="password" id="regPassword" class="auth-input" placeholder="Contraseña (mín. 6 caracteres)" autocomplete="new-password">
+      <input type="password" id="regPassword2" class="auth-input" placeholder="Repetir contraseña" autocomplete="new-password">
+
+      <div class="auth-error" id="registerError"></div>
+
+      <button class="auth-btn auth-btn-primary" onclick="registerWithEmail()">CREAR CUENTA</button>
+
+      <div class="auth-links">
+        <a href="#" onclick="showLoginForm(); return false;">Ya tengo cuenta</a>
+      </div>
+    </div>
+
+    <!-- RESET PASSWORD FORM -->
+    <div class="auth-form hidden" id="authResetForm">
+      <h3>Recuperar Contraseña</h3>
+      <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px;">Te enviamos un email para restablecer tu contraseña.</p>
+
+      <input type="email" id="resetEmail" class="auth-input" placeholder="Email" autocomplete="email">
+
+      <div class="auth-error" id="resetError"></div>
+      <div class="auth-success" id="resetSuccess"></div>
+
+      <button class="auth-btn auth-btn-primary" onclick="resetPassword()">ENVIAR EMAIL</button>
+
+      <div class="auth-links">
+        <a href="#" onclick="showLoginForm(); return false;">Volver a login</a>
+      </div>
+    </div>
+
+    <!-- GUEST BUTTON -->
+    <div class="auth-guest">
+      <button class="auth-btn auth-btn-guest" onclick="playAsGuest()">Jugar sin cuenta (modo invitado)</button>
+      <p class="auth-guest-note">Tu progreso solo se guardará en este navegador</p>
+    </div>
+  </div>
+</div>
+
 <!-- NAME MODAL -->
-<div class="modal-overlay" id="nameModal">
+<div class="modal-overlay hidden" id="nameModal">
   <div class="modal">
     <div style="font-size:48px;margin-bottom:12px;">🏋️</div>
     <h2>Iron Empire</h2>
     <p>Estás a punto de abrir tu propio gimnasio. ¿Cómo se va a llamar?</p>
     <input type="text" id="gymNameInput" placeholder="Nombre del gimnasio..." maxlength="24" autofocus>
     <button class="btn btn-buy" onclick="startGame()" style="font-size:18px;padding:14px;">🚀 ABRIR GIMNASIO</button>
+  </div>
+</div>
+
+<!-- ACCOUNT SETTINGS MODAL -->
+<div class="modal-overlay hidden" id="accountModal">
+  <div class="modal" style="max-width:440px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h2 style="margin:0;">👤 Mi Cuenta</h2>
+      <button class="btn btn-small btn-red" onclick="closeAccountSettings()" style="padding:6px 12px;">✕</button>
+    </div>
+
+    <div class="account-section">
+      <label class="account-label">Método de login</label>
+      <div class="account-value" id="accountProviders">-</div>
+    </div>
+
+    <div class="account-section">
+      <label class="account-label">Email</label>
+      <div class="account-value" id="accountEmail">-</div>
+    </div>
+
+    <div class="account-section">
+      <label class="account-label">Nombre de usuario</label>
+      <div style="display:flex;gap:8px;">
+        <input type="text" id="accountUsername" class="auth-input" maxlength="20" style="margin:0;flex:1;">
+        <button class="btn btn-buy btn-small" onclick="saveAccountUsername()">GUARDAR</button>
+      </div>
+      <div class="account-error" id="usernameError"></div>
+      <div class="account-success" id="usernameSuccess"></div>
+    </div>
+
+    <div id="accountPasswordSection">
+      <div class="account-section">
+        <label class="account-label">Cambiar Contraseña</label>
+        <input type="password" id="accountCurrentPass" class="auth-input" placeholder="Contraseña actual">
+        <input type="password" id="accountNewPass" class="auth-input" placeholder="Nueva contraseña (mín. 6)">
+        <input type="password" id="accountNewPass2" class="auth-input" placeholder="Repetir nueva contraseña">
+        <button class="btn btn-purple btn-small" onclick="changeAccountPassword()" style="margin-top:4px;">CAMBIAR CONTRASEÑA</button>
+        <div class="account-error" id="passwordError"></div>
+        <div class="account-success" id="passwordSuccess"></div>
+      </div>
+    </div>
+
+    <div class="account-section" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+      <button class="btn btn-red btn-small" onclick="logoutUser()">🚪 CERRAR SESIÓN</button>
+    </div>
   </div>
 </div>
 
@@ -215,11 +356,17 @@
   <div class="tab-content" id="tab-settings">
     <div class="section-title">⚙️ Opciones</div>
     <div style="display:flex;flex-direction:column;gap:16px;max-width:500px;">
+
+      <div class="stat-box" style="text-align:left;">
+        <div class="stat-box-label" style="margin-bottom:4px;">Cuenta</div>
+        <div id="accountBtnContainer" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
+      </div>
+
       <div class="stat-box" style="text-align:left;">
         <div class="stat-box-label" style="margin-bottom:4px;">Guardar / Cargar</div>
         <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">Tu progreso se guarda automáticamente cada 30 segundos.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn btn-buy btn-small" onclick="saveGame(); showToast('💾','¡Partida guardada!')">💾 GUARDAR</button>
+          <button class="btn btn-buy btn-small" onclick="manualSave()">💾 GUARDAR</button>
           <button class="btn btn-cyan btn-small" onclick="exportSave()">📤 EXPORTAR</button>
           <button class="btn btn-purple btn-small" onclick="importSave()">📥 IMPORTAR</button>
         </div>
@@ -261,11 +408,17 @@
   <span class="toast-text" id="toastText">¡Logro desbloqueado!</span>
 </div>
 
-<!-- SCRIPTS -->
+<!-- FIREBASE SDKs (compat mode - no bundler needed) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<!-- GAME SCRIPTS -->
 <script src="js/data.js"></script>
 <script src="js/game.js"></script>
 <script src="js/ui.js"></script>
 <script src="js/systems.js"></script>
+<script src="js/auth.js"></script>
 
 <!-- Settings stats update -->
 <script>
