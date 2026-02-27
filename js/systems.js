@@ -355,6 +355,36 @@ function handleEventChoice(eventId, choiceIndex) {
 }
 
 // ===== CLASSES =====
+function getClassCost(gc) {
+  var cost = gc.cost || 0;
+  var levelScale = 1 + (game.level - 1) * 0.15;
+  return Math.ceil(cost * levelScale);
+}
+
+function getClassReward(gc) {
+  var levelScale = 1 + (game.level - 1) * 0.2;
+  var prestigeMult = 1 + (game.prestigeStars * 0.25);
+  var classMult = getSkillEffect('classIncomeMult');
+  // Quality bonus: equipment level + staff level boost rewards
+  var qualityBonus = 1;
+  if (gc.reqEquipment) {
+    var eqLvl = game.equipment[gc.reqEquipment]?.level || 0;
+    qualityBonus += eqLvl * 0.05; // +5% per equipment level
+  }
+  if (gc.reqStaff) {
+    var staffState = game.staff[gc.reqStaff];
+    if (staffState?.hired) {
+      qualityBonus += (staffState.level || 1) * 0.1; // +10% per staff level
+    }
+  }
+  return {
+    income: Math.ceil(gc.income * levelScale * prestigeMult * classMult * qualityBonus),
+    xp: Math.ceil(gc.xp * levelScale * 0.5), // XP scales slower
+    rep: Math.ceil(gc.rep * levelScale * 0.5),
+    qualityBonus: qualityBonus
+  };
+}
+
 function startClass(id) {
   const gc = GYM_CLASSES.find(c => c.id === id);
   if (!gc) return;
@@ -362,9 +392,19 @@ function startClass(id) {
   // Check equipment requirement
   if (gc.reqEquipment) {
     var eqLevel = game.equipment[gc.reqEquipment]?.level || 0;
-    if (eqLevel <= 0) {
+    if (eqLevel <= 0 || isEquipmentBroken(gc.reqEquipment)) {
       var eqData = EQUIPMENT.find(function(e) { return e.id === gc.reqEquipment; });
-      showToast('❌', '¡Necesitás ' + (eqData ? eqData.name : gc.reqEquipment) + '!');
+      showToast('❌', '¡Necesitás ' + (eqData ? eqData.name : gc.reqEquipment) + ' funcionando!');
+      return;
+    }
+  }
+
+  // Check staff requirement
+  if (gc.reqStaff) {
+    var staffState = game.staff[gc.reqStaff];
+    if (!staffState?.hired) {
+      var staffData = STAFF.find(function(s) { return s.id === gc.reqStaff; });
+      showToast('❌', '¡Necesitás ' + (staffData ? staffData.name : gc.reqStaff) + '!');
       return;
     }
   }
@@ -375,13 +415,22 @@ function startClass(id) {
   // Check not already running
   if (state?.runningUntil && Date.now() < state.runningUntil) return;
 
+  // Check cost
+  var classCost = getClassCost(gc);
+  if (classCost > 0 && game.money < classCost) {
+    showToast('❌', '¡No tenés suficiente plata!');
+    return;
+  }
+
+  if (classCost > 0) game.money -= classCost;
+
   game.classes[id] = {
     runningUntil: Date.now() + gc.duration * 1000,
     cooldownUntil: 0,
     collected: false
   };
 
-  addLog('🧘 Clase <span class="highlight">' + gc.name + '</span> iniciada! (' + fmtTime(gc.duration) + ')');
+  addLog('🧘 Clase <span class="highlight">' + gc.name + '</span> iniciada! Costo: ' + fmtMoney(classCost) + ' (' + fmtTime(gc.duration) + ')');
   showToast(gc.icon, '¡Clase ' + gc.name + ' en curso!');
 
   renderClasses();
@@ -395,7 +444,8 @@ function renderClasses() {
   grid.innerHTML = GYM_CLASSES.map(gc => {
     const state = game.classes[gc.id] || {};
     const locked = game.level < gc.reqLevel;
-    const missingEquip = gc.reqEquipment && (game.equipment[gc.reqEquipment]?.level || 0) <= 0;
+    const missingEquip = gc.reqEquipment && ((game.equipment[gc.reqEquipment]?.level || 0) <= 0 || isEquipmentBroken(gc.reqEquipment));
+    const missingStaff = gc.reqStaff && !game.staff[gc.reqStaff]?.hired;
     const isRunning = state.runningUntil && Date.now() < state.runningUntil;
     const onCooldown = state.cooldownUntil && Date.now() < state.cooldownUntil;
 
@@ -404,19 +454,38 @@ function renderClasses() {
       game.classes[gc.id].cooldownUntil = Date.now() + gc.cooldown * 1000;
     }
 
+    var classCost = getClassCost(gc);
+    var reward = getClassReward(gc);
+    var canAfford = game.money >= classCost;
+    var profit = reward.income - classCost;
+
     let timerText = '';
     let btnHTML = '';
+    let reqHTML = '';
+
+    // Requirements display
+    var reqs = [];
+    if (gc.reqEquipment) {
+      var eqData = EQUIPMENT.find(function(e) { return e.id === gc.reqEquipment; });
+      var eqName = eqData ? eqData.icon + ' ' + eqData.name : gc.reqEquipment;
+      var hasEq = !missingEquip;
+      reqs.push('<span style="color:' + (hasEq ? 'var(--green)' : 'var(--red)') + ';">' + (hasEq ? '✅' : '❌') + ' ' + eqName + '</span>');
+    }
+    if (gc.reqStaff) {
+      var staffData = STAFF.find(function(s) { return s.id === gc.reqStaff; });
+      var staffName = staffData ? staffData.icon + ' ' + staffData.name : gc.reqStaff;
+      var hasStaff = !missingStaff;
+      reqs.push('<span style="color:' + (hasStaff ? 'var(--green)' : 'var(--red)') + ';">' + (hasStaff ? '✅' : '❌') + ' ' + staffName + '</span>');
+    }
+    if (reqs.length > 0 && !locked) {
+      reqHTML = '<div style="font-size:11px;margin:4px 0;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">' + reqs.join('') + '</div>';
+    }
 
     if (locked) {
-      var reqParts = ['Requiere Nivel ' + gc.reqLevel];
-      if (gc.reqEquipment) {
-        var eqData = EQUIPMENT.find(function(e) { return e.id === gc.reqEquipment; });
-        reqParts.push('Requiere ' + (eqData ? eqData.name : gc.reqEquipment));
-      }
+      var reqParts = ['🔒 Requiere Nivel ' + gc.reqLevel];
       btnHTML = '<div style="color:var(--text-muted);font-size:12px;">' + reqParts.join('<br>') + '</div>';
-    } else if (missingEquip) {
-      var eqData2 = EQUIPMENT.find(function(e) { return e.id === gc.reqEquipment; });
-      btnHTML = '<div style="color:var(--red);font-size:12px;">❌ Necesitás ' + (eqData2 ? eqData2.icon + ' ' + eqData2.name : gc.reqEquipment) + '</div>';
+    } else if (missingEquip || missingStaff) {
+      btnHTML = '<button class="btn btn-buy" disabled>🎯 INICIAR — ' + fmtMoney(classCost) + '</button>';
     } else if (isRunning) {
       const timeLeft = Math.ceil((state.runningUntil - Date.now()) / 1000);
       timerText = '<div class="class-timer">⏳ ' + fmtTime(timeLeft) + '</div>';
@@ -426,7 +495,14 @@ function renderClasses() {
       timerText = '<div class="class-timer" style="color:var(--text-muted);">⏱️ Cooldown: ' + fmtTime(coolLeft) + '</div>';
       btnHTML = '<button class="btn btn-buy" disabled>ESPERANDO</button>';
     } else {
-      btnHTML = '<button class="btn btn-buy" onclick="startClass(\'' + gc.id + '\')">🎯 INICIAR CLASE</button>';
+      btnHTML = '<button class="btn btn-buy" ' + (canAfford ? '' : 'disabled') + ' onclick="startClass(\'' + gc.id + '\')">🎯 INICIAR — ' + fmtMoney(classCost) + '</button>';
+    }
+
+    // Quality indicator
+    var qualityText = '';
+    if (!locked && reward.qualityBonus > 1) {
+      var qPct = Math.round((reward.qualityBonus - 1) * 100);
+      qualityText = '<div style="font-size:11px;color:var(--accent);text-align:center;margin-top:2px;">⭐ Calidad +' + qPct + '% (equipo + staff)</div>';
     }
 
     return (
@@ -434,12 +510,15 @@ function renderClasses() {
         '<div class="class-icon">' + gc.icon + '</div>' +
         '<div class="class-name">' + gc.name + '</div>' +
         '<div class="class-desc">' + gc.desc + '</div>' +
+        reqHTML +
         '<div class="class-stats">' +
-          '<div class="class-stat"><span style="color:var(--green);">💰 ' + fmtMoney(gc.income) + '</span></div>' +
-          '<div class="class-stat"><span style="color:var(--cyan);">✨ +' + gc.xp + ' XP</span></div>' +
-          '<div class="class-stat"><span style="color:var(--purple);">⭐ +' + gc.rep + ' rep</span></div>' +
+          '<div class="class-stat"><span style="color:var(--green);">💰 ' + fmtMoney(reward.income) + '</span></div>' +
+          (classCost > 0 ? '<div class="class-stat"><span style="color:var(--red);">💸 -' + fmtMoney(classCost) + '</span></div>' : '') +
+          '<div class="class-stat"><span style="color:' + (profit > 0 ? 'var(--green)' : 'var(--red)') + ';">📊 ' + (profit >= 0 ? '+' : '') + fmtMoney(profit) + ' neto</span></div>' +
+          '<div class="class-stat"><span style="color:var(--cyan);">✨ +' + reward.xp + ' XP · ⭐ +' + reward.rep + ' rep</span></div>' +
           '<div class="class-stat"><span style="color:var(--text-dim);">⏱️ ' + fmtTime(gc.duration) + ' · CD: ' + fmtTime(gc.cooldown) + '</span></div>' +
         '</div>' +
+        qualityText +
         timerText +
         btnHTML +
       '</div>'

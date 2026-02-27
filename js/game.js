@@ -1353,21 +1353,20 @@ function classTick() {
     if (state?.runningUntil && Date.now() >= state.runningUntil && !state.collected) {
       // Class finished
       game.classes[gc.id].collected = true;
-      const prestigeMult = 1 + (game.prestigeStars * 0.25);
-      const income = Math.ceil(gc.income * prestigeMult * getSkillEffect('classIncomeMult'));
-      game.money += income;
-      game.totalMoneyEarned += income;
-      game.xp += gc.xp;
-      game.reputation += gc.rep;
+      var reward = getClassReward(gc);
+      game.money += reward.income;
+      game.totalMoneyEarned += reward.income;
+      game.xp += reward.xp;
+      game.reputation += reward.rep;
       game.stats.classesCompleted++;
       game.dailyTracking.classesRun++;
-      game.dailyTracking.moneyEarned += income;
-      game.dailyTracking.xpEarned += gc.xp;
-      game.dailyTracking.reputationGained += gc.rep;
+      game.dailyTracking.moneyEarned += reward.income;
+      game.dailyTracking.xpEarned += reward.xp;
+      game.dailyTracking.reputationGained += reward.rep;
 
-      addLog('🧘 Clase <span class="highlight">' + gc.name + '</span> completada! +<span class="money-log">' + fmtMoney(income) + '</span>');
-      showToast(gc.icon, '¡Clase ' + gc.name + ' completada!');
-      floatNumber('+' + fmtMoney(income));
+      addLog('🧘 Clase <span class="highlight">' + gc.name + '</span> completada! +<span class="money-log">' + fmtMoney(reward.income) + '</span>');
+      showToast(gc.icon, '¡Clase ' + gc.name + ': +' + fmtMoney(reward.income) + '!');
+      floatNumber('+' + fmtMoney(reward.income));
 
       checkAchievements();
       checkMissionProgress();

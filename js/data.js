@@ -74,14 +74,14 @@ const ACHIEVEMENTS = [
 ];
 
 const GYM_CLASSES = [
-  { id: 'yoga', name: 'Yoga', icon: '🧘', desc: 'Flexibilidad y paz mental.', duration: 120, income: 200, xp: 40, rep: 5, reqLevel: 2, cooldown: 300 },
-  { id: 'spinning', name: 'Spinning', icon: '🚴', desc: 'Cardio intenso sobre ruedas. Requiere Cinta de Correr.', duration: 90, income: 300, xp: 50, rep: 8, reqLevel: 3, cooldown: 240, reqEquipment: 'treadmill' },
-  { id: 'hiit', name: 'HIIT', icon: '💥', desc: 'Intervalos de alta intensidad. Quemá todo.', duration: 60, income: 400, xp: 60, rep: 10, reqLevel: 5, cooldown: 180 },
-  { id: 'pilates', name: 'Pilates', icon: '🤸', desc: 'Core y control corporal.', duration: 120, income: 350, xp: 45, rep: 7, reqLevel: 4, cooldown: 300 },
-  { id: 'boxing_class', name: 'Boxeo Fitness', icon: '🥊', desc: 'Golpeá la bolsa, liberá stress. Requiere Ring de Boxeo.', duration: 75, income: 500, xp: 70, rep: 12, reqLevel: 7, cooldown: 250, reqEquipment: 'boxing' },
-  { id: 'zumba', name: 'Zumba', icon: '💃', desc: 'Bailá y entrenate al mismo tiempo.', duration: 90, income: 350, xp: 45, rep: 10, reqLevel: 4, cooldown: 270 },
-  { id: 'crossfit_class', name: 'WOD CrossFit', icon: '🏋️', desc: 'Workout Of the Day. Intenso. Requiere Zona CrossFit.', duration: 60, income: 600, xp: 80, rep: 15, reqLevel: 9, cooldown: 200, reqEquipment: 'crossfit' },
-  { id: 'swimming', name: 'Natación Guiada', icon: '🏊', desc: 'Técnica y resistencia en el agua. Requiere Pileta.', duration: 90, income: 700, xp: 90, rep: 18, reqLevel: 11, cooldown: 300, reqEquipment: 'pool' },
+  { id: 'yoga', name: 'Yoga', icon: '🧘', desc: 'Flexibilidad y paz mental.', duration: 120, income: 200, cost: 80, xp: 40, rep: 5, reqLevel: 2, cooldown: 300, reqStaff: 'trainer' },
+  { id: 'spinning', name: 'Spinning', icon: '🚴', desc: 'Cardio intenso sobre ruedas.', duration: 90, income: 300, cost: 130, xp: 50, rep: 8, reqLevel: 3, cooldown: 240, reqEquipment: 'treadmill', reqStaff: 'trainer' },
+  { id: 'pilates', name: 'Pilates', icon: '🤸', desc: 'Core y control corporal.', duration: 120, income: 350, cost: 150, xp: 45, rep: 7, reqLevel: 4, cooldown: 300, reqStaff: 'trainer' },
+  { id: 'zumba', name: 'Zumba', icon: '💃', desc: 'Bailá y entrenate al mismo tiempo.', duration: 90, income: 350, cost: 140, xp: 45, rep: 10, reqLevel: 4, cooldown: 270 },
+  { id: 'hiit', name: 'HIIT', icon: '💥', desc: 'Intervalos de alta intensidad. Quemá todo.', duration: 60, income: 400, cost: 200, xp: 60, rep: 10, reqLevel: 5, cooldown: 180, reqStaff: 'trainer' },
+  { id: 'boxing_class', name: 'Boxeo Fitness', icon: '🥊', desc: 'Golpeá la bolsa, liberá stress.', duration: 75, income: 500, cost: 280, xp: 70, rep: 12, reqLevel: 7, cooldown: 250, reqEquipment: 'boxing', reqStaff: 'trainer' },
+  { id: 'crossfit_class', name: 'WOD CrossFit', icon: '🏋️', desc: 'Workout Of the Day. Intenso.', duration: 60, income: 600, cost: 350, xp: 80, rep: 15, reqLevel: 9, cooldown: 200, reqEquipment: 'crossfit', reqStaff: 'trainer' },
+  { id: 'swimming', name: 'Natación Guiada', icon: '🏊', desc: 'Técnica y resistencia en el agua.', duration: 90, income: 700, cost: 400, xp: 90, rep: 18, reqLevel: 11, cooldown: 300, reqEquipment: 'pool', reqStaff: 'physio' },
 ];
 
 const MARKETING_CAMPAIGNS = [
