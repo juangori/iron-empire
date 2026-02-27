@@ -4,7 +4,7 @@
 Browser-based idle/tycoon gym game. Free, no pay-to-win. All text in Argentine Spanish.
 Deployed on GitHub Pages (static files only, no backend).
 Repo: https://github.com/juangori/iron-empire
-Live: https://juangori.github.io/iron-empire/
+Live: https://ironempiregame.com (custom domain)
 
 ## Tech Stack
 - Pure HTML/CSS/JS (no frameworks, no build step)
@@ -15,36 +15,40 @@ Live: https://juangori.github.io/iron-empire/
 ```
 index.html          - Main HTML structure, loads all scripts
 css/styles.css      - All styles (CSS variables, responsive)
-js/data.js          - Game data definitions (equipment, staff, competitions, achievements, classes, marketing campaigns, random events, daily missions, tutorial steps, daily bonus rewards)
-js/game.js          - Core engine: game state, save/load, tick loop, game actions (buy equipment, hire staff, enter competition, prestige), utility functions
-js/ui.js            - All UI rendering functions (equipment grid, staff grid, competitions, achievements, log, updateUI)
-js/systems.js       - Engagement systems: daily bonus with streak, daily missions (3/day), random events with choices, tutorial walkthrough, gym classes, marketing campaigns, tab notifications
+js/data.js          - Game data: equipment, staff, competitions, achievements, classes, marketing, events, missions, tutorial, daily bonus, skill tree, zones, VIP members
+js/game.js          - Core engine: game state, save/load, tick loop, game actions, utility functions, skill/zone calculations
+js/ui.js            - UI rendering: equipment, staff, competitions, achievements, log, updateUI
+js/systems.js       - Engagement: daily bonus, daily missions, random events, tutorial, classes, marketing, skill tree, expansion, VIP members, tab notifications
+CNAME               - Custom domain config
 ```
 
 ## Architecture Notes
 - Game state is a single global `game` object (defined in game.js)
-- Data definitions are global constants (EQUIPMENT, STAFF, COMPETITIONS, etc. in data.js)
+- Data definitions are global constants (EQUIPMENT, STAFF, SKILL_TREE, GYM_ZONES, VIP_MEMBERS, etc. in data.js)
 - Game loop runs via `setInterval(gameTick, 1000)` - one tick per second
 - All rendering functions follow pattern: `renderXxx()` reads from `game` state and writes innerHTML
 - Save system: auto-save every 30 ticks to localStorage, deep merge on load to preserve new defaults
 - Offline earnings calculated on load (capped at 2 hours)
+- Skills persist through prestige, zones do not
 
-## Key Game Systems
+## Key Game Systems (14 total)
 1. **Equipment** (12 items) - Buy/upgrade, each gives income/members/capacity
-2. **Staff** (8 types) - One-time hire, passive bonuses (income mult, auto-members, rep, cost reduction)
+2. **Staff** (8 types) - One-time hire, passive bonuses
 3. **Competitions** (6 tiers) - Win chance + cooldown, rewards money/rep/XP
-4. **Achievements** (24) - Auto-checked conditions, grant XP
+4. **Achievements** (33) - Auto-checked conditions, grant XP
 5. **Prestige/Franchise** - Reset for permanent income multiplier stars
 6. **Daily Bonus** - 7-day streak cycle with escalating rewards
-7. **Daily Missions** (3/day) - Random from pool of 8 types, progress tracking, bonus for completing all 3
-8. **Random Events** (every 3-6 min) - 10 events with player choices and consequences
-9. **Gym Classes** (8 types) - Real-time duration + cooldown, reward on completion
-10. **Marketing Campaigns** (7 tiers) - Spend money for temporary member/rep boost
-11. **Tutorial** - 10-step interactive walkthrough for new players
+7. **Daily Missions** (3/day) - Random from pool of 8 types, bonus for all 3
+8. **Random Events** (every 3-6 min) - 10 events with player choices
+9. **Gym Classes** (8 types) - Real-time duration + cooldown
+10. **Marketing Campaigns** (7 tiers) - Temporary member/rep boost
+11. **Tutorial** - 12-step interactive walkthrough
+12. **Skill Tree** (4 branches x 4 skills) - Permanent upgrades, persist through prestige
+13. **Gym Expansion** (6 zones) - Capacity + income per zone
+14. **VIP Members** (10 types) - Spawn every 4-7 min, require specific equipment/zones/staff
 
 ## Development Conventions
 - Language: All UI text in Argentine Spanish (vos form: "comprá", "mejorá", "elegí")
-- No emojis in code comments, only in game UI
 - Functions use camelCase
 - CSS uses BEM-ish naming with kebab-case
 - No external dependencies - everything is vanilla JS
@@ -58,23 +62,17 @@ js/systems.js       - Engagement systems: daily bonus with streak, daily mission
 - PATH needs: `export PATH="$PATH:/c/Program Files/GitHub CLI"`
 
 ## Planned Future Features (by priority)
-### Phase 3 - Content Depth
-- Member VIP system (special members with requests)
-- Rival NPC gyms competing for members
-- Building expansion (floors/zones)
-- Training programs
-- Seasonal competition leagues
-
 ### Phase 4 - Social & Meta
+- Rival NPC gyms competing for members
+- Training programs (assign routines to members)
+- Seasonal competition leagues
 - Leaderboard (needs backend - Firebase or similar)
 - Player profiles with stats/badges
 - Gym decoration/customization
 - Supplement shop
-- Skill/research tree
 
 ### Phase 5 - Polish & Endgame
 - Multiple simultaneous branches (evolved prestige)
 - Sound effects & music
 - Animated gym visual with members
 - Income/growth charts
-- Dark/light mode toggle
