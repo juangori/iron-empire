@@ -165,10 +165,12 @@ function normalizeStaffData() {
     if (state && state.hired) {
       if (!state.level) state.level = 1;
       if (!state.trainingUntil) state.trainingUntil = 0;
+      if (!state.sickUntil) state.sickUntil = 0;
       if (!state.extras) state.extras = [];
       state.extras.forEach(function(ex) {
         if (!ex.level) ex.level = 1;
         if (!ex.trainingUntil) ex.trainingUntil = 0;
+        if (!ex.sickUntil) ex.sickUntil = 0;
       });
     }
   });
@@ -334,14 +336,14 @@ function getStaffTotalEffect(staffDef, effectKey) {
   if (!baseVal) return 0;
 
   var total = 0;
-  // Main copy (skip if training)
-  if (!isStaffTraining(staffDef.id, 0)) {
+  // Main copy (skip if training or sick)
+  if (!isStaffTraining(staffDef.id, 0) && !isStaffSick(staffDef.id, 0)) {
     total += baseVal * getStaffLevelMult(state.level || 1);
   }
   // Extra copies
   if (state.extras) {
     state.extras.forEach(function(ex, i) {
-      if (!isStaffTraining(staffDef.id, i + 1)) {
+      if (!isStaffTraining(staffDef.id, i + 1) && !isStaffSick(staffDef.id, i + 1)) {
         total += baseVal * getStaffLevelMult(ex.level || 1);
       }
     });
@@ -349,11 +351,232 @@ function getStaffTotalEffect(staffDef, effectKey) {
   return total;
 }
 
+// ===== CHAOS MECHANICS: EQUIPMENT BREAKDOWN =====
+function normalizeEquipmentData() {
+  EQUIPMENT.forEach(function(eq) {
+    var state = game.equipment[eq.id];
+    if (state && state.level > 0) {
+      if (!state.brokenUntil) state.brokenUntil = 0;
+    }
+  });
+}
+
+function isEquipmentBroken(id) {
+  var state = game.equipment[id];
+  if (!state) return false;
+  // brokenUntil = -1 means broken waiting for repair
+  // brokenUntil = timestamp means repairing until that time
+  return state.brokenUntil === -1 || (state.brokenUntil > 0 && Date.now() < state.brokenUntil);
+}
+
+function isEquipmentRepairing(id) {
+  var state = game.equipment[id];
+  return state && state.brokenUntil > 0 && Date.now() < state.brokenUntil;
+}
+
+function getRepairCost(equipDef, level) {
+  var cost = Math.ceil(equipDef.baseCost * Math.pow(equipDef.costMult, level - 1) * 0.3);
+  if (game.staff.manager?.hired && !isStaffTraining('manager', 0) && !isStaffSick('manager', 0)) {
+    cost = Math.ceil(cost * 0.8);
+  }
+  return cost;
+}
+
+function getRepairDuration(level) {
+  return 60 + level * 30; // seconds: lvl1=90s, lvl5=210s, lvl10=360s
+}
+
+function repairEquipment(id) {
+  var eq = EQUIPMENT.find(function(e) { return e.id === id; });
+  var state = game.equipment[id];
+  if (!eq || !state || state.brokenUntil !== -1) return; // must be broken (not already repairing)
+
+  // Check concurrent repair limit: 1 normally, 2 with manager
+  var repairingCount = 0;
+  EQUIPMENT.forEach(function(e) {
+    if (isEquipmentRepairing(e.id)) repairingCount++;
+  });
+  var maxRepairs = (game.staff.manager?.hired && !isStaffTraining('manager', 0) && !isStaffSick('manager', 0)) ? 2 : 1;
+  if (repairingCount >= maxRepairs) {
+    showToast('❌', '¡Ya hay ' + repairingCount + ' equipo(s) en reparación!');
+    return;
+  }
+
+  var cost = getRepairCost(eq, state.level);
+  if (game.money < cost) {
+    showToast('❌', '¡No tenés suficiente plata!');
+    return;
+  }
+
+  game.money -= cost;
+  var duration = getRepairDuration(state.level);
+  state.brokenUntil = Date.now() + duration * 1000;
+
+  addLog('🔧 Reparando <span class="highlight">' + eq.name + '</span> (' + Math.floor(duration / 60) + ' min ' + (duration % 60) + 's)');
+  showToast('🔧', 'Reparando ' + eq.name + '...');
+  renderEquipment();
+  saveGame();
+}
+
+function checkEquipmentBreakdown() {
+  if (game.tickCount % 30 !== 0) return;
+
+  // Cleaner reduces breakdown chance
+  var cleanerReduction = 0;
+  var cleanerDef = STAFF.find(function(s) { return s.id === 'cleaner'; });
+  if (game.staff.cleaner?.hired) {
+    cleanerReduction = 0.4 * getStaffLevelMult(game.staff.cleaner.level || 1);
+    if (isStaffTraining('cleaner', 0) || isStaffSick('cleaner', 0)) cleanerReduction = 0;
+    // Extra cleaners
+    if (game.staff.cleaner.extras) {
+      game.staff.cleaner.extras.forEach(function(ex, i) {
+        if (!isStaffTraining('cleaner', i + 1) && !isStaffSick('cleaner', i + 1)) {
+          cleanerReduction += 0.4 * getStaffLevelMult(ex.level || 1);
+        }
+      });
+    }
+  }
+  cleanerReduction = Math.min(cleanerReduction, 0.9); // cap at 90%
+
+  EQUIPMENT.forEach(function(eq) {
+    var state = game.equipment[eq.id];
+    if (!state || state.level <= 0) return;
+    if (isEquipmentBroken(eq.id)) return; // already broken
+
+    var baseChance = 0.003; // 0.3% per check
+    // More expensive/advanced equipment breaks more often
+    var tierBonus = EQUIPMENT.indexOf(eq) * 0.0003;
+    var chance = (baseChance + tierBonus) * (1 - cleanerReduction);
+
+    if (Math.random() < chance) {
+      state.brokenUntil = -1; // broken, waiting for repair
+      var repairCost = getRepairCost(eq, state.level);
+      addLog('⚠️ <span class="highlight">' + eq.name + '</span> se rompió! Reparación: ' + fmtMoney(repairCost));
+      showToast('⚠️', '¡' + eq.name + ' se rompió!');
+      renderEquipment();
+    }
+  });
+}
+
+function checkRepairCompletion() {
+  EQUIPMENT.forEach(function(eq) {
+    var state = game.equipment[eq.id];
+    if (!state) return;
+    if (state.brokenUntil > 0 && Date.now() >= state.brokenUntil) {
+      state.brokenUntil = 0;
+      addLog('✅ <span class="highlight">' + eq.name + '</span> reparado y funcionando!');
+      showToast('✅', eq.name + ' reparado!');
+      renderEquipment();
+      updateUI();
+    }
+  });
+}
+
+// ===== CHAOS MECHANICS: STAFF ILLNESS =====
+function isStaffSick(staffId, copyIdx) {
+  var state = game.staff[staffId];
+  if (!state || !state.hired) return false;
+  if (copyIdx === undefined || copyIdx === 0) {
+    return state.sickUntil && Date.now() < state.sickUntil;
+  }
+  var extra = state.extras && state.extras[copyIdx - 1];
+  return extra && extra.sickUntil && Date.now() < extra.sickUntil;
+}
+
+function getHealCost(staffDef, level) {
+  return Math.ceil(getStaffSalaryAtLevel(staffDef.salary, level) * 5);
+}
+
+function healStaff(id, copyIdx) {
+  var s = STAFF.find(function(st) { return st.id === id; });
+  if (!s) return;
+  var state = game.staff[id];
+  if (!state || !state.hired) return;
+
+  var target;
+  if (copyIdx === 0 || copyIdx === undefined) {
+    target = state;
+  } else {
+    target = state.extras && state.extras[copyIdx - 1];
+  }
+  if (!target || !target.sickUntil || Date.now() >= target.sickUntil) return;
+
+  var lvl = target.level || 1;
+  var cost = getHealCost(s, lvl);
+  if (game.money < cost) {
+    showToast('❌', '¡No tenés suficiente plata!');
+    return;
+  }
+
+  game.money -= cost;
+  target.sickUntil = 0;
+  addLog('💊 <span class="highlight">' + s.name + '</span> se recuperó con tratamiento médico.');
+  showToast('💊', s.name + ' curado!');
+  renderStaff();
+  updateUI();
+  saveGame();
+}
+
+function checkStaffIllness() {
+  if (game.tickCount % 60 !== 0) return;
+
+  // Physio reduces illness chance
+  var physioReduction = 0;
+  if (game.staff.physio?.hired) {
+    physioReduction = 0.5 * getStaffLevelMult(game.staff.physio.level || 1);
+    if (isStaffTraining('physio', 0) || isStaffSick('physio', 0)) physioReduction = 0;
+    if (game.staff.physio.extras) {
+      game.staff.physio.extras.forEach(function(ex, i) {
+        if (!isStaffTraining('physio', i + 1) && !isStaffSick('physio', i + 1)) {
+          physioReduction += 0.5 * getStaffLevelMult(ex.level || 1);
+        }
+      });
+    }
+  }
+  physioReduction = Math.min(physioReduction, 0.9); // cap at 90%
+
+  var baseChance = 0.005; // 0.5% per check per staff
+  var chance = baseChance * (1 - physioReduction);
+
+  STAFF.forEach(function(s) {
+    var state = game.staff[s.id];
+    if (!state || !state.hired) return;
+
+    // Main copy
+    if (!isStaffTraining(s.id, 0) && !isStaffSick(s.id, 0)) {
+      if (Math.random() < chance) {
+        var sickDuration = 180 + Math.floor(Math.random() * 300); // 3-8 min
+        state.sickUntil = Date.now() + sickDuration * 1000;
+        var healCost = getHealCost(s, state.level || 1);
+        addLog('🤒 <span class="highlight">' + s.name + '</span> se enfermó! Curar: ' + fmtMoney(healCost));
+        showToast('🤒', s.name + ' se enfermó!');
+        renderStaff();
+      }
+    }
+
+    // Extra copies
+    if (state.extras) {
+      state.extras.forEach(function(ex, i) {
+        if (!isStaffTraining(s.id, i + 1) && !isStaffSick(s.id, i + 1)) {
+          if (Math.random() < chance) {
+            var sickDuration = 180 + Math.floor(Math.random() * 300);
+            ex.sickUntil = Date.now() + sickDuration * 1000;
+            addLog('🤒 <span class="highlight">' + s.name + ' #' + (i + 2) + '</span> se enfermó!');
+            showToast('🤒', s.name + ' #' + (i + 2) + ' se enfermó!');
+            renderStaff();
+          }
+        }
+      });
+    }
+  });
+}
+
 // ===== INCOME CALCULATION =====
 function getIncomePerSecond() {
   let base = 0;
   EQUIPMENT.forEach(eq => {
     const lvl = game.equipment[eq.id]?.level || 0;
+    if (isEquipmentBroken(eq.id)) return; // broken equipment earns nothing
     base += eq.incomePerLevel * lvl;
   });
 
@@ -817,7 +1040,7 @@ function hireStaff(id) {
   if (game.money < cost || game.staff[id]?.hired) return;
 
   game.money -= cost;
-  game.staff[id] = { hired: true, level: 1, trainingUntil: 0, extras: [] };
+  game.staff[id] = { hired: true, level: 1, trainingUntil: 0, sickUntil: 0, extras: [] };
   const xpGain = 50;
   game.xp += xpGain;
   game.dailyTracking.xpEarned += xpGain;
@@ -1071,6 +1294,9 @@ function gameTick() {
   game.stats.totalPlayTime++;
   updateSessionTimer();
   checkTrainingCompletion();
+  checkRepairCompletion();
+  checkEquipmentBreakdown();
+  checkStaffIllness();
   autoMemberTick();
   repTick();
   classTick();
@@ -1099,13 +1325,14 @@ function gameTick() {
   updateUI();
   renderCompetitions();
 
-  // Refresh timers every 2 seconds (classes, marketing, supplements, rivals, staff training)
+  // Refresh timers every 2 seconds (classes, marketing, supplements, rivals, staff training, equipment repair)
   if (game.tickCount % 2 === 0) {
     renderClasses();
     renderMarketing();
     renderSupplements();
     renderRivals();
     renderStaff();
+    renderEquipment();
   }
 
   // Refresh gym scene every 10 ticks (people count may change)
@@ -1208,6 +1435,7 @@ function resetGame() {
 // ===== RENDER ALL =====
 function renderAll() {
   normalizeStaffData();
+  normalizeEquipmentData();
   renderEquipment();
   renderStaff();
   renderCompetitions();

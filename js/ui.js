@@ -21,9 +21,32 @@ function renderEquipment() {
     var locked = game.level < eq.reqLevel;
     var isNew = state.level === 0;
     var atLevelCap = state.level >= game.level;
+    var broken = state.brokenUntil === -1;
+    var repairing = isEquipmentRepairing(eq.id);
 
     var btnHTML = '';
-    if (locked) {
+    var breakdownHTML = '';
+
+    if (broken) {
+      // Broken - show repair button
+      var repairCost = getRepairCost(eq, state.level);
+      var canAffordRepair = game.money >= repairCost;
+      breakdownHTML = '<div class="equip-broken-badge">⚠️ FUERA DE SERVICIO</div>';
+      btnHTML = '<button class="btn btn-red" ' + (canAffordRepair ? '' : 'disabled') +
+        ' onclick="repairEquipment(\'' + eq.id + '\')">🔧 REPARAR — ' + fmtMoney(repairCost) + '</button>';
+    } else if (repairing) {
+      // Repairing - show progress bar
+      var duration = getRepairDuration(state.level) * 1000;
+      var startTime = state.brokenUntil - duration;
+      var elapsed = Date.now() - startTime;
+      var pct = Math.min(100, (elapsed / duration) * 100);
+      var remaining = Math.max(0, Math.ceil((state.brokenUntil - Date.now()) / 1000));
+      var mins = Math.floor(remaining / 60);
+      var secs = remaining % 60;
+      breakdownHTML = '<div class="equip-broken-badge repairing">🔧 REPARANDO</div>';
+      btnHTML = '<div class="equip-repair-bar"><div class="equip-repair-fill" style="width:' + pct + '%"></div></div>' +
+        '<div class="equip-repair-time">Listo en ' + mins + ':' + (secs < 10 ? '0' : '') + secs + '</div>';
+    } else if (locked) {
       btnHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;margin-top:8px;">🔒 Requiere Nivel ' + eq.reqLevel + '</div>';
     } else if (atLevelCap && state.level > 0) {
       btnHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;margin-top:8px;">⚠️ Máx. nivel del equipo = tu nivel (' + game.level + ')</div>';
@@ -35,13 +58,19 @@ function renderEquipment() {
       '</button>';
     }
 
+    var cardClass = 'equip-card';
+    if (locked) cardClass += ' locked';
+    if (broken) cardClass += ' broken';
+    if (repairing) cardClass += ' repairing';
+
     return (
-      '<div class="equip-card ' + (locked ? 'locked' : '') + '">' +
+      '<div class="' + cardClass + '">' +
         '<div class="equip-header">' +
           '<span class="equip-icon">' + eq.icon + '</span>' +
-          (state.level > 0 ? '<span class="equip-level">LVL ' + state.level + (atLevelCap ? ' (MAX)' : '') + '</span>' : '') +
+          (state.level > 0 ? '<span class="equip-level">LVL ' + state.level + (atLevelCap && !broken && !repairing ? ' (MAX)' : '') + '</span>' : '') +
         '</div>' +
         '<div class="equip-name">' + eq.name + '</div>' +
+        breakdownHTML +
         '<div class="equip-desc">' + eq.desc + '</div>' +
         '<div class="equip-stats">' +
           '<div class="equip-stat">💰 <span class="val">+' + fmt(eq.incomePerLevel) + '/s</span></div>' +
@@ -143,18 +172,39 @@ function renderStaff() {
 function _renderStaffCopy(staffDef, copyState, copyIdx) {
   var level = copyState.level || 1;
   var isTraining = copyState.trainingUntil && Date.now() < copyState.trainingUntil;
-  var label = copyIdx === 0 ? '' : ' #' + (copyIdx + 1);
+  var isSick = copyState.sickUntil && Date.now() < copyState.sickUntil;
 
-  var html = '<div class="staff-copy' + (isTraining ? ' training' : '') + '">';
+  var stateClass = isTraining ? ' training' : (isSick ? ' sick' : '');
+  var html = '<div class="staff-copy' + stateClass + '">';
 
-  // Level badge
+  // Level badge + status
   html += '<div class="staff-copy-header">';
   html += '<span class="staff-level-badge">LVL ' + level + '</span>';
-  html += '<span class="staff-copy-label">' + (copyIdx === 0 ? (isTraining ? '⏳ Entrenando' : '✅ Activo') : (isTraining ? '⏳ Entrenando' : '✅ #' + (copyIdx + 1))) + '</span>';
-  if (!isTraining) {
+
+  if (isSick) {
+    html += '<span class="staff-copy-label" style="color:var(--orange);">🤒 Enfermo</span>';
+  } else if (isTraining) {
+    html += '<span class="staff-copy-label" style="color:var(--cyan);">⏳ Entrenando</span>';
+  } else {
+    html += '<span class="staff-copy-label">' + (copyIdx === 0 ? '✅ Activo' : '✅ #' + (copyIdx + 1)) + '</span>';
+  }
+
+  if (!isTraining && !isSick) {
     html += '<span class="staff-copy-salary">💵 ' + fmtMoney(getStaffSalaryAtLevel(staffDef.salary, level)) + '/día</span>';
   }
   html += '</div>';
+
+  // Sick countdown + heal button
+  if (isSick) {
+    var remaining = Math.max(0, Math.ceil((copyState.sickUntil - Date.now()) / 1000));
+    var mins = Math.floor(remaining / 60);
+    var secs = remaining % 60;
+    html += '<div class="staff-sick-time">Se recupera en ' + mins + ':' + (secs < 10 ? '0' : '') + secs + '</div>';
+    var healCost = getHealCost(staffDef, level);
+    var canAffordHeal = game.money >= healCost;
+    html += '<button class="btn btn-red btn-small staff-train-btn" ' + (canAffordHeal ? '' : 'disabled') +
+      ' onclick="healStaff(\'' + staffDef.id + '\',' + copyIdx + ')">💊 CURAR — ' + fmtMoney(healCost) + '</button>';
+  }
 
   // Training progress bar
   if (isTraining) {
@@ -169,13 +219,13 @@ function _renderStaffCopy(staffDef, copyState, copyIdx) {
     html += '<div class="staff-training-time">→ LVL ' + (level + 1) + ' en ' + mins + ':' + (secs < 10 ? '0' : '') + secs + '</div>';
   }
 
-  // Train button (if not training and not max level)
-  if (!isTraining && level < STAFF_MAX_LEVEL) {
+  // Train button (if not training, not sick, and not max level)
+  if (!isTraining && !isSick && level < STAFF_MAX_LEVEL) {
     var trainCost = getTrainingCost(staffDef, level);
     var canAfford = game.money >= trainCost;
     html += '<button class="btn btn-buy btn-small staff-train-btn" ' + (canAfford ? '' : 'disabled') +
       ' onclick="trainStaff(\'' + staffDef.id + '\',' + copyIdx + ')">📚 ENTRENAR → LVL ' + (level + 1) + ' — ' + fmtMoney(trainCost) + '</button>';
-  } else if (!isTraining && level >= STAFF_MAX_LEVEL) {
+  } else if (!isTraining && !isSick && level >= STAFF_MAX_LEVEL) {
     html += '<div class="staff-max-level">⭐ NIVEL MÁXIMO</div>';
   }
 

@@ -718,6 +718,88 @@ body::before {
   margin-top: 6px;
 }
 
+/* Equipment broken/repairing states */
+.equip-card.broken {
+  border-color: var(--red) !important;
+  opacity: 0.8;
+  animation: brokenPulse 2.5s ease-in-out infinite;
+}
+
+.equip-card.repairing {
+  border-color: var(--accent) !important;
+  opacity: 0.85;
+}
+
+@keyframes brokenPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  50% { box-shadow: 0 0 10px 3px rgba(239, 68, 68, 0.2); }
+}
+
+.equip-broken-badge {
+  background: var(--red);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 4px;
+  text-align: center;
+  margin: 6px 0;
+  animation: brokenPulse 2.5s ease-in-out infinite;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.equip-broken-badge.repairing {
+  background: var(--accent);
+  color: #000;
+  animation: none;
+}
+
+.equip-repair-bar {
+  height: 6px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 6px 0 2px;
+}
+
+.equip-repair-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--green));
+  border-radius: 3px;
+  transition: width 0.5s linear;
+}
+
+.equip-repair-time {
+  font-size: 11px;
+  color: var(--accent);
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Staff sick state */
+.staff-copy.sick {
+  border-color: #f97316;
+  background: rgba(249, 115, 22, 0.08);
+  animation: sickPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes sickPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+  50% { box-shadow: 0 0 8px 2px rgba(249, 115, 22, 0.15); }
+}
+
+.staff-copy.sick .staff-copy-label {
+  color: #f97316;
+}
+
+.staff-sick-time {
+  font-size: 11px;
+  color: #f97316;
+  text-align: center;
+  font-weight: 600;
+}
+
 .staff-summary {
   display: flex;
   gap: 16px;
