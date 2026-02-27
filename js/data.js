@@ -71,6 +71,45 @@ const ACHIEVEMENTS = [
   { id: 'vip_magnet', name: 'Imán de VIPs', icon: '🧲', desc: 'Atendé a 10 miembros VIP', check: () => game.stats.vipsServed >= 10 },
   { id: 'five_hundred_members', name: 'Medio Millar', icon: '🏟️', desc: 'Llegá a 500 miembros', check: () => game.members >= 500 },
   { id: 'ten_million', name: 'Diez Millones', icon: '💎', desc: 'Ganá $10,000,000 en total', check: () => game.totalMoneyEarned >= 10000000 },
+  // Chaos mechanics
+  { id: 'first_repair', name: 'Técnico', icon: '🔧', desc: 'Repará tu primer equipo roto', check: () => game.stats.equipRepaired >= 1 },
+  { id: 'repair_master', name: 'Maestro Mecánico', icon: '⚙️', desc: 'Repará 10 equipos', check: () => game.stats.equipRepaired >= 10 },
+  { id: 'first_heal', name: 'Doctor del Gym', icon: '💊', desc: 'Curá a un empleado enfermo', check: () => game.stats.staffHealed >= 1 },
+  { id: 'survivor', name: 'Sobreviviente', icon: '🛡️', desc: 'Soportá 20 roturas de equipo', check: () => game.stats.equipBreakdowns >= 20 },
+  // Construction & upgrades
+  { id: 'property_owner', name: 'Propietario', icon: '🏠', desc: 'Comprá el local', check: () => game.ownProperty },
+  { id: 'level_15', name: 'Nivel 15', icon: '⚡', desc: 'Llegá al nivel 15', check: () => game.level >= 15 },
+  { id: 'level_25', name: 'Nivel 25', icon: '🔱', desc: 'Llegá al nivel 25', check: () => game.level >= 25 },
+  // Staff training
+  { id: 'train_staff', name: 'Entrenador de Entrenadores', icon: '📚', desc: 'Entrenrá un staff a nivel 3', check: () => Object.values(game.staff).some(s => s.hired && s.level >= 3) },
+  { id: 'max_staff_level', name: 'Staff Élite', icon: '🎓', desc: 'Llevar un staff a nivel 5', check: () => Object.values(game.staff).some(s => s.hired && s.level >= 5) },
+  { id: 'hire_extra', name: 'Duplicador', icon: '👯', desc: 'Contratá un segundo empleado del mismo tipo', check: () => Object.values(game.staff).some(s => s.extras && s.extras.length >= 1) },
+  // Skills
+  { id: 'five_skills', name: 'Investigador Avanzado', icon: '🔬', desc: 'Investigá 5 mejoras', check: () => game.stats.skillsResearched >= 5 },
+  { id: 'fifteen_skills', name: 'Científico Loco', icon: '🧪', desc: 'Investigá 15 mejoras', check: () => game.stats.skillsResearched >= 15 },
+  { id: 'all_skills', name: 'Omnisciente', icon: '🧠', desc: 'Investigá las 30 mejoras', check: () => game.stats.skillsResearched >= 30 },
+  // Competition mastery
+  { id: 'ten_comp_wins', name: 'Veterano', icon: '🎖️', desc: 'Ganá 10 competencias', check: () => game.stats.competitionsWon >= 10 },
+  { id: 'fifty_comp_wins', name: 'Leyenda', icon: '🏅', desc: 'Ganá 50 competencias', check: () => game.stats.competitionsWon >= 50 },
+  { id: 'world_champ', name: 'Campeón Mundial', icon: '🌍', desc: 'Ganá el Mundial de Pesas', check: () => (game.competitions.world?.wins || 0) >= 1 },
+  // Rivals
+  { id: 'first_rival', name: 'Rival Derrotado', icon: '💀', desc: 'Derrotá a tu primer rival', check: () => game.stats.rivalsDefeated >= 1 },
+  { id: 'all_rivals', name: 'Monopolio Local', icon: '🦈', desc: 'Derrotá a todos los rivales', check: () => game.stats.rivalsDefeated >= 6 },
+  // Money milestones
+  { id: 'hundred_million', name: 'Cien Millones', icon: '💸', desc: 'Ganá $100,000,000 en total', check: () => game.totalMoneyEarned >= 100000000 },
+  { id: 'billion', name: 'Billonario', icon: '🏦', desc: 'Ganá $1,000,000,000 en total', check: () => game.totalMoneyEarned >= 1000000000 },
+  // Supplements
+  { id: 'supp_addict', name: 'Suplementado', icon: '💉', desc: 'Comprá 20 suplementos', check: () => game.stats.supplementsBought >= 20 },
+  // Rep
+  { id: 'rep_5000', name: 'Ícono', icon: '🌟', desc: 'Llegá a 5000 de reputación', check: () => game.reputation >= 5000 },
+  { id: 'rep_10000', name: 'Leyenda del Fitness', icon: '👑', desc: 'Llegá a 10000 de reputación', check: () => game.reputation >= 10000 },
+  // Playtime
+  { id: 'play_1h', name: 'Enganchado', icon: '⏰', desc: 'Jugá 1 hora en total', check: () => game.stats.totalPlayTime >= 3600 },
+  { id: 'play_10h', name: 'Adicto al Gym', icon: '🕐', desc: 'Jugá 10 horas en total', check: () => game.stats.totalPlayTime >= 36000 },
+  // Classes
+  { id: 'fifty_classes', name: 'Profesor Titular', icon: '🎓', desc: 'Completá 50 clases', check: () => game.stats.classesCompleted >= 50 },
+  // Members
+  { id: 'thousand_members', name: 'Mil Miembros', icon: '🏟️', desc: 'Llegá a 1000 miembros', check: () => game.members >= 1000 },
 ];
 
 const GYM_CLASSES = [

@@ -88,6 +88,11 @@ let game = {
     rivalsDefeated: 0,
     totalPlayTime: 0,
     daysPlayed: 0,
+    equipRepaired: 0,
+    staffHealed: 0,
+    equipBreakdowns: 0,
+    staffIllnesses: 0,
+    competitionsWon: 0,
   }
 };
 
@@ -455,6 +460,7 @@ function checkEquipmentBreakdown() {
 
     if (Math.random() < chance) {
       state.brokenUntil = -1; // broken, waiting for repair
+      game.stats.equipBreakdowns++;
       var repairCost = getRepairCost(eq, state.level);
       addLog('⚠️ <span class="highlight">' + eq.name + '</span> se rompió! Reparación: ' + fmtMoney(repairCost));
       showToast('⚠️', '¡' + eq.name + ' se rompió!');
@@ -469,6 +475,7 @@ function checkRepairCompletion() {
     if (!state) return;
     if (state.brokenUntil > 0 && Date.now() >= state.brokenUntil) {
       state.brokenUntil = 0;
+      game.stats.equipRepaired++;
       addLog('✅ <span class="highlight">' + eq.name + '</span> reparado y funcionando!');
       showToast('✅', eq.name + ' reparado!');
       renderEquipment();
@@ -591,6 +598,7 @@ function healStaff(id, copyIdx) {
 
   game.money -= cost;
   target.sickUntil = 0;
+  game.stats.staffHealed++;
   addLog('💊 <span class="highlight">' + s.name + '</span> se recuperó con tratamiento médico.');
   showToast('💊', s.name + ' curado!');
   renderStaff();
@@ -628,6 +636,7 @@ function checkStaffIllness() {
       if (Math.random() < chance) {
         var sickDuration = 180 + Math.floor(Math.random() * 300); // 3-8 min
         state.sickUntil = Date.now() + sickDuration * 1000;
+        game.stats.staffIllnesses++;
         var healCost = getHealCost(s, state.level || 1);
         addLog('🤒 <span class="highlight">' + s.name + '</span> se enfermó! Curar: ' + fmtMoney(healCost));
         showToast('🤒', s.name + ' se enfermó!');
@@ -642,6 +651,7 @@ function checkStaffIllness() {
           if (Math.random() < chance) {
             var sickDuration = 180 + Math.floor(Math.random() * 300);
             ex.sickUntil = Date.now() + sickDuration * 1000;
+            game.stats.staffIllnesses++;
             addLog('🤒 <span class="highlight">' + s.name + ' #' + (i + 2) + '</span> se enfermó!');
             showToast('🤒', s.name + ' #' + (i + 2) + ' se enfermó!');
             renderStaff();
@@ -1198,6 +1208,7 @@ function enterCompetition(id) {
     var compXpMult = getSkillEffect('compXpMult');
     game.xp += Math.ceil(c.xpReward * compXpMult);
     game.competitions[id].wins++;
+    game.stats.competitionsWon++;
     game.dailyTracking.competitionsWon++;
     game.dailyTracking.moneyEarned += reward;
     game.dailyTracking.reputationGained += c.repReward;
