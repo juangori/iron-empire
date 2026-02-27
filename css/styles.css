@@ -904,6 +904,112 @@ body::before {
 
 .marketing-stat .val { color: var(--cyan); font-weight: 600; }
 
+/* ===== SUPPLEMENTS ===== */
+.supplement-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.supplement-card {
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s;
+}
+
+.supplement-card:hover {
+  border-color: var(--green);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+}
+
+.supplement-card.locked { opacity: 0.45; pointer-events: none; }
+
+.supplement-card.active {
+  border-color: var(--green);
+  box-shadow: 0 0 15px var(--green-glow);
+}
+
+.supplement-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.supplement-icon { font-size: 36px; }
+
+.supplement-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.supplement-badge.running { background: var(--green); color: #000; }
+
+.supplement-summary {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.supplement-summary-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--green);
+  margin-bottom: 12px;
+}
+
+.supplement-active-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.supplement-active-item:last-child { border-bottom: none; }
+
+.supplement-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--bg-dark);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.supplement-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--green), var(--cyan));
+  border-radius: 2px;
+  transition: width 1s;
+}
+
+.supplement-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.supplement-desc { font-size: 13px; color: var(--text-dim); margin-bottom: 12px; line-height: 1.4; }
+
+.supplement-stats { display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+
+.supplement-stat {
+  font-size: 12px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.supplement-stat .val { color: var(--green); font-weight: 600; }
+
 /* ===== CLASSES ===== */
 .classes-grid {
   display: grid;
@@ -1814,7 +1920,7 @@ body::before {
   .nav-tab { padding: 8px 14px; font-size: 13px; }
   .tab-content { padding: 16px; }
   .gym-name-display { font-size: 26px; }
-  .equipment-grid, .marketing-grid, .classes-grid, .expansion-grid { grid-template-columns: 1fr; }
+  .equipment-grid, .marketing-grid, .supplement-grid, .classes-grid, .expansion-grid { grid-template-columns: 1fr; }
   .staff-grid { grid-template-columns: 1fr; }
   .skill-branch-skills { flex-direction: column; align-items: stretch; }
   .skill-node { max-width: 100%; min-width: auto; }

@@ -524,6 +524,97 @@ function renderMarketing() {
   grid.innerHTML = summaryHTML + cardsHTML;
 }
 
+// ===== SUPPLEMENTS =====
+function renderSupplements() {
+  var grid = document.getElementById('supplementsGrid');
+  if (!grid) return;
+
+  // Summary of active supplements
+  var activeSupps = SUPPLEMENTS.filter(function(sup) {
+    var state = game.supplements[sup.id];
+    return state && state.activeUntil && Date.now() < state.activeUntil;
+  });
+
+  var summaryHTML = '';
+  if (activeSupps.length > 0) {
+    summaryHTML = '<div class="supplement-summary"><div class="supplement-summary-title">🧃 Suplementos Activos: ' + activeSupps.length + '</div>';
+    activeSupps.forEach(function(sup) {
+      var state = game.supplements[sup.id];
+      var timeLeft = Math.ceil((state.activeUntil - Date.now()) / 1000);
+      var totalDuration = sup.duration;
+      var elapsed = totalDuration - timeLeft;
+      var progressPct = Math.round((elapsed / totalDuration) * 100);
+      summaryHTML += '<div class="supplement-active-item">' +
+        '<span>' + sup.icon + ' ' + sup.name + '</span>' +
+        '<span style="color:var(--green);">' + getSupplementEffectText(sup) + '</span>' +
+        '<span style="color:var(--text-dim);">⏱️ ' + fmtTime(timeLeft) + '</span>' +
+        '<div class="supplement-progress-bar"><div class="supplement-progress-fill" style="width:' + progressPct + '%"></div></div>' +
+      '</div>';
+    });
+    summaryHTML += '</div>';
+  }
+
+  var cardsHTML = SUPPLEMENTS.map(function(sup) {
+    var state = game.supplements[sup.id] || {};
+    var locked = game.level < sup.reqLevel;
+    var isActive = state.activeUntil && Date.now() < state.activeUntil;
+
+    var cost = sup.cost;
+    if (game.staff.manager && game.staff.manager.hired) cost = Math.ceil(cost * 0.8);
+    var canAfford = game.money >= cost;
+
+    var timerHTML = '';
+    var btnHTML = '';
+
+    if (locked) {
+      btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;margin-top:8px;">🔒 Requiere Nivel ' + sup.reqLevel + '</div>';
+    } else if (isActive) {
+      var timeLeft = Math.ceil((state.activeUntil - Date.now()) / 1000);
+      var totalDuration = sup.duration;
+      var progressPct = Math.round(((totalDuration - timeLeft) / totalDuration) * 100);
+      timerHTML = '<div style="text-align:center;margin-bottom:8px;">' +
+        '<span class="supplement-badge running">ACTIVO — ' + fmtTime(timeLeft) + '</span>' +
+        '<div class="supplement-progress-bar" style="margin-top:6px;"><div class="supplement-progress-fill" style="width:' + progressPct + '%"></div></div>' +
+      '</div>';
+      btnHTML = '<button class="btn btn-green" disabled>✅ EN CURSO</button>';
+    } else {
+      btnHTML = '<button class="btn btn-buy" ' + (canAfford ? '' : 'disabled') + ' onclick="buySupplement(\'' + sup.id + '\')">🧃 TOMAR — ' + fmtMoney(cost) + '</button>';
+    }
+
+    return (
+      '<div class="supplement-card ' + (locked ? 'locked' : '') + ' ' + (isActive ? 'active' : '') + '">' +
+        '<div class="supplement-header">' +
+          '<span class="supplement-icon">' + sup.icon + '</span>' +
+        '</div>' +
+        '<div class="supplement-name">' + sup.name + '</div>' +
+        '<div class="supplement-desc">' + sup.desc + '</div>' +
+        '<div class="supplement-stats">' +
+          '<div class="supplement-stat">💪 <span class="val">' + getSupplementEffectText(sup) + '</span></div>' +
+          '<div class="supplement-stat">⏱️ <span class="val">' + fmtTime(sup.duration) + '</span></div>' +
+          '<div class="supplement-stat">💰 <span class="val">' + fmtMoney(cost) + '</span></div>' +
+        '</div>' +
+        timerHTML +
+        btnHTML +
+      '</div>'
+    );
+  }).join('');
+
+  grid.innerHTML = summaryHTML + cardsHTML;
+}
+
+function getSupplementEffectText(sup) {
+  var parts = [];
+  var e = sup.effects;
+  if (e.incomeMult) parts.push('+' + Math.round((e.incomeMult - 1) * 100) + '% income');
+  if (e.equipIncomeMult) parts.push('+' + Math.round((e.equipIncomeMult - 1) * 100) + '% income equipos');
+  if (e.classIncomeMult) parts.push('+' + Math.round((e.classIncomeMult - 1) * 100) + '% income clases');
+  if (e.marketingMult) parts.push('+' + Math.round((e.marketingMult - 1) * 100) + '% marketing');
+  if (e.capacityBonus) parts.push('+' + e.capacityBonus + ' capacidad');
+  if (e.repBonus) parts.push('+' + e.repBonus + ' rep');
+  if (e.repPerMin) parts.push('+' + e.repPerMin + ' rep/min');
+  return parts.join(', ');
+}
+
 // ===== TUTORIAL =====
 function startTutorial() {
   game.tutorialStep = 0;
@@ -975,6 +1066,22 @@ function updateTabNotifications() {
     } else {
       vipDot.classList.add('hidden');
       vipDot.textContent = '';
+    }
+  }
+
+  // Supplements tab - count active supplements
+  const suppDot = document.getElementById('dot-supplements');
+  if (suppDot) {
+    const activeCount = SUPPLEMENTS.filter(function(sup) {
+      var state = game.supplements[sup.id];
+      return state && state.activeUntil && Date.now() < state.activeUntil;
+    }).length;
+    if (activeCount > 0) {
+      suppDot.classList.remove('hidden');
+      suppDot.textContent = activeCount;
+    } else {
+      suppDot.classList.add('hidden');
+      suppDot.textContent = '';
     }
   }
 }

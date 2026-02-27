@@ -349,3 +349,15 @@ const TUTORIAL_STEPS = [
   // Consejos finales
   { target: '.gym-scene-container', title: '¡A Jugar!', text: 'Consejo: el juego genera plata aunque cierres el navegador (hasta 2 horas). Entrá todos los días por el bonus, hacé misiones, dictá clases y competí. ¡Construí tu Iron Empire!', tab: 'gym' },
 ];
+
+// ===== SUPPLEMENTS =====
+const SUPPLEMENTS = [
+  { id: 'protein', name: 'Proteína en Polvo', icon: '🥤', desc: 'El clásico batido post-entreno. Más ingresos para tu gym.', cost: 300, duration: 180, effects: { incomeMult: 1.2 }, reqLevel: 2 },
+  { id: 'creatine', name: 'Creatina', icon: '💊', desc: 'Más fuerza, más resistencia. Tu gym atrae más gente.', cost: 600, duration: 180, effects: { capacityBonus: 10 }, reqLevel: 4 },
+  { id: 'preworkout', name: 'Pre-Workout', icon: '⚡', desc: 'Energía explosiva. Las clases rinden mucho más.', cost: 1000, duration: 240, effects: { classIncomeMult: 1.3 }, reqLevel: 6 },
+  { id: 'bcaa', name: 'BCAA', icon: '🧪', desc: 'Aminoácidos de cadena ramificada. Mejoran tu reputación.', cost: 2000, duration: 240, effects: { repBonus: 15, repPerMin: 5 }, reqLevel: 8 },
+  { id: 'fatburner', name: 'Quemador de Grasa', icon: '🔥', desc: 'Termogénico potente. Potencia tus campañas de marketing.', cost: 4000, duration: 300, effects: { marketingMult: 1.3 }, reqLevel: 10 },
+  { id: 'glutamine', name: 'Glutamina', icon: '💚', desc: 'Recuperación muscular. Más capacidad para tu gym.', cost: 8000, duration: 300, effects: { capacityBonus: 15 }, reqLevel: 13 },
+  { id: 'massgainer', name: 'Mass Gainer', icon: '🏋️', desc: 'Calorías y proteína masiva. El equipamiento rinde más.', cost: 15000, duration: 300, effects: { equipIncomeMult: 1.4 }, reqLevel: 16 },
+  { id: 'multivitamin', name: 'Multivitamínico Premium', icon: '🌟', desc: 'El suplemento definitivo. Mejora todo.', cost: 30000, duration: 360, effects: { incomeMult: 1.25, repPerMin: 5 }, reqLevel: 20 },
+];

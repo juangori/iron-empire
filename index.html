@@ -227,6 +227,7 @@
   <button class="nav-tab" data-tab="equipment"><span class="tab-icon">🏋️</span>Equipamiento</button>
   <button class="nav-tab" data-tab="staff"><span class="tab-icon">👤</span>Staff</button>
   <button class="nav-tab" data-tab="marketing"><span class="tab-icon">📢</span>Marketing</button>
+  <button class="nav-tab" data-tab="supplements"><span class="tab-icon">🧃</span>Suplementos<span class="notification-dot hidden" id="dot-supplements"></span></button>
   <button class="nav-tab" data-tab="classes"><span class="tab-icon">🧘</span>Clases<span class="notification-dot hidden" id="dot-classes"></span></button>
   <button class="nav-tab" data-tab="missions"><span class="tab-icon">📋</span>Misiones<span class="notification-dot hidden" id="dot-missions"></span></button>
   <button class="nav-tab" data-tab="vip"><span class="tab-icon">⭐</span>VIP<span class="notification-dot hidden" id="dot-vip"></span></button>
@@ -330,6 +331,13 @@
     <div class="marketing-grid" id="marketingGrid"></div>
   </div>
 
+  <!-- SUPPLEMENTS TAB -->
+  <div class="tab-content" id="tab-supplements">
+    <div class="section-title">🧃 Suplementos</div>
+    <p class="section-subtitle">Tomá suplementos para activar buffs temporales que potencian tu gym.</p>
+    <div class="supplement-grid" id="supplementsGrid"></div>
+  </div>
+
   <!-- CLASSES TAB -->
   <div class="tab-content" id="tab-classes">
     <div class="section-title">🧘 Clases Especiales</div>
@@ -427,6 +435,7 @@
           <div>📅 Días jugados: <span style="color:var(--text);" id="statDays">0</span></div>
           <div>🧘 Clases completadas: <span style="color:var(--text);" id="statClasses">0</span></div>
           <div>📢 Campañas lanzadas: <span style="color:var(--text);" id="statCampaigns">0</span></div>
+          <div>🧃 Suplementos tomados: <span style="color:var(--text);" id="statSupplements">0</span></div>
           <div>📋 Misiones completadas: <span style="color:var(--text);" id="statMissions">0</span></div>
           <div>⚡ Eventos resueltos: <span style="color:var(--text);" id="statEvents">0</span></div>
           <div>🔬 Mejoras investigadas: <span style="color:var(--text);" id="statSkills">0</span></div>
@@ -480,6 +489,8 @@ setInterval(function() {
   if (el) el.textContent = game.stats.classesCompleted;
   el = document.getElementById('statCampaigns');
   if (el) el.textContent = game.stats.campaignsLaunched;
+  el = document.getElementById('statSupplements');
+  if (el) el.textContent = game.stats.supplementsBought;
   el = document.getElementById('statMissions');
   if (el) el.textContent = game.stats.missionsCompleted;
   el = document.getElementById('statEvents');

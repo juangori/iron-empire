@@ -47,7 +47,11 @@ let game = {
     campaignsLaunched: 0,
     xpEarned: 0,
     eventsHandled: 0,
+    supplementsBought: 0,
   },
+
+  // Supplements
+  supplements: {},
 
   // Skill tree
   skills: {},
@@ -73,6 +77,7 @@ let game = {
     zonesUnlocked: 1,
     vipsServed: 0,
     eventsHandled: 0,
+    supplementsBought: 0,
     totalPlayTime: 0,
     daysPlayed: 0,
   }
@@ -178,7 +183,77 @@ function getIncomePerSecond() {
     if (game.zones[z.id]) zoneIncome += z.incomeBonus;
   });
 
-  return (base + zoneIncome) * mult * memberBonus * prestigeMult;
+  // Supplement effects
+  const suppEffects = getActiveSupplementEffects();
+  if (suppEffects.equipIncomeMult !== 1) base *= suppEffects.equipIncomeMult;
+  const totalIncome = (base + zoneIncome) * mult * memberBonus * prestigeMult;
+  return totalIncome * suppEffects.incomeMult;
+}
+
+// ===== SUPPLEMENT EFFECTS =====
+function getActiveSupplementEffects() {
+  var effects = { incomeMult: 1, equipIncomeMult: 1, classIncomeMult: 1, marketingMult: 1, capacityBonus: 0, repBonus: 0, repPerMin: 0 };
+  SUPPLEMENTS.forEach(function(sup) {
+    var state = game.supplements[sup.id];
+    if (state && state.activeUntil && Date.now() < state.activeUntil) {
+      var e = sup.effects;
+      if (e.incomeMult) effects.incomeMult *= e.incomeMult;
+      if (e.equipIncomeMult) effects.equipIncomeMult *= e.equipIncomeMult;
+      if (e.classIncomeMult) effects.classIncomeMult *= e.classIncomeMult;
+      if (e.marketingMult) effects.marketingMult *= e.marketingMult;
+      if (e.capacityBonus) effects.capacityBonus += e.capacityBonus;
+      if (e.repBonus) effects.repBonus += e.repBonus;
+      if (e.repPerMin) effects.repPerMin += e.repPerMin;
+    }
+  });
+  return effects;
+}
+
+function buySupplement(id) {
+  var sup = SUPPLEMENTS.find(function(s) { return s.id === id; });
+  if (!sup) return;
+
+  if (game.level < sup.reqLevel) return;
+
+  var state = game.supplements[id];
+  if (state && state.activeUntil && Date.now() < state.activeUntil) {
+    showToast('❌', '¡Ya está activo!');
+    return;
+  }
+
+  var cost = sup.cost;
+  if (game.staff.manager && game.staff.manager.hired) cost = Math.ceil(cost * 0.8);
+
+  if (game.money < cost) {
+    showToast('❌', '¡No tenés suficiente plata!');
+    return;
+  }
+
+  game.money -= cost;
+  game.supplements[id] = { activeUntil: Date.now() + sup.duration * 1000 };
+
+  if (sup.effects.repBonus) {
+    game.reputation += sup.effects.repBonus;
+    game.dailyTracking.reputationGained += sup.effects.repBonus;
+  }
+
+  game.stats.supplementsBought++;
+  game.dailyTracking.supplementsBought++;
+
+  var xpGain = 25;
+  game.xp += xpGain;
+  game.dailyTracking.xpEarned += xpGain;
+
+  updateMembers();
+
+  addLog('🧃 Suplemento <span class="highlight">' + sup.name + '</span> activado! Duración: ' + fmtTime(sup.duration));
+  showToast(sup.icon, '¡' + sup.name + ' activado!');
+
+  renderSupplements();
+  updateUI();
+  checkAchievements();
+  checkMissionProgress();
+  saveGame();
 }
 
 // ===== STAFF SALARY CALCULATION =====
@@ -228,6 +303,8 @@ function getMaxMembers() {
       cap += mc.membersBoost;
     }
   });
+  // Supplement capacity bonus
+  cap += getActiveSupplementEffects().capacityBonus;
   // Skill: capacity mult
   cap *= getSkillEffect('capacityMult');
   return Math.floor(cap);
@@ -433,6 +510,7 @@ function checkLevelUp() {
     renderStaff();
     renderClasses();
     renderMarketing();
+    renderSupplements();
   }
 }
 
@@ -464,6 +542,7 @@ function doPrestige() {
   game.competitions = {};
   game.classes = {};
   game.marketing = {};
+  game.supplements = {};
   game.zones = { ground_floor: true };
   game.vipMembers = [];
   // Skills persist through prestige!
@@ -562,6 +641,20 @@ function classTick() {
   });
 }
 
+// ===== SUPPLEMENT TICK (rep per min) =====
+let supplementRepTimer = 0;
+function supplementTick() {
+  supplementRepTimer++;
+  if (supplementRepTimer >= 60) {
+    supplementRepTimer = 0;
+    var effects = getActiveSupplementEffects();
+    if (effects.repPerMin > 0) {
+      game.reputation += effects.repPerMin;
+      game.dailyTracking.reputationGained += effects.repPerMin;
+    }
+  }
+}
+
 // ===== MAIN GAME TICK (every second) =====
 function gameTick() {
   if (!game.started) return;
@@ -579,6 +672,7 @@ function gameTick() {
   autoMemberTick();
   repTick();
   classTick();
+  supplementTick();
   checkLevelUp();
 
   // Random event check
@@ -708,6 +802,7 @@ function renderAll() {
   renderAchievements();
   renderClasses();
   renderMarketing();
+  renderSupplements();
   renderDailyMissions();
   renderDailyBonus();
   renderSkillTree();
