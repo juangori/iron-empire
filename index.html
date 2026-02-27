@@ -77,7 +77,10 @@
   <button class="nav-tab" data-tab="marketing"><span class="tab-icon">📢</span>Marketing</button>
   <button class="nav-tab" data-tab="classes"><span class="tab-icon">🧘</span>Clases<span class="notification-dot hidden" id="dot-classes"></span></button>
   <button class="nav-tab" data-tab="missions"><span class="tab-icon">📋</span>Misiones<span class="notification-dot hidden" id="dot-missions"></span></button>
+  <button class="nav-tab" data-tab="vip"><span class="tab-icon">⭐</span>VIP<span class="notification-dot hidden" id="dot-vip"></span></button>
   <button class="nav-tab" data-tab="competitions"><span class="tab-icon">🏆</span>Competencias</button>
+  <button class="nav-tab" data-tab="skills"><span class="tab-icon">🔬</span>Mejoras</button>
+  <button class="nav-tab" data-tab="expansion"><span class="tab-icon">🏗️</span>Expansión</button>
   <button class="nav-tab" data-tab="achievements"><span class="tab-icon">🎖️</span>Logros</button>
   <button class="nav-tab" data-tab="prestige"><span class="tab-icon">🌟</span>Prestigio</button>
   <button class="nav-tab" data-tab="settings"><span class="tab-icon">⚙️</span>Opciones</button>
@@ -152,11 +155,32 @@
     <div id="missionsContainer"></div>
   </div>
 
+  <!-- VIP TAB -->
+  <div class="tab-content" id="tab-vip">
+    <div class="section-title">⭐ Miembros VIP</div>
+    <p class="section-subtitle">Miembros especiales que buscan un gym con lo que necesitan. Cumplí sus requisitos para grandes rewards.</p>
+    <div id="vipContainer"></div>
+  </div>
+
   <!-- COMPETITIONS TAB -->
   <div class="tab-content" id="tab-competitions">
     <div class="section-title">🏆 Competencias de Pesas</div>
     <p class="section-subtitle">Enviá a tus miembros a competir por premios y reputación.</p>
     <div class="comp-list" id="compList"></div>
+  </div>
+
+  <!-- SKILLS TAB -->
+  <div class="tab-content" id="tab-skills">
+    <div class="section-title">🔬 Árbol de Mejoras</div>
+    <p class="section-subtitle">Investigá mejoras permanentes para tu gym. Las mejoras persisten incluso después del prestige.</p>
+    <div id="skillTreeContainer"></div>
+  </div>
+
+  <!-- EXPANSION TAB -->
+  <div class="tab-content" id="tab-expansion">
+    <div class="section-title">🏗️ Expansión del Gym</div>
+    <p class="section-subtitle">Construí nuevas zonas para aumentar capacidad, ingresos y desbloquear nuevas posibilidades.</p>
+    <div id="expansionContainer"></div>
   </div>
 
   <!-- ACHIEVEMENTS TAB -->
@@ -210,6 +234,9 @@
           <div>📢 Campañas lanzadas: <span style="color:var(--text);" id="statCampaigns">0</span></div>
           <div>📋 Misiones completadas: <span style="color:var(--text);" id="statMissions">0</span></div>
           <div>⚡ Eventos resueltos: <span style="color:var(--text);" id="statEvents">0</span></div>
+          <div>🔬 Mejoras investigadas: <span style="color:var(--text);" id="statSkills">0</span></div>
+          <div>🏗️ Zonas desbloqueadas: <span style="color:var(--text);" id="statZones">0</span></div>
+          <div>⭐ VIPs atendidos: <span style="color:var(--text);" id="statVips">0</span></div>
           <div>🔥 Streak diario: <span style="color:var(--text);" id="statStreak">0</span></div>
         </div>
       </div>
@@ -256,6 +283,12 @@ setInterval(function() {
   if (el) el.textContent = game.stats.missionsCompleted;
   el = document.getElementById('statEvents');
   if (el) el.textContent = game.stats.eventsHandled;
+  el = document.getElementById('statSkills');
+  if (el) el.textContent = game.stats.skillsResearched;
+  el = document.getElementById('statZones');
+  if (el) el.textContent = game.stats.zonesUnlocked;
+  el = document.getElementById('statVips');
+  if (el) el.textContent = game.stats.vipsServed;
   el = document.getElementById('statStreak');
   if (el) el.textContent = game.dailyBonus.streak;
 }, 2000);

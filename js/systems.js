@@ -562,6 +562,326 @@ function endTutorial() {
   saveGame();
 }
 
+// ===== SKILL TREE =====
+function researchSkill(skillId) {
+  // Find the skill
+  let skill = null;
+  let branchKey = null;
+  Object.entries(SKILL_TREE).forEach(([key, branch]) => {
+    branch.skills.forEach(s => {
+      if (s.id === skillId) { skill = s; branchKey = key; }
+    });
+  });
+  if (!skill || game.skills[skillId]) return;
+
+  // Check requirements
+  if (game.level < skill.reqLevel) return;
+  if (skill.requires && !game.skills[skill.requires]) return;
+  if (game.money < skill.cost) return;
+
+  game.money -= skill.cost;
+  game.skills[skillId] = true;
+  game.stats.skillsResearched++;
+
+  const xpGain = 80;
+  game.xp += xpGain;
+  game.dailyTracking.xpEarned += xpGain;
+
+  addLog('🔬 Investigaste <span class="highlight">' + skill.name + '</span> (' + SKILL_TREE[branchKey].name + ')');
+  showToast(skill.icon, '¡Mejora: ' + skill.name + '!');
+
+  // Recalculate everything
+  updateMembers();
+  renderAll();
+  saveGame();
+}
+
+function renderSkillTree() {
+  const container = document.getElementById('skillTreeContainer');
+  if (!container) return;
+
+  let html = '';
+
+  Object.entries(SKILL_TREE).forEach(([key, branch]) => {
+    html += '<div class="skill-branch">';
+    html += '<div class="skill-branch-header" style="color:' + branch.color + ';">';
+    html += '<span style="font-size:24px;">' + branch.icon + '</span> ';
+    html += '<span class="section-title" style="color:' + branch.color + ';margin-bottom:0;">' + branch.name + '</span>';
+    html += '</div>';
+    html += '<div class="skill-branch-skills">';
+
+    branch.skills.forEach((skill, i) => {
+      const owned = game.skills[skill.id];
+      const reqMet = game.level >= skill.reqLevel;
+      const depMet = !skill.requires || game.skills[skill.requires];
+      const canAfford = game.money >= skill.cost;
+      const available = !owned && reqMet && depMet;
+
+      let cls = 'skill-node';
+      if (owned) cls += ' owned';
+      else if (!reqMet || !depMet) cls += ' locked';
+
+      html += '<div class="' + cls + '" style="border-color:' + (owned ? branch.color : 'var(--border)') + ';">';
+      html += '<div class="skill-node-icon">' + skill.icon + '</div>';
+      html += '<div class="skill-node-name">' + skill.name + '</div>';
+      html += '<div class="skill-node-desc">' + skill.desc + '</div>';
+
+      if (owned) {
+        html += '<div class="skill-node-status" style="color:var(--green);">✅ Investigado</div>';
+      } else if (!reqMet) {
+        html += '<div class="skill-node-status">🔒 Nivel ' + skill.reqLevel + '</div>';
+      } else if (!depMet) {
+        html += '<div class="skill-node-status">🔒 Requiere: ' + branch.skills.find(s => s.id === skill.requires).name + '</div>';
+      } else {
+        html += '<button class="btn btn-buy btn-small" ' + (canAfford ? '' : 'disabled') + ' onclick="researchSkill(\'' + skill.id + '\')">🔬 INVESTIGAR — ' + fmtMoney(skill.cost) + '</button>';
+      }
+
+      html += '</div>';
+
+      // Arrow between skills
+      if (i < branch.skills.length - 1) {
+        html += '<div class="skill-arrow" style="color:' + (owned ? branch.color : 'var(--border)') + ';">→</div>';
+      }
+    });
+
+    html += '</div></div>';
+  });
+
+  container.innerHTML = html;
+}
+
+// ===== GYM EXPANSION =====
+function buyZone(zoneId) {
+  const zone = GYM_ZONES.find(z => z.id === zoneId);
+  if (!zone || game.zones[zoneId]) return;
+  if (game.level < zone.reqLevel) return;
+  if (game.money < zone.cost) return;
+
+  game.money -= zone.cost;
+  game.zones[zoneId] = true;
+  game.stats.zonesUnlocked++;
+
+  const xpGain = 100;
+  game.xp += xpGain;
+  game.dailyTracking.xpEarned += xpGain;
+
+  addLog('🏗️ Nueva zona: <span class="highlight">' + zone.name + '</span> ' + zone.icon);
+  showToast(zone.icon, '¡Zona desbloqueada: ' + zone.name + '!');
+  floatNumber('+' + zone.capacityBonus + ' capacidad', 'var(--accent)');
+
+  updateMembers();
+  renderAll();
+  saveGame();
+}
+
+function renderExpansion() {
+  const container = document.getElementById('expansionContainer');
+  if (!container) return;
+
+  // Gym visual map
+  let mapHTML = '<div class="expansion-map">';
+  GYM_ZONES.forEach(z => {
+    const owned = game.zones[z.id];
+    mapHTML += '<div class="expansion-zone-icon ' + (owned ? 'owned' : 'locked') + '">';
+    mapHTML += '<span>' + z.icon + '</span>';
+    mapHTML += '<span class="expansion-zone-label">' + z.name + '</span>';
+    mapHTML += '</div>';
+  });
+  mapHTML += '</div>';
+
+  let cardsHTML = '<div class="expansion-grid">';
+  GYM_ZONES.forEach(z => {
+    const owned = game.zones[z.id];
+    const locked = game.level < z.reqLevel;
+    const canAfford = game.money >= z.cost;
+
+    let btnHTML = '';
+    if (owned) {
+      btnHTML = '<button class="btn btn-green" disabled>✅ DESBLOQUEADA</button>';
+    } else if (locked) {
+      btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;">🔒 Requiere Nivel ' + z.reqLevel + '</div>';
+    } else {
+      btnHTML = '<button class="btn btn-buy" ' + (canAfford ? '' : 'disabled') + ' onclick="buyZone(\'' + z.id + '\')">🏗️ CONSTRUIR — ' + fmtMoney(z.cost) + '</button>';
+    }
+
+    cardsHTML += '<div class="expansion-card ' + (owned ? 'owned' : '') + ' ' + (locked && !owned ? 'locked' : '') + '">';
+    cardsHTML += '<div class="expansion-card-icon">' + z.icon + '</div>';
+    cardsHTML += '<div class="expansion-card-name">' + z.name + '</div>';
+    cardsHTML += '<div class="expansion-card-desc">' + z.desc + '</div>';
+    cardsHTML += '<div class="expansion-card-stats">';
+    cardsHTML += '<span>📦 +' + z.capacityBonus + ' capacidad</span>';
+    cardsHTML += '<span>💰 +' + fmtMoney(z.incomeBonus) + '/s</span>';
+    cardsHTML += '</div>';
+    cardsHTML += btnHTML;
+    cardsHTML += '</div>';
+  });
+  cardsHTML += '</div>';
+
+  container.innerHTML = mapHTML + cardsHTML;
+}
+
+// ===== VIP MEMBERS =====
+function checkVipSpawn() {
+  game.lastVipTime++;
+  if (game.lastVipTime < game.nextVipIn) return;
+  if (game.vipMembers.length >= 3) return; // Max 3 VIPs at a time
+
+  game.lastVipTime = 0;
+  game.nextVipIn = 250 + Math.floor(Math.random() * 200); // 4-7.5 minutes
+
+  // Filter VIPs by what the player can satisfy
+  const available = VIP_MEMBERS.filter(v => {
+    // Don't show if already active
+    if (game.vipMembers.some(av => av.id === v.id)) return false;
+    return true;
+  });
+
+  if (available.length === 0) return;
+
+  const vip = available[Math.floor(Math.random() * available.length)];
+  const expiresAt = Date.now() + vip.stayDuration * 1000;
+
+  game.vipMembers.push({
+    id: vip.id,
+    expiresAt: expiresAt,
+    accepted: false
+  });
+
+  addLog('⭐ VIP: <span class="highlight">' + vip.name + '</span> quiere unirse! "' + vip.request + '"');
+  showToast(vip.icon, '¡VIP: ' + vip.name + ' quiere unirse!');
+
+  renderVipMembers();
+  updateTabNotifications();
+}
+
+function checkVipExpiry() {
+  const now = Date.now();
+  const expired = game.vipMembers.filter(v => now >= v.expiresAt && !v.accepted);
+  expired.forEach(v => {
+    const vipDef = VIP_MEMBERS.find(vd => vd.id === v.id);
+    if (vipDef) {
+      addLog('😔 VIP <span class="highlight">' + vipDef.name + '</span> se fue... no cumplías sus requisitos.');
+    }
+  });
+
+  const before = game.vipMembers.length;
+  game.vipMembers = game.vipMembers.filter(v => now < v.expiresAt || v.accepted);
+
+  // Remove accepted VIPs whose stay is over
+  game.vipMembers = game.vipMembers.filter(v => {
+    if (v.accepted && now >= v.expiresAt) return false;
+    return true;
+  });
+
+  if (game.vipMembers.length !== before) {
+    renderVipMembers();
+  }
+}
+
+function acceptVip(vipId) {
+  const vipState = game.vipMembers.find(v => v.id === vipId);
+  if (!vipState || vipState.accepted) return;
+
+  const vipDef = VIP_MEMBERS.find(v => v.id === vipId);
+  if (!vipDef) return;
+
+  // Check requirements
+  const meetsReqs = vipDef.requires.every(req => {
+    // Check equipment
+    if (game.equipment[req]?.level > 0) return true;
+    // Check staff
+    if (game.staff[req]?.hired) return true;
+    // Check zones
+    if (game.zones[req]) return true;
+    // Check class types (yoga_class → check if 'yoga' class exists)
+    const classId = req.replace('_class', '');
+    if (GYM_CLASSES.find(c => c.id === classId)) {
+      // Just need the class to be available (level unlocked)
+      const gc = GYM_CLASSES.find(c => c.id === classId);
+      return game.level >= gc.reqLevel;
+    }
+    return false;
+  });
+
+  if (!meetsReqs) {
+    showToast('❌', '¡No cumplís los requisitos del VIP!');
+    return;
+  }
+
+  vipState.accepted = true;
+
+  const prestigeMult = 1 + (game.prestigeStars * 0.25);
+  const moneyReward = Math.ceil(vipDef.reward.money * prestigeMult);
+
+  game.money += moneyReward;
+  game.totalMoneyEarned += moneyReward;
+  game.reputation += vipDef.reward.rep;
+  game.xp += vipDef.reward.xp;
+  game.stats.vipsServed++;
+  game.dailyTracking.moneyEarned += moneyReward;
+  game.dailyTracking.reputationGained += vipDef.reward.rep;
+  game.dailyTracking.xpEarned += vipDef.reward.xp;
+
+  addLog('⭐ VIP <span class="highlight">' + vipDef.name + '</span> aceptado! +<span class="money-log">' + fmtMoney(moneyReward) + '</span> +' + vipDef.reward.rep + '⭐');
+  showToast(vipDef.icon, '¡VIP ' + vipDef.name + ' se unió!');
+  floatNumber('+' + fmtMoney(moneyReward));
+
+  renderVipMembers();
+  updateUI();
+  checkAchievements();
+  checkMissionProgress();
+  saveGame();
+}
+
+function renderVipMembers() {
+  const container = document.getElementById('vipContainer');
+  if (!container) return;
+
+  const vips = game.vipMembers || [];
+
+  if (vips.length === 0) {
+    container.innerHTML = '<div class="vip-empty"><div style="font-size:40px;margin-bottom:12px;">👀</div><p style="color:var(--text-dim);">No hay miembros VIP esperando. Aparecen cada 4-7 minutos.<br>Mientras más equipamiento y zonas tengas, más VIPs podés satisfacer.</p></div>';
+    return;
+  }
+
+  let html = '<div class="vip-list">';
+  vips.forEach(v => {
+    const vipDef = VIP_MEMBERS.find(vd => vd.id === v.id);
+    if (!vipDef) return;
+
+    const timeLeft = Math.max(0, Math.ceil((v.expiresAt - Date.now()) / 1000));
+    const meetsReqs = vipDef.requires.every(req => {
+      if (game.equipment[req]?.level > 0) return true;
+      if (game.staff[req]?.hired) return true;
+      if (game.zones[req]) return true;
+      const classId = req.replace('_class', '');
+      const gc = GYM_CLASSES.find(c => c.id === classId);
+      if (gc) return game.level >= gc.reqLevel;
+      return false;
+    });
+
+    html += '<div class="vip-card ' + (v.accepted ? 'accepted' : '') + '">';
+    html += '<div class="vip-icon">' + vipDef.icon + '</div>';
+    html += '<div class="vip-info">';
+    html += '<div class="vip-name">' + vipDef.name + '</div>';
+    html += '<div class="vip-request">"' + vipDef.request + '"</div>';
+    html += '<div class="vip-reward">💰 ' + fmtMoney(vipDef.reward.money) + ' · ⭐ ' + vipDef.reward.rep + ' · ✨ ' + vipDef.reward.xp + ' XP</div>';
+    html += '<div class="vip-timer">' + (v.accepted ? '✅ Miembro activo' : '⏱️ Se va en: ' + fmtTime(timeLeft)) + '</div>';
+    html += '</div>';
+
+    if (!v.accepted) {
+      html += '<button class="btn ' + (meetsReqs ? 'btn-buy' : 'btn-red') + ' btn-small" onclick="acceptVip(\'' + v.id + '\')">';
+      html += meetsReqs ? '✅ ACEPTAR' : '❌ NO CUMPLÍS';
+      html += '</button>';
+    }
+
+    html += '</div>';
+  });
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
 // ===== TAB NOTIFICATIONS =====
 function updateTabNotifications() {
   // Missions tab - has unclaimed missions
@@ -579,5 +899,12 @@ function updateTabNotifications() {
       return state?.runningUntil && Date.now() >= state.runningUntil && !state.collected;
     });
     classesDot.classList.toggle('hidden', !hasFinished);
+  }
+
+  // VIP tab - has pending VIPs
+  const vipDot = document.getElementById('dot-vip');
+  if (vipDot) {
+    const hasPending = game.vipMembers?.some(v => !v.accepted);
+    vipDot.classList.toggle('hidden', !hasPending);
   }
 }

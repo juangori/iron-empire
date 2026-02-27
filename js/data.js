@@ -60,6 +60,14 @@ const ACHIEVEMENTS = [
   { id: 'streak_7', name: 'Semana Completa', icon: '🔥', desc: 'Mantené un streak de 7 días', check: () => game.dailyBonus.streak >= 7 },
   { id: 'mission_master', name: 'Misionero', icon: '📋', desc: 'Completá 10 misiones diarias', check: () => game.stats.missionsCompleted >= 10 },
   { id: 'event_handler', name: 'Solucionador', icon: '⚡', desc: 'Resolvé 10 eventos', check: () => game.stats.eventsHandled >= 10 },
+  { id: 'first_skill', name: 'Investigador', icon: '🔬', desc: 'Investigá tu primera mejora', check: () => game.stats.skillsResearched >= 1 },
+  { id: 'skill_master', name: 'Maestro Científico', icon: '🧬', desc: 'Investigá 8 mejoras', check: () => game.stats.skillsResearched >= 8 },
+  { id: 'first_zone', name: 'Expansionista', icon: '🏗️', desc: 'Desbloqueá una nueva zona', check: () => game.stats.zonesUnlocked >= 2 },
+  { id: 'all_zones', name: 'Magnate Inmobiliario', icon: '🏟️', desc: 'Desbloqueá todas las zonas', check: () => game.stats.zonesUnlocked >= GYM_ZONES.length },
+  { id: 'first_vip', name: 'Trato VIP', icon: '⭐', desc: 'Atendé a tu primer miembro VIP', check: () => game.stats.vipsServed >= 1 },
+  { id: 'vip_magnet', name: 'Imán de VIPs', icon: '🧲', desc: 'Atendé a 10 miembros VIP', check: () => game.stats.vipsServed >= 10 },
+  { id: 'five_hundred_members', name: 'Medio Millar', icon: '🏟️', desc: 'Llegá a 500 miembros', check: () => game.members >= 500 },
+  { id: 'ten_million', name: 'Diez Millones', icon: '💎', desc: 'Ganá $10,000,000 en total', check: () => game.totalMoneyEarned >= 10000000 },
 ];
 
 const GYM_CLASSES = [
@@ -223,6 +231,78 @@ const DAILY_BONUS_REWARDS = [
   { day: 7, money: 5000, xp: 300, label: '$5K + 🎁' },
 ];
 
+// ===== SKILL TREE =====
+const SKILL_TREE = {
+  equipment: {
+    name: 'Equipamiento',
+    icon: '🔧',
+    color: 'var(--accent)',
+    skills: [
+      { id: 'eq_durability', name: 'Durabilidad', icon: '🛡️', desc: 'Equipos duran más. -15% costo de mejora.', cost: 1000, reqLevel: 3, effect: { equipCostMult: 0.85 } },
+      { id: 'eq_efficiency', name: 'Eficiencia', icon: '⚡', desc: '+25% ingresos de todo el equipamiento.', cost: 3000, reqLevel: 5, requires: 'eq_durability', effect: { equipIncomeMult: 1.25 } },
+      { id: 'eq_premium', name: 'Línea Premium', icon: '💎', desc: '+50% capacidad de equipamiento.', cost: 8000, reqLevel: 8, requires: 'eq_efficiency', effect: { equipCapacityMult: 1.5 } },
+      { id: 'eq_mastery', name: 'Maestría Total', icon: '👑', desc: '+100% ingresos de equipamiento y -25% costos.', cost: 25000, reqLevel: 12, requires: 'eq_premium', effect: { equipIncomeMult: 2.0, equipCostMult: 0.75 } },
+    ]
+  },
+  marketing: {
+    name: 'Marketing',
+    icon: '📢',
+    color: 'var(--cyan)',
+    skills: [
+      { id: 'mk_reach', name: 'Mayor Alcance', icon: '📡', desc: '+30% miembros de campañas.', cost: 1500, reqLevel: 4, effect: { campaignMembersMult: 1.3 } },
+      { id: 'mk_viral', name: 'Viralización', icon: '🔥', desc: 'Campañas duran 50% más.', cost: 4000, reqLevel: 6, requires: 'mk_reach', effect: { campaignDurationMult: 1.5 } },
+      { id: 'mk_brand', name: 'Marca Fuerte', icon: '🏷️', desc: '+50% reputación de campañas.', cost: 10000, reqLevel: 9, requires: 'mk_viral', effect: { campaignRepMult: 1.5 } },
+      { id: 'mk_empire', name: 'Imperio Mediático', icon: '📺', desc: '-40% costo de campañas, +100% miembros.', cost: 30000, reqLevel: 13, requires: 'mk_brand', effect: { campaignCostMult: 0.6, campaignMembersMult: 2.0 } },
+    ]
+  },
+  staff: {
+    name: 'Personal',
+    icon: '👥',
+    color: 'var(--purple)',
+    skills: [
+      { id: 'st_training', name: 'Capacitación', icon: '📚', desc: '+30% efecto de todo el staff.', cost: 2000, reqLevel: 4, effect: { staffEffectMult: 1.3 } },
+      { id: 'st_motivation', name: 'Motivación', icon: '💪', desc: 'Staff genera +50% reputación.', cost: 5000, reqLevel: 7, requires: 'st_training', effect: { staffRepMult: 1.5 } },
+      { id: 'st_synergy', name: 'Sinergia', icon: '🤝', desc: 'Cada staff contratado da +5% ingreso extra.', cost: 12000, reqLevel: 10, requires: 'st_motivation', effect: { staffSynergyBonus: 0.05 } },
+      { id: 'st_legends', name: 'Staff Legendario', icon: '🌟', desc: '-30% costo staff, duplica auto-miembros.', cost: 35000, reqLevel: 14, requires: 'st_synergy', effect: { staffCostMult: 0.7, autoMembersMult: 2.0 } },
+    ]
+  },
+  members: {
+    name: 'Miembros',
+    icon: '🏃',
+    color: 'var(--green)',
+    skills: [
+      { id: 'mb_welcome', name: 'Bienvenida', icon: '🤗', desc: '+20% miembros atraídos por equipo.', cost: 1200, reqLevel: 3, effect: { memberAttractionMult: 1.2 } },
+      { id: 'mb_retention', name: 'Retención', icon: '🔒', desc: '+40% capacidad máxima.', cost: 4000, reqLevel: 6, requires: 'mb_welcome', effect: { capacityMult: 1.4 } },
+      { id: 'mb_premium_tier', name: 'Membresía Premium', icon: '💳', desc: 'Cada miembro genera +100% ingreso.', cost: 15000, reqLevel: 10, requires: 'mb_retention', effect: { memberIncomeMult: 2.0 } },
+      { id: 'mb_loyalty', name: 'Lealtad Total', icon: '❤️', desc: '+200% rep por miembro, +50% capacidad.', cost: 40000, reqLevel: 15, requires: 'mb_premium_tier', effect: { memberRepMult: 3.0, capacityMult: 1.5 } },
+    ]
+  }
+};
+
+// ===== GYM ZONES / EXPANSION =====
+const GYM_ZONES = [
+  { id: 'ground_floor', name: 'Planta Baja', icon: '🏠', desc: 'El corazón del gym. Tu base de operaciones.', cost: 0, capacityBonus: 10, incomeBonus: 0, reqLevel: 1, unlocked: true },
+  { id: 'first_floor', name: 'Primer Piso', icon: '🏢', desc: 'Más espacio, más máquinas, más miembros.', cost: 15000, capacityBonus: 30, incomeBonus: 10, reqLevel: 6 },
+  { id: 'basement', name: 'Sótano', icon: '🔨', desc: 'Zona hardcore. Pesas pesadas, chalk, gritos.', cost: 40000, capacityBonus: 25, incomeBonus: 20, reqLevel: 10 },
+  { id: 'rooftop', name: 'Terraza', icon: '☀️', desc: 'Entrenamiento al aire libre con vista.', cost: 80000, capacityBonus: 20, incomeBonus: 30, reqLevel: 13 },
+  { id: 'annex', name: 'Edificio Anexo', icon: '🏗️', desc: 'Un edificio completo al lado. Duplicás tu gym.', cost: 200000, capacityBonus: 60, incomeBonus: 50, reqLevel: 16 },
+  { id: 'arena', name: 'Arena de Competición', icon: '🏟️', desc: 'Arena propia para competencias y eventos. +rep masivo.', cost: 500000, capacityBonus: 40, incomeBonus: 80, reqLevel: 19 },
+];
+
+// ===== VIP MEMBERS =====
+const VIP_MEMBERS = [
+  { id: 'bodybuilder', name: 'Fisicoculturista Pro', icon: '💪', request: 'Necesito Squat Rack y Prensa de Piernas', requires: ['squat_rack', 'leg_press'], reward: { money: 3000, rep: 30, xp: 80 }, stayDuration: 600 },
+  { id: 'yoga_guru', name: 'Gurú del Yoga', icon: '🧘', request: 'Quiero un espacio tranquilo para dar clases', requires: ['yoga_class'], reward: { money: 2000, rep: 40, xp: 60 }, stayDuration: 500 },
+  { id: 'boxer', name: 'Boxeador Amateur', icon: '🥊', request: 'Necesito Ring de Boxeo para entrenar', requires: ['boxing'], reward: { money: 5000, rep: 50, xp: 100 }, stayDuration: 700 },
+  { id: 'swimmer', name: 'Nadadora Olímpica', icon: '🏊‍♀️', request: 'Solo entreno en gyms con pileta', requires: ['pool'], reward: { money: 8000, rep: 80, xp: 150 }, stayDuration: 800 },
+  { id: 'crossfitter', name: 'Crossfitter Fanático', icon: '🤸', request: 'Dame WODs o dame muerte', requires: ['crossfit'], reward: { money: 6000, rep: 60, xp: 120 }, stayDuration: 600 },
+  { id: 'ceo', name: 'CEO Fitness', icon: '👔', request: 'Quiero Spa y Sauna. Necesito relajarme.', requires: ['spa', 'sauna'], reward: { money: 15000, rep: 100, xp: 200 }, stayDuration: 900 },
+  { id: 'influencer_vip', name: 'Influencer (1M seguidores)', icon: '📱', request: 'Tu gym tiene que ser Instagrameable', requires: ['first_floor'], reward: { money: 10000, rep: 150, xp: 180 }, stayDuration: 700 },
+  { id: 'retired_athlete', name: 'Atleta Retirado', icon: '🏅', request: 'Necesito un gym completo y staff de calidad', requires: ['trainer', 'physio'], reward: { money: 12000, rep: 120, xp: 250 }, stayDuration: 1000 },
+  { id: 'family', name: 'Familia Fitness', icon: '👨‍👩‍👧‍👦', request: 'Queremos pileta y clases para todos', requires: ['pool', 'spinning_class'], reward: { money: 7000, rep: 70, xp: 130 }, stayDuration: 800 },
+  { id: 'strongman', name: 'Strongman', icon: '🦍', request: 'Solo entreno en sótanos con pesas reales', requires: ['basement'], reward: { money: 20000, rep: 200, xp: 300 }, stayDuration: 1200 },
+];
+
 const TUTORIAL_STEPS = [
   { target: '.gym-visual', title: 'Tu Gimnasio', text: 'Este es tu gym. Acá ves el nombre, la categoría y el equipamiento que tenés instalado.', tab: 'gym' },
   { target: '.stats-bar', title: 'Tus Recursos', text: 'Arriba ves tu dinero, miembros, reputación, ingresos por segundo y nivel. Todo lo que hagas afecta estos números.' },
@@ -233,5 +313,7 @@ const TUTORIAL_STEPS = [
   { target: '[data-tab="missions"]', title: 'Misiones Diarias', text: 'Cada día tenés misiones nuevas con objetivos y rewards. Completalas todas para bonus extra.', tab: 'missions' },
   { target: '[data-tab="competitions"]', title: 'Competencias', text: 'Mandá a tus miembros a competir por premios y reputación. A mayor reputación, mejores competencias.', tab: 'competitions' },
   { target: '.daily-bonus-banner', title: 'Bonus Diario', text: 'Entrá todos los días para reclamar tu bonus. Si mantenés el streak, los premios crecen.' },
+  { target: '[data-tab="skills"]', title: 'Árbol de Mejoras', text: 'Investigá mejoras permanentes en 4 ramas: Equipamiento, Marketing, Staff y Miembros. Cada una tiene 4 niveles.', tab: 'skills' },
+  { target: '[data-tab="expansion"]', title: 'Expansión', text: 'Comprá nuevas zonas para tu gym: primer piso, sótano, terraza y más. Cada zona da capacidad e ingresos extra.', tab: 'expansion' },
   { target: '[data-tab="prestige"]', title: 'Prestigio', text: 'Cuando ya seas grande, podés abrir una franquicia (prestige). Se reinicia todo pero ganás multiplicadores permanentes.' },
 ];

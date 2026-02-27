@@ -49,6 +49,17 @@ let game = {
     eventsHandled: 0,
   },
 
+  // Skill tree
+  skills: {},
+
+  // Gym zones
+  zones: { ground_floor: true },
+
+  // VIP members
+  vipMembers: [],
+  lastVipTime: 0,
+  nextVipIn: 300,
+
   // Random events
   lastEventTime: 0,
   nextEventIn: 180,
@@ -58,6 +69,9 @@ let game = {
     classesCompleted: 0,
     campaignsLaunched: 0,
     missionsCompleted: 0,
+    skillsResearched: 0,
+    zonesUnlocked: 1,
+    vipsServed: 0,
     eventsHandled: 0,
     totalPlayTime: 0,
     daysPlayed: 0,
@@ -92,16 +106,39 @@ function getDateString(date) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
+// ===== SKILL HELPERS =====
+function hasSkill(skillId) {
+  return !!game.skills[skillId];
+}
+
+function getSkillEffect(effectName, defaultVal) {
+  let val = defaultVal !== undefined ? defaultVal : 1;
+  Object.values(SKILL_TREE).forEach(branch => {
+    branch.skills.forEach(skill => {
+      if (game.skills[skill.id] && skill.effect[effectName]) {
+        if (defaultVal === 1 || defaultVal === undefined) {
+          val *= skill.effect[effectName];
+        } else {
+          val += skill.effect[effectName];
+        }
+      }
+    });
+  });
+  return val;
+}
+
 // ===== COST CALCULATIONS =====
 function getEquipCost(equip, level) {
   let cost = equip.baseCost * Math.pow(equip.costMult, level);
   if (game.staff.manager?.hired) cost *= (1 - STAFF.find(s => s.id === 'manager').costReduction);
+  cost *= getSkillEffect('equipCostMult');
   return Math.ceil(cost);
 }
 
 function getStaffCost(staff) {
   let cost = staff.costBase;
   if (game.staff.manager?.hired && staff.id !== 'manager') cost *= 0.8;
+  cost *= getSkillEffect('staffCostMult');
   return Math.ceil(cost);
 }
 
@@ -113,24 +150,49 @@ function getIncomePerSecond() {
     base += eq.incomePerLevel * lvl;
   });
 
+  // Skill: equipment income mult
+  base *= getSkillEffect('equipIncomeMult');
+
   let mult = 1;
   STAFF.forEach(s => {
     if (game.staff[s.id]?.hired && s.incomeMult) {
-      mult += s.incomeMult;
+      mult += s.incomeMult * getSkillEffect('staffEffectMult');
     }
   });
 
-  const memberBonus = 1 + (game.members * 0.005);
+  // Skill: staff synergy bonus (each hired staff gives % income)
+  if (hasSkill('st_synergy')) {
+    const hiredCount = STAFF.filter(s => game.staff[s.id]?.hired).length;
+    mult += hiredCount * SKILL_TREE.staff.skills.find(s => s.id === 'st_synergy').effect.staffSynergyBonus;
+  }
+
+  // Skill: member income mult
+  const memberIncomeMult = getSkillEffect('memberIncomeMult');
+  const memberBonus = (1 + (game.members * 0.005)) * memberIncomeMult;
+
   const prestigeMult = 1 + (game.prestigeStars * 0.25);
 
-  return base * mult * memberBonus * prestigeMult;
+  // Zone income bonus
+  let zoneIncome = 0;
+  GYM_ZONES.forEach(z => {
+    if (game.zones[z.id]) zoneIncome += z.incomeBonus;
+  });
+
+  return (base + zoneIncome) * mult * memberBonus * prestigeMult;
 }
 
 function getMaxMembers() {
-  let cap = 10;
+  let cap = 0;
+  // Zone capacity
+  GYM_ZONES.forEach(z => {
+    if (game.zones[z.id]) cap += z.capacityBonus;
+  });
+
   EQUIPMENT.forEach(eq => {
     const lvl = game.equipment[eq.id]?.level || 0;
-    cap += eq.capacityPerLevel * lvl;
+    let eqCap = eq.capacityPerLevel * lvl;
+    eqCap *= getSkillEffect('equipCapacityMult');
+    cap += eqCap;
   });
   STAFF.forEach(s => {
     if (game.staff[s.id]?.hired && s.capacityBonus) {
@@ -144,7 +206,9 @@ function getMaxMembers() {
       cap += mc.membersBoost;
     }
   });
-  return cap;
+  // Skill: capacity mult
+  cap *= getSkillEffect('capacityMult');
+  return Math.floor(cap);
 }
 
 function getMembersAttracted() {
@@ -153,6 +217,7 @@ function getMembersAttracted() {
     const lvl = game.equipment[eq.id]?.level || 0;
     base += eq.membersPerLevel * lvl;
   });
+  base *= getSkillEffect('memberAttractionMult');
   // Marketing boost
   MARKETING_CAMPAIGNS.forEach(mc => {
     const state = game.marketing[mc.id];
@@ -375,6 +440,9 @@ function doPrestige() {
   game.competitions = {};
   game.classes = {};
   game.marketing = {};
+  game.zones = { ground_floor: true };
+  game.vipMembers = [];
+  // Skills persist through prestige!
   game.log = [];
 
   addLog('🌟 ¡Abriste una nueva franquicia! +' + stars + ' estrellas');
@@ -470,6 +538,9 @@ function gameTick() {
 
   // Random event check
   checkRandomEvent();
+  // VIP member check
+  checkVipSpawn();
+  checkVipExpiry();
 
   if (game.tickCount % 5 === 0) {
     checkAchievements();
@@ -572,6 +643,9 @@ function renderAll() {
   renderMarketing();
   renderDailyMissions();
   renderDailyBonus();
+  renderSkillTree();
+  renderExpansion();
+  renderVipMembers();
   renderLog();
   updateUI();
   updateTabNotifications();
