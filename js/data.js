@@ -1,38 +1,38 @@
 // ===== IRON EMPIRE - GAME DATA =====
 
 const EQUIPMENT = [
-  { id: 'dumbbells', name: 'Mancuernas', icon: '🏋️', desc: 'El básico de todo gym. Atraen principiantes.', baseCost: 50, costMult: 1.6, incomePerLevel: 1, membersPerLevel: 2, capacityPerLevel: 0, reqLevel: 1 },
-  { id: 'bench', name: 'Banco Plano', icon: '🪑', desc: 'Press de banca, el rey de los ejercicios.', baseCost: 150, costMult: 1.65, incomePerLevel: 2.5, membersPerLevel: 3, capacityPerLevel: 2, reqLevel: 1 },
-  { id: 'squat_rack', name: 'Squat Rack', icon: '🔩', desc: 'Para los que no saltean leg day.', baseCost: 400, costMult: 1.7, incomePerLevel: 5, membersPerLevel: 4, capacityPerLevel: 3, reqLevel: 2 },
-  { id: 'treadmill', name: 'Cinta de Correr', icon: '🏃', desc: 'Cardio warriors love this.', baseCost: 800, costMult: 1.7, incomePerLevel: 4, membersPerLevel: 5, capacityPerLevel: 3, reqLevel: 3 },
-  { id: 'cables', name: 'Polea / Cables', icon: '⚙️', desc: 'Versatilidad total. Mil ejercicios.', baseCost: 1500, costMult: 1.75, incomePerLevel: 8, membersPerLevel: 5, capacityPerLevel: 4, reqLevel: 4 },
-  { id: 'leg_press', name: 'Prensa de Piernas', icon: '🦵', desc: 'Para empujar peso de verdad.', baseCost: 3000, costMult: 1.8, incomePerLevel: 12, membersPerLevel: 6, capacityPerLevel: 4, reqLevel: 5 },
-  { id: 'smith', name: 'Smith Machine', icon: '🔧', desc: 'Guiada y segura. Ideal para entrenar solo.', baseCost: 5000, costMult: 1.8, incomePerLevel: 18, membersPerLevel: 7, capacityPerLevel: 5, reqLevel: 7 },
-  { id: 'pool', name: 'Pileta de Natación', icon: '🏊', desc: 'El upgrade premium. Cambia todo.', baseCost: 15000, costMult: 2.0, incomePerLevel: 40, membersPerLevel: 15, capacityPerLevel: 10, reqLevel: 9 },
-  { id: 'sauna', name: 'Sauna', icon: '🧖', desc: 'Relax post-entreno. Atrae membresías premium.', baseCost: 25000, costMult: 2.0, incomePerLevel: 55, membersPerLevel: 12, capacityPerLevel: 5, reqLevel: 11 },
-  { id: 'crossfit', name: 'Zona CrossFit', icon: '🤸', desc: 'Box jumps, rope climbs, WODs. La fiebre CrossFit.', baseCost: 50000, costMult: 2.1, incomePerLevel: 80, membersPerLevel: 20, capacityPerLevel: 15, reqLevel: 13 },
-  { id: 'boxing', name: 'Ring de Boxeo', icon: '🥊', desc: 'Entrenamiento de combate. Atrae fighters.', baseCost: 100000, costMult: 2.1, incomePerLevel: 120, membersPerLevel: 25, capacityPerLevel: 10, reqLevel: 15 },
-  { id: 'spa', name: 'Spa Completo', icon: '💆', desc: 'Masajes, crioterapia, el paquete full.', baseCost: 250000, costMult: 2.2, incomePerLevel: 200, membersPerLevel: 30, capacityPerLevel: 8, reqLevel: 18 },
+  { id: 'dumbbells', name: 'Mancuernas', icon: '🏋️', desc: 'El básico de todo gym. Atraen principiantes.', baseCost: 50, costMult: 1.6, incomePerLevel: 0.6, membersPerLevel: 2, capacityPerLevel: 0, reqLevel: 1 },
+  { id: 'bench', name: 'Banco Plano', icon: '🪑', desc: 'Press de banca, el rey de los ejercicios.', baseCost: 150, costMult: 1.65, incomePerLevel: 1.5, membersPerLevel: 3, capacityPerLevel: 2, reqLevel: 1 },
+  { id: 'squat_rack', name: 'Squat Rack', icon: '🔩', desc: 'Para los que no saltean leg day.', baseCost: 400, costMult: 1.7, incomePerLevel: 3, membersPerLevel: 4, capacityPerLevel: 3, reqLevel: 2 },
+  { id: 'treadmill', name: 'Cinta de Correr', icon: '🏃', desc: 'Cardio warriors love this.', baseCost: 800, costMult: 1.7, incomePerLevel: 2.5, membersPerLevel: 5, capacityPerLevel: 3, reqLevel: 3 },
+  { id: 'cables', name: 'Polea / Cables', icon: '⚙️', desc: 'Versatilidad total. Mil ejercicios.', baseCost: 1500, costMult: 1.75, incomePerLevel: 5, membersPerLevel: 5, capacityPerLevel: 4, reqLevel: 4 },
+  { id: 'leg_press', name: 'Prensa de Piernas', icon: '🦵', desc: 'Para empujar peso de verdad.', baseCost: 3000, costMult: 1.8, incomePerLevel: 7, membersPerLevel: 6, capacityPerLevel: 4, reqLevel: 5 },
+  { id: 'smith', name: 'Smith Machine', icon: '🔧', desc: 'Guiada y segura. Ideal para entrenar solo.', baseCost: 5000, costMult: 1.8, incomePerLevel: 11, membersPerLevel: 7, capacityPerLevel: 5, reqLevel: 7 },
+  { id: 'pool', name: 'Pileta de Natación', icon: '🏊', desc: 'El upgrade premium. Cambia todo.', baseCost: 15000, costMult: 2.0, incomePerLevel: 25, membersPerLevel: 15, capacityPerLevel: 10, reqLevel: 9 },
+  { id: 'sauna', name: 'Sauna', icon: '🧖', desc: 'Relax post-entreno. Atrae membresías premium.', baseCost: 25000, costMult: 2.0, incomePerLevel: 35, membersPerLevel: 12, capacityPerLevel: 5, reqLevel: 11 },
+  { id: 'crossfit', name: 'Zona CrossFit', icon: '🤸', desc: 'Box jumps, rope climbs, WODs. La fiebre CrossFit.', baseCost: 50000, costMult: 2.1, incomePerLevel: 50, membersPerLevel: 20, capacityPerLevel: 15, reqLevel: 13 },
+  { id: 'boxing', name: 'Ring de Boxeo', icon: '🥊', desc: 'Entrenamiento de combate. Atrae fighters.', baseCost: 100000, costMult: 2.1, incomePerLevel: 75, membersPerLevel: 25, capacityPerLevel: 10, reqLevel: 15 },
+  { id: 'spa', name: 'Spa Completo', icon: '💆', desc: 'Masajes, crioterapia, el paquete full.', baseCost: 250000, costMult: 2.2, incomePerLevel: 125, membersPerLevel: 30, capacityPerLevel: 8, reqLevel: 18 },
 ];
 
 const STAFF = [
-  { id: 'trainer', name: 'Entrenador', icon: '💪', role: 'Personal Trainer', effect: '+50% ingresos de equipamiento', costBase: 500, costMult: 2.5, salary: 8, incomeMult: 0.5, reqLevel: 2 },
-  { id: 'receptionist', name: 'Recepcionista', icon: '👩‍💼', role: 'Atención al Cliente', effect: '+1 miembro cada 10s automático', costBase: 1000, costMult: 2.5, salary: 12, autoMembers: 1, reqLevel: 3 },
-  { id: 'cleaner', name: 'Personal de Limpieza', icon: '🧹', role: 'Mantenimiento', effect: '+20% reputación por tick', costBase: 800, costMult: 2.0, salary: 6, repMult: 0.2, reqLevel: 4 },
-  { id: 'nutritionist', name: 'Nutricionista', icon: '🥗', role: 'Asesor Nutricional', effect: '+30% ingresos, +5 capacidad', costBase: 3000, costMult: 2.5, salary: 22, incomeMult: 0.3, capacityBonus: 5, reqLevel: 6 },
-  { id: 'physio', name: 'Kinesiólogo', icon: '🩺', role: 'Rehabilitación', effect: '+40% reputación, reduce lesiones', costBase: 5000, costMult: 2.5, salary: 30, repMult: 0.4, reqLevel: 8 },
-  { id: 'influencer', name: 'Influencer Fitness', icon: '📱', role: 'Marketing', effect: '+2 miembros cada 10s, +reputación', costBase: 8000, costMult: 3.0, salary: 45, autoMembers: 2, repMult: 0.3, reqLevel: 10 },
-  { id: 'manager', name: 'Gerente', icon: '👔', role: 'Administración', effect: '-20% costos de todo', costBase: 15000, costMult: 3.0, salary: 70, costReduction: 0.2, reqLevel: 12 },
-  { id: 'champion', name: 'Campeón Retirado', icon: '🏅', role: 'Embajador', effect: 'x2 premios de competencias', costBase: 50000, costMult: 3.5, salary: 130, compMult: 2, reqLevel: 15 },
+  { id: 'trainer', name: 'Entrenador', icon: '💪', role: 'Personal Trainer', effect: '+50% ingresos de equipamiento', costBase: 500, costMult: 2.5, salary: 25, incomeMult: 0.5, reqLevel: 2 },
+  { id: 'receptionist', name: 'Recepcionista', icon: '👩‍💼', role: 'Atención al Cliente', effect: '+1 miembro cada 10s automático', costBase: 1000, costMult: 2.5, salary: 35, autoMembers: 1, reqLevel: 3 },
+  { id: 'cleaner', name: 'Personal de Limpieza', icon: '🧹', role: 'Mantenimiento', effect: '+20% reputación por tick', costBase: 800, costMult: 2.0, salary: 20, repMult: 0.2, reqLevel: 4 },
+  { id: 'nutritionist', name: 'Nutricionista', icon: '🥗', role: 'Asesor Nutricional', effect: '+30% ingresos, +5 capacidad', costBase: 3000, costMult: 2.5, salary: 60, incomeMult: 0.3, capacityBonus: 5, reqLevel: 6 },
+  { id: 'physio', name: 'Kinesiólogo', icon: '🩺', role: 'Rehabilitación', effect: '+40% reputación, reduce lesiones', costBase: 5000, costMult: 2.5, salary: 80, repMult: 0.4, reqLevel: 8 },
+  { id: 'influencer', name: 'Influencer Fitness', icon: '📱', role: 'Marketing', effect: '+2 miembros cada 10s, +reputación', costBase: 8000, costMult: 3.0, salary: 120, autoMembers: 2, repMult: 0.3, reqLevel: 10 },
+  { id: 'manager', name: 'Gerente', icon: '👔', role: 'Administración', effect: '-20% costos de todo', costBase: 15000, costMult: 3.0, salary: 200, costReduction: 0.2, reqLevel: 12 },
+  { id: 'champion', name: 'Campeón Retirado', icon: '🏅', role: 'Embajador', effect: 'x2 premios de competencias', costBase: 50000, costMult: 3.5, salary: 350, compMult: 2, reqLevel: 15 },
 ];
 
 const COMPETITIONS = [
-  { id: 'local', name: 'Torneo de Barrio', icon: '🏠', desc: 'Competencia local de pesas. Bajo riesgo.', reward: 500, repReward: 10, xpReward: 30, cooldown: 45, minRep: 0, winChance: 0.8 },
-  { id: 'city', name: 'Campeonato Municipal', icon: '🏙️', desc: 'Los mejores del municipio. Nivel intermedio.', reward: 2000, repReward: 30, xpReward: 80, cooldown: 90, minRep: 50, winChance: 0.6 },
-  { id: 'regional', name: 'Regional de Powerlifting', icon: '🗺️', desc: 'Deadlift, squat, bench. Los tres grandes.', reward: 8000, repReward: 80, xpReward: 200, cooldown: 180, minRep: 200, winChance: 0.45 },
-  { id: 'national', name: 'Nacional de Fuerza', icon: '🇦🇷', desc: 'Lo mejor del país compite acá.', reward: 30000, repReward: 200, xpReward: 500, cooldown: 480, minRep: 500, winChance: 0.3 },
-  { id: 'continental', name: 'Sudamericano', icon: '🌎', desc: 'Argentina vs. Brasil vs. todos. Épico.', reward: 100000, repReward: 500, xpReward: 1200, cooldown: 900, minRep: 1500, winChance: 0.2 },
-  { id: 'world', name: 'Mundial de Pesas', icon: '🌍', desc: 'El pináculo. Solo los mejores del mundo.', reward: 500000, repReward: 2000, xpReward: 5000, cooldown: 1800, minRep: 5000, winChance: 0.1 },
+  { id: 'local', name: 'Torneo de Barrio', icon: '🏠', desc: 'Competencia local de pesas. Bajo riesgo.', reward: 500, repReward: 10, xpReward: 30, cooldown: 300, minRep: 0, winChance: 0.8 },
+  { id: 'city', name: 'Campeonato Municipal', icon: '🏙️', desc: 'Los mejores del municipio. Nivel intermedio.', reward: 2000, repReward: 30, xpReward: 80, cooldown: 600, minRep: 50, winChance: 0.6 },
+  { id: 'regional', name: 'Regional de Powerlifting', icon: '🗺️', desc: 'Deadlift, squat, bench. Los tres grandes.', reward: 8000, repReward: 80, xpReward: 200, cooldown: 1800, minRep: 200, winChance: 0.45 },
+  { id: 'national', name: 'Nacional de Fuerza', icon: '🇦🇷', desc: 'Lo mejor del país compite acá.', reward: 30000, repReward: 200, xpReward: 500, cooldown: 3600, minRep: 500, winChance: 0.3 },
+  { id: 'continental', name: 'Sudamericano', icon: '🌎', desc: 'Argentina vs. Brasil vs. todos. Épico.', reward: 100000, repReward: 500, xpReward: 1200, cooldown: 7200, minRep: 1500, winChance: 0.2 },
+  { id: 'world', name: 'Mundial de Pesas', icon: '🌍', desc: 'El pináculo. Solo los mejores del mundo.', reward: 500000, repReward: 2000, xpReward: 5000, cooldown: 14400, minRep: 5000, winChance: 0.1 },
 ];
 
 const ACHIEVEMENTS = [
@@ -422,11 +422,11 @@ const TUTORIAL_STEPS = [
 
 // ===== OPERATING COSTS =====
 const OPERATING_COSTS = {
-  baseRent: 60,              // per game day (600 ticks = 10 min real)
-  rentPerExtraZone: 30,      // additional rent per zone beyond ground floor
-  utilitiesPerEquipLevel: 2, // utilities cost per total equipment level per game day
-  propertyPrice: 250000,     // one-time purchase to eliminate rent
-  propertyReqLevel: 14,
+  baseRent: 120,             // per game day (600 ticks = 10 min real)
+  rentPerExtraZone: 60,      // additional rent per zone beyond ground floor
+  utilitiesPerEquipLevel: 5, // utilities cost per total equipment level per game day
+  propertyPrice: 2000000,    // one-time purchase to eliminate rent
+  propertyReqLevel: 18,
 };
 
 // ===== SUPPLEMENTS =====
