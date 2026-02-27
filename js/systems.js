@@ -80,6 +80,14 @@ function renderDailyBonus() {
   const streakDay = game.dailyBonus.streak % 7;
   const claimed = game.dailyBonus.claimedToday;
 
+  // Hide banner if already claimed
+  if (claimed) {
+    container.innerHTML = '';
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = '';
+
   let dotsHTML = '';
   for (let i = 0; i < 7; i++) {
     let cls = 'streak-dot';
