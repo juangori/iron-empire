@@ -1023,22 +1023,40 @@ function renderSkillTree() {
 function buyZone(zoneId) {
   const zone = GYM_ZONES.find(z => z.id === zoneId);
   if (!zone || game.zones[zoneId]) return;
+  if (isZoneBuilding(zoneId)) return;
   if (game.level < zone.reqLevel) return;
   if (game.money < zone.cost) return;
 
+  // Check concurrent zone build limit (1, +1 with manager)
+  var activeBuilds = getActiveZoneBuilds();
+  var maxBuilds = getMaxConcurrentUpgrades();
+  if (activeBuilds >= maxBuilds) {
+    showToast('❌', '¡Ya hay ' + activeBuilds + ' construcción(es) en curso!');
+    return;
+  }
+
   game.money -= zone.cost;
-  game.zones[zoneId] = true;
-  game.stats.zonesUnlocked++;
 
   const xpGain = 100;
   game.xp += xpGain;
   game.dailyTracking.xpEarned += xpGain;
 
-  addLog('🏗️ Nueva zona: <span class="highlight">' + zone.name + '</span> ' + zone.icon);
-  showToast(zone.icon, '¡Zona desbloqueada: ' + zone.name + '!');
-  floatNumber('+' + zone.capacityBonus + ' capacidad', 'var(--accent)');
+  if (zone.buildTime > 0) {
+    // Start construction timer
+    if (!game.zoneBuilding) game.zoneBuilding = {};
+    game.zoneBuilding[zoneId] = Date.now() + zone.buildTime * 1000;
+    addLog('🏗️ Construyendo <span class="highlight">' + zone.name + '</span> ' + zone.icon + ' (' + fmtTime(zone.buildTime) + ')');
+    showToast('🏗️', 'Construyendo ' + zone.name + '... ' + fmtTime(zone.buildTime));
+  } else {
+    // Instant (ground floor)
+    game.zones[zoneId] = true;
+    game.stats.zonesUnlocked++;
+    addLog('🏗️ Nueva zona: <span class="highlight">' + zone.name + '</span> ' + zone.icon);
+    showToast(zone.icon, '¡Zona desbloqueada: ' + zone.name + '!');
+    floatNumber('+' + zone.capacityBonus + ' capacidad', 'var(--accent)');
+    updateMembers();
+  }
 
-  updateMembers();
   renderAll();
   saveGame();
 }
@@ -1051,7 +1069,8 @@ function renderExpansion() {
   let mapHTML = '<div class="expansion-map">';
   GYM_ZONES.forEach(z => {
     const owned = game.zones[z.id];
-    mapHTML += '<div class="expansion-zone-icon ' + (owned ? 'owned' : 'locked') + '">';
+    const building = isZoneBuilding(z.id);
+    mapHTML += '<div class="expansion-zone-icon ' + (owned ? 'owned' : (building ? 'building' : 'locked')) + '">';
     mapHTML += '<span>' + z.icon + '</span>';
     mapHTML += '<span class="expansion-zone-label">' + z.name + '</span>';
     mapHTML += '</div>';
@@ -1061,19 +1080,36 @@ function renderExpansion() {
   let cardsHTML = '<div class="expansion-grid">';
   GYM_ZONES.forEach(z => {
     const owned = game.zones[z.id];
+    const building = isZoneBuilding(z.id);
     const locked = game.level < z.reqLevel;
     const canAfford = game.money >= z.cost;
 
     let btnHTML = '';
+    let cardExtra = '';
     if (owned) {
       btnHTML = '<button class="btn btn-green" disabled>✅ DESBLOQUEADA</button>';
+    } else if (building) {
+      var bldEnd = game.zoneBuilding[z.id];
+      var bldDuration = z.buildTime * 1000;
+      var bldStart = bldEnd - bldDuration;
+      var bldElapsed = Date.now() - bldStart;
+      var bldPct = Math.min(100, (bldElapsed / bldDuration) * 100);
+      var bldRemaining = Math.max(0, Math.ceil((bldEnd - Date.now()) / 1000));
+      var bldMins = Math.floor(bldRemaining / 60);
+      var bldSecs = bldRemaining % 60;
+      var bldTimeStr = bldRemaining >= 3600 ? Math.floor(bldRemaining / 3600) + 'h ' + Math.floor((bldRemaining % 3600) / 60) + 'm' : bldMins + ':' + (bldSecs < 10 ? '0' : '') + bldSecs;
+      btnHTML = '<div class="zone-build-badge">🏗️ EN CONSTRUCCIÓN</div>';
+      btnHTML += '<div class="equip-repair-bar"><div class="equip-upgrade-fill" style="width:' + bldPct + '%"></div></div>';
+      btnHTML += '<div class="equip-upgrade-time">Listo en ' + bldTimeStr + '</div>';
+      cardExtra = ' building';
     } else if (locked) {
       btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;">🔒 Requiere Nivel ' + z.reqLevel + '</div>';
     } else {
-      btnHTML = '<button class="btn btn-buy" ' + (canAfford ? '' : 'disabled') + ' onclick="buyZone(\'' + z.id + '\')">🏗️ CONSTRUIR — ' + fmtMoney(z.cost) + '</button>';
+      var timeStr = z.buildTime >= 3600 ? Math.floor(z.buildTime / 3600) + 'h' : Math.floor(z.buildTime / 60) + 'min';
+      btnHTML = '<button class="btn btn-buy" ' + (canAfford ? '' : 'disabled') + ' onclick="buyZone(\'' + z.id + '\')">🏗️ CONSTRUIR — ' + fmtMoney(z.cost) + (z.buildTime > 0 ? ' (' + timeStr + ')' : '') + '</button>';
     }
 
-    cardsHTML += '<div class="expansion-card ' + (owned ? 'owned' : '') + ' ' + (locked && !owned ? 'locked' : '') + '">';
+    cardsHTML += '<div class="expansion-card ' + (owned ? 'owned' : '') + (locked && !owned && !building ? ' locked' : '') + cardExtra + '">';
     cardsHTML += '<div class="expansion-card-icon">' + z.icon + '</div>';
     cardsHTML += '<div class="expansion-card-name">' + z.name + '</div>';
     cardsHTML += '<div class="expansion-card-desc">' + z.desc + '</div>';

@@ -777,6 +777,63 @@ body::before {
   font-weight: 600;
 }
 
+/* Equipment upgrading state */
+.equip-card.upgrading {
+  border-color: var(--cyan) !important;
+}
+
+.equip-upgrade-badge {
+  background: var(--cyan);
+  color: #000;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 4px;
+  text-align: center;
+  margin: 6px 0;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.equip-upgrade-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+  border-radius: 3px;
+  transition: width 0.5s linear;
+}
+
+.equip-upgrade-time {
+  font-size: 11px;
+  color: var(--cyan);
+  text-align: center;
+  font-weight: 600;
+}
+
+/* Zone building state */
+.expansion-card.building {
+  border-color: var(--cyan) !important;
+  animation: trainingPulse 2s ease-in-out infinite;
+}
+
+.expansion-zone-icon.building {
+  border-color: var(--cyan);
+  background: rgba(6, 182, 212, 0.1);
+  animation: trainingPulse 2s ease-in-out infinite;
+}
+
+.zone-build-badge {
+  background: var(--cyan);
+  color: #000;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 4px;
+  text-align: center;
+  margin: 6px 0;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.5px;
+}
+
 /* Staff sick state */
 .staff-copy.sick {
   border-color: #f97316;

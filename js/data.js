@@ -354,12 +354,12 @@ const SKILL_TREE = {
 
 // ===== GYM ZONES / EXPANSION =====
 const GYM_ZONES = [
-  { id: 'ground_floor', name: 'Planta Baja', icon: '🏠', desc: 'El corazón del gym. Tu base de operaciones.', cost: 0, capacityBonus: 10, incomeBonus: 0, reqLevel: 1, unlocked: true },
-  { id: 'first_floor', name: 'Primer Piso', icon: '🏢', desc: 'Más espacio, más máquinas, más miembros.', cost: 15000, capacityBonus: 30, incomeBonus: 10, reqLevel: 6 },
-  { id: 'basement', name: 'Sótano', icon: '🔨', desc: 'Zona hardcore. Pesas pesadas, chalk, gritos.', cost: 40000, capacityBonus: 25, incomeBonus: 20, reqLevel: 10 },
-  { id: 'rooftop', name: 'Terraza', icon: '☀️', desc: 'Entrenamiento al aire libre con vista.', cost: 80000, capacityBonus: 20, incomeBonus: 30, reqLevel: 13 },
-  { id: 'annex', name: 'Edificio Anexo', icon: '🏗️', desc: 'Un edificio completo al lado. Duplicás tu gym.', cost: 200000, capacityBonus: 60, incomeBonus: 50, reqLevel: 16 },
-  { id: 'arena', name: 'Arena de Competición', icon: '🏟️', desc: 'Arena propia para competencias y eventos. +rep masivo.', cost: 500000, capacityBonus: 40, incomeBonus: 80, reqLevel: 19 },
+  { id: 'ground_floor', name: 'Planta Baja', icon: '🏠', desc: 'El corazón del gym. Tu base de operaciones.', cost: 0, capacityBonus: 10, incomeBonus: 0, reqLevel: 1, unlocked: true, buildTime: 0 },
+  { id: 'first_floor', name: 'Primer Piso', icon: '🏢', desc: 'Más espacio, más máquinas, más miembros.', cost: 50000, capacityBonus: 30, incomeBonus: 10, reqLevel: 6, buildTime: 180 },
+  { id: 'basement', name: 'Sótano', icon: '🔨', desc: 'Zona hardcore. Pesas pesadas, chalk, gritos.', cost: 300000, capacityBonus: 25, incomeBonus: 20, reqLevel: 10, buildTime: 600 },
+  { id: 'rooftop', name: 'Terraza', icon: '☀️', desc: 'Entrenamiento al aire libre con vista.', cost: 1000000, capacityBonus: 20, incomeBonus: 30, reqLevel: 13, buildTime: 1800 },
+  { id: 'annex', name: 'Edificio Anexo', icon: '🏗️', desc: 'Un edificio completo al lado. Duplicás tu gym.', cost: 5000000, capacityBonus: 60, incomeBonus: 50, reqLevel: 16, buildTime: 3600 },
+  { id: 'arena', name: 'Arena de Competición', icon: '🏟️', desc: 'Arena propia para competencias y eventos. +rep masivo.', cost: 15000000, capacityBonus: 40, incomeBonus: 80, reqLevel: 19, buildTime: 7200 },
 ];
 
 // ===== VIP MEMBERS =====

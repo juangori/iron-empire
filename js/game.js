@@ -61,6 +61,7 @@ let game = {
 
   // Gym zones
   zones: { ground_floor: true },
+  zoneBuilding: {},
 
   // VIP members
   vipMembers: [],
@@ -357,8 +358,11 @@ function normalizeEquipmentData() {
     var state = game.equipment[eq.id];
     if (state && state.level > 0) {
       if (!state.brokenUntil) state.brokenUntil = 0;
+      if (!state.upgradingUntil) state.upgradingUntil = 0;
     }
   });
+  // Normalize zone building state
+  if (!game.zoneBuilding) game.zoneBuilding = {};
 }
 
 function isEquipmentBroken(id) {
@@ -442,6 +446,7 @@ function checkEquipmentBreakdown() {
     var state = game.equipment[eq.id];
     if (!state || state.level <= 0) return;
     if (isEquipmentBroken(eq.id)) return; // already broken
+    if (isEquipmentUpgrading(eq.id)) return; // being upgraded
 
     var baseChance = 0.003; // 0.3% per check
     // More expensive/advanced equipment breaks more often
@@ -470,6 +475,80 @@ function checkRepairCompletion() {
       updateUI();
     }
   });
+}
+
+// ===== CONSTRUCTION TIMERS =====
+function getEquipUpgradeDuration(level) {
+  // seconds: lvl 1→2: 20s, lvl 5→6: 100s, lvl 10→11: 200s, lvl 15→16: 300s
+  return 20 * level;
+}
+
+function isEquipmentUpgrading(id) {
+  var state = game.equipment[id];
+  return state && state.upgradingUntil > 0 && Date.now() < state.upgradingUntil;
+}
+
+function getActiveEquipUpgrades() {
+  var count = 0;
+  EQUIPMENT.forEach(function(eq) {
+    if (isEquipmentUpgrading(eq.id)) count++;
+  });
+  return count;
+}
+
+function getMaxConcurrentUpgrades() {
+  if (game.staff.manager?.hired && !isStaffTraining('manager', 0) && !isStaffSick('manager', 0)) return 2;
+  return 1;
+}
+
+function isZoneBuilding(zoneId) {
+  return game.zoneBuilding && game.zoneBuilding[zoneId] && Date.now() < game.zoneBuilding[zoneId];
+}
+
+function getActiveZoneBuilds() {
+  var count = 0;
+  if (!game.zoneBuilding) return 0;
+  Object.keys(game.zoneBuilding).forEach(function(zId) {
+    if (Date.now() < game.zoneBuilding[zId]) count++;
+  });
+  return count;
+}
+
+function checkConstructionCompletion() {
+  // Equipment upgrades
+  EQUIPMENT.forEach(function(eq) {
+    var state = game.equipment[eq.id];
+    if (!state) return;
+    if (state.upgradingUntil > 0 && Date.now() >= state.upgradingUntil) {
+      state.upgradingUntil = 0;
+      state.level++;
+      addLog('🏗️ <span class="highlight">' + eq.name + '</span> mejorado a nivel ' + state.level + '!');
+      showToast('⬆️', eq.name + ' — Nivel ' + state.level + '!');
+      updateMembers();
+      renderEquipment();
+      renderGymScene();
+      updateUI();
+    }
+  });
+  // Zone builds
+  if (game.zoneBuilding) {
+    Object.keys(game.zoneBuilding).forEach(function(zId) {
+      if (Date.now() >= game.zoneBuilding[zId]) {
+        game.zones[zId] = true;
+        delete game.zoneBuilding[zId];
+        var zone = GYM_ZONES.find(function(z) { return z.id === zId; });
+        if (zone) {
+          game.stats.zonesUnlocked++;
+          addLog('🏗️ ¡Construcción terminada: <span class="highlight">' + zone.name + '</span>! ' + zone.icon);
+          showToast(zone.icon, '¡' + zone.name + ' lista!');
+          floatNumber('+' + zone.capacityBonus + ' capacidad', 'var(--accent)');
+        }
+        updateMembers();
+        renderAll();
+        updateUI();
+      }
+    });
+  }
 }
 
 // ===== CHAOS MECHANICS: STAFF ILLNESS =====
@@ -879,7 +958,11 @@ function buyProperty() {
 
 // ===== EVENT COST SCALING =====
 function getEventCostScale() {
-  return 1 + (game.level - 1) * 0.2;
+  var levelScale = 1 + (game.level - 1) * 0.2;
+  // Scale with income so events always feel meaningful
+  var income = getIncomePerSecond();
+  var incomeScale = Math.max(1, income * 0.5);
+  return Math.max(levelScale, incomeScale);
 }
 
 function getMaxMembers() {
@@ -999,9 +1082,23 @@ function buyEquipment(id) {
   const eq = EQUIPMENT.find(e => e.id === id);
   const state = game.equipment[id] || { level: 0 };
 
+  // Can't upgrade if already upgrading
+  if (isEquipmentUpgrading(id)) {
+    showToast('❌', '¡Ya se está mejorando!');
+    return;
+  }
+
   // Equipment level cannot exceed player level
   if (state.level >= game.level) {
     showToast('❌', 'El equipo no puede superar tu nivel (' + game.level + ')');
+    return;
+  }
+
+  // Check concurrent upgrade limit
+  var activeUpgrades = getActiveEquipUpgrades();
+  var maxUpgrades = getMaxConcurrentUpgrades();
+  if (activeUpgrades >= maxUpgrades) {
+    showToast('❌', '¡Ya hay ' + activeUpgrades + ' mejora(s) en curso! Máx: ' + maxUpgrades);
     return;
   }
 
@@ -1009,23 +1106,30 @@ function buyEquipment(id) {
   if (game.money < cost) return;
 
   game.money -= cost;
-  if (!game.equipment[id]) game.equipment[id] = { level: 0 };
-  game.equipment[id].level++;
+  if (!game.equipment[id]) game.equipment[id] = { level: 0, brokenUntil: 0, upgradingUntil: 0 };
 
-  const xpGain = 15 + game.equipment[id].level * 3;
+  const isNew = state.level === 0;
+  const nextLevel = state.level + 1;
+  const xpGain = 15 + nextLevel * 3;
   game.xp += xpGain;
   game.dailyTracking.equipmentBought++;
   game.dailyTracking.xpEarned += xpGain;
 
-  const isNew = game.equipment[id].level === 1;
   if (isNew) {
+    // First purchase is instant
+    game.equipment[id].level = 1;
     addLog('🛒 Compraste <span class="highlight">' + eq.name + '</span> ' + eq.icon);
     showToast(eq.icon, '¡Nuevo equipo: ' + eq.name + '!');
+    updateMembers();
   } else {
-    addLog('⬆️ Mejoraste <span class="highlight">' + eq.name + '</span> a nivel ' + game.equipment[id].level);
+    // Upgrades take time
+    var duration = getEquipUpgradeDuration(state.level) * 1000;
+    game.equipment[id].upgradingUntil = Date.now() + duration;
+    var secs = Math.ceil(duration / 1000);
+    addLog('🏗️ Mejorando <span class="highlight">' + eq.name + '</span> a nivel ' + nextLevel + ' (' + fmtTime(secs) + ')');
+    showToast('🏗️', 'Mejorando ' + eq.name + '... ' + fmtTime(secs));
   }
 
-  updateMembers();
   renderEquipment();
   renderGymScene();
   updateUI();
@@ -1295,6 +1399,7 @@ function gameTick() {
   updateSessionTimer();
   checkTrainingCompletion();
   checkRepairCompletion();
+  checkConstructionCompletion();
   checkEquipmentBreakdown();
   checkStaffIllness();
   autoMemberTick();
@@ -1333,6 +1438,7 @@ function gameTick() {
     renderRivals();
     renderStaff();
     renderEquipment();
+    renderExpansion();
   }
 
   // Refresh gym scene every 10 ticks (people count may change)

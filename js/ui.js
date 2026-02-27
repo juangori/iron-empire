@@ -23,6 +23,7 @@ function renderEquipment() {
     var atLevelCap = state.level >= game.level;
     var broken = state.brokenUntil === -1;
     var repairing = isEquipmentRepairing(eq.id);
+    var upgrading = isEquipmentUpgrading(eq.id);
 
     var btnHTML = '';
     var breakdownHTML = '';
@@ -46,6 +47,18 @@ function renderEquipment() {
       breakdownHTML = '<div class="equip-broken-badge repairing">🔧 REPARANDO</div>';
       btnHTML = '<div class="equip-repair-bar"><div class="equip-repair-fill" style="width:' + pct + '%"></div></div>' +
         '<div class="equip-repair-time">Listo en ' + mins + ':' + (secs < 10 ? '0' : '') + secs + '</div>';
+    } else if (upgrading) {
+      // Upgrading - show construction progress bar
+      var upgDuration = getEquipUpgradeDuration(state.level) * 1000;
+      var upgStart = state.upgradingUntil - upgDuration;
+      var upgElapsed = Date.now() - upgStart;
+      var upgPct = Math.min(100, (upgElapsed / upgDuration) * 100);
+      var upgRemaining = Math.max(0, Math.ceil((state.upgradingUntil - Date.now()) / 1000));
+      var upgMins = Math.floor(upgRemaining / 60);
+      var upgSecs = upgRemaining % 60;
+      breakdownHTML = '<div class="equip-upgrade-badge">🏗️ MEJORANDO A LVL ' + (state.level + 1) + '</div>';
+      btnHTML = '<div class="equip-repair-bar"><div class="equip-upgrade-fill" style="width:' + upgPct + '%"></div></div>' +
+        '<div class="equip-upgrade-time">Listo en ' + upgMins + ':' + (upgSecs < 10 ? '0' : '') + upgSecs + '</div>';
     } else if (locked) {
       btnHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;margin-top:8px;">🔒 Requiere Nivel ' + eq.reqLevel + '</div>';
     } else if (atLevelCap && state.level > 0) {
@@ -62,6 +75,7 @@ function renderEquipment() {
     if (locked) cardClass += ' locked';
     if (broken) cardClass += ' broken';
     if (repairing) cardClass += ' repairing';
+    if (upgrading) cardClass += ' upgrading';
 
     return (
       '<div class="' + cardClass + '">' +
