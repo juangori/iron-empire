@@ -53,6 +53,9 @@ let game = {
   // Supplements
   supplements: {},
 
+  // Rivals
+  rivals: {},
+
   // Skill tree
   skills: {},
 
@@ -78,6 +81,7 @@ let game = {
     vipsServed: 0,
     eventsHandled: 0,
     supplementsBought: 0,
+    rivalsDefeated: 0,
     totalPlayTime: 0,
     daysPlayed: 0,
   }
@@ -183,10 +187,13 @@ function getIncomePerSecond() {
     if (game.zones[z.id]) zoneIncome += z.incomeBonus;
   });
 
+  // Rival defeat bonus income
+  const rivalIncome = getRivalIncomeBonus();
+
   // Supplement effects
   const suppEffects = getActiveSupplementEffects();
   if (suppEffects.equipIncomeMult !== 1) base *= suppEffects.equipIncomeMult;
-  const totalIncome = (base + zoneIncome) * mult * memberBonus * prestigeMult;
+  const totalIncome = (base + zoneIncome + rivalIncome) * mult * memberBonus * prestigeMult;
   return totalIncome * suppEffects.incomeMult;
 }
 
@@ -256,6 +263,125 @@ function buySupplement(id) {
   saveGame();
 }
 
+// ===== RIVAL GYMS =====
+function getRivalMemberSteal() {
+  var total = 0;
+  RIVAL_GYMS.forEach(function(r) {
+    if (game.level < r.reqLevel) return;
+    var state = game.rivals[r.id];
+    if (state && state.defeated) return;
+    if (state && state.promoUntil && Date.now() < state.promoUntil) return;
+    total += r.memberSteal;
+  });
+  return total;
+}
+
+function getRivalIncomeBonus() {
+  var total = 0;
+  RIVAL_GYMS.forEach(function(r) {
+    var state = game.rivals[r.id];
+    if (state && state.defeated && r.defeatBonus.income) {
+      total += r.defeatBonus.income;
+    }
+  });
+  return total;
+}
+
+function getRivalCapacityBonus() {
+  var total = 0;
+  RIVAL_GYMS.forEach(function(r) {
+    var state = game.rivals[r.id];
+    if (state && state.defeated && r.defeatBonus.capacity) {
+      total += r.defeatBonus.capacity;
+    }
+  });
+  return total;
+}
+
+function launchRivalPromo(id) {
+  var rival = RIVAL_GYMS.find(function(r) { return r.id === id; });
+  if (!rival) return;
+
+  if (game.level < rival.reqLevel) return;
+
+  var state = game.rivals[id];
+  if (state && state.defeated) return;
+  if (state && state.promoUntil && Date.now() < state.promoUntil) {
+    showToast('❌', '¡Ya tenés una promo activa contra este rival!');
+    return;
+  }
+
+  var cost = rival.promoCost;
+  if (game.staff.manager && game.staff.manager.hired) cost = Math.ceil(cost * 0.8);
+
+  if (game.money < cost) {
+    showToast('❌', '¡No tenés suficiente plata!');
+    return;
+  }
+
+  game.money -= cost;
+  if (!game.rivals[id]) game.rivals[id] = {};
+  game.rivals[id].promoUntil = Date.now() + rival.promoDuration * 1000;
+
+  var xpGain = 20;
+  game.xp += xpGain;
+  game.dailyTracking.xpEarned += xpGain;
+
+  updateMembers();
+
+  addLog('🏪 Promoción contra <span class="highlight">' + rival.name + '</span>! Neutralizado por ' + fmtTime(rival.promoDuration));
+  showToast('📣', '¡Promo contra ' + rival.name + '!');
+
+  renderRivals();
+  updateUI();
+  saveGame();
+}
+
+function defeatRival(id) {
+  var rival = RIVAL_GYMS.find(function(r) { return r.id === id; });
+  if (!rival) return;
+
+  if (game.level < rival.reqLevel) return;
+
+  var state = game.rivals[id];
+  if (state && state.defeated) return;
+
+  var cost = rival.defeatCost;
+  if (game.staff.manager && game.staff.manager.hired) cost = Math.ceil(cost * 0.8);
+
+  if (game.money < cost) {
+    showToast('❌', '¡No tenés suficiente plata!');
+    return;
+  }
+
+  if (!confirm('¿Superar a ' + rival.name + ' por ' + fmtMoney(cost) + '? Bonus permanente al derrotarlo.')) return;
+
+  game.money -= cost;
+  if (!game.rivals[id]) game.rivals[id] = {};
+  game.rivals[id].defeated = true;
+
+  game.stats.rivalsDefeated++;
+
+  var xpGain = 100;
+  game.xp += xpGain;
+  game.dailyTracking.xpEarned += xpGain;
+
+  var bonusParts = [];
+  if (rival.defeatBonus.income) bonusParts.push('+' + rival.defeatBonus.income + ' income/s');
+  if (rival.defeatBonus.capacity) bonusParts.push('+' + rival.defeatBonus.capacity + ' capacidad');
+
+  updateMembers();
+
+  addLog('🏆 ¡Superaste a <span class="highlight">' + rival.name + '</span>! Bonus: ' + bonusParts.join(', '));
+  showToast('🏆', '¡' + rival.name + ' superado!');
+
+  renderRivals();
+  updateUI();
+  checkAchievements();
+  checkMissionProgress();
+  saveGame();
+}
+
 // ===== STAFF SALARY CALCULATION =====
 function getStaffSalaryPerSecond() {
   let total = 0;
@@ -305,6 +431,8 @@ function getMaxMembers() {
   });
   // Supplement capacity bonus
   cap += getActiveSupplementEffects().capacityBonus;
+  // Rival defeat bonus capacity
+  cap += getRivalCapacityBonus();
   // Skill: capacity mult
   cap *= getSkillEffect('capacityMult');
   return Math.floor(cap);
@@ -324,6 +452,8 @@ function getMembersAttracted() {
       base += mc.membersBoost;
     }
   });
+  // Rival gyms steal members
+  base = Math.max(0, base - getRivalMemberSteal());
   return Math.min(base, getMaxMembers());
 }
 
@@ -511,6 +641,7 @@ function checkLevelUp() {
     renderClasses();
     renderMarketing();
     renderSupplements();
+    renderRivals();
   }
 }
 
@@ -543,6 +674,7 @@ function doPrestige() {
   game.classes = {};
   game.marketing = {};
   game.supplements = {};
+  game.rivals = {};
   game.zones = { ground_floor: true };
   game.vipMembers = [];
   // Skills persist through prestige!
@@ -803,6 +935,7 @@ function renderAll() {
   renderClasses();
   renderMarketing();
   renderSupplements();
+  renderRivals();
   renderDailyMissions();
   renderDailyBonus();
   renderSkillTree();

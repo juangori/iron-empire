@@ -615,6 +615,105 @@ function getSupplementEffectText(sup) {
   return parts.join(', ');
 }
 
+// ===== RIVAL GYMS =====
+function renderRivals() {
+  var grid = document.getElementById('rivalsGrid');
+  if (!grid) return;
+
+  var totalSteal = getRivalMemberSteal();
+  var defeatedCount = RIVAL_GYMS.filter(function(r) {
+    var state = game.rivals[r.id];
+    return state && state.defeated;
+  }).length;
+  var unlockedCount = RIVAL_GYMS.filter(function(r) { return game.level >= r.reqLevel; }).length;
+
+  // Summary
+  var summaryHTML = '';
+  if (unlockedCount > 0) {
+    summaryHTML = '<div class="rival-summary">' +
+      '<div class="rival-summary-title">🏪 Competencia del Mercado</div>' +
+      '<div class="rival-summary-stats">' +
+        '<div class="rival-summary-stat">' +
+          '<span class="rival-summary-label">Rivales activos</span>' +
+          '<span class="rival-summary-value" style="color:var(--red);">' + (unlockedCount - defeatedCount) + '</span>' +
+        '</div>' +
+        '<div class="rival-summary-stat">' +
+          '<span class="rival-summary-label">Rivales superados</span>' +
+          '<span class="rival-summary-value" style="color:var(--green);">' + defeatedCount + ' / ' + RIVAL_GYMS.length + '</span>' +
+        '</div>' +
+        '<div class="rival-summary-stat">' +
+          '<span class="rival-summary-label">Miembros perdidos</span>' +
+          '<span class="rival-summary-value" style="color:' + (totalSteal > 0 ? 'var(--red)' : 'var(--green)') + ';">' + (totalSteal > 0 ? '-' + totalSteal : '0') + '</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  var cardsHTML = RIVAL_GYMS.map(function(r) {
+    var state = game.rivals[r.id] || {};
+    var locked = game.level < r.reqLevel;
+    var defeated = state.defeated;
+    var promoActive = state.promoUntil && Date.now() < state.promoUntil;
+
+    var promoCost = r.promoCost;
+    var defeatCost = r.defeatCost;
+    if (game.staff.manager && game.staff.manager.hired) {
+      promoCost = Math.ceil(promoCost * 0.8);
+      defeatCost = Math.ceil(defeatCost * 0.8);
+    }
+
+    var statusHTML = '';
+    var actionsHTML = '';
+
+    if (locked) {
+      statusHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;margin-top:8px;">🔒 Requiere Nivel ' + r.reqLevel + '</div>';
+    } else if (defeated) {
+      var bonusParts = [];
+      if (r.defeatBonus.income) bonusParts.push('+' + r.defeatBonus.income + ' income/s');
+      if (r.defeatBonus.capacity) bonusParts.push('+' + r.defeatBonus.capacity + ' capacidad');
+      statusHTML = '<div style="text-align:center;margin-bottom:8px;">' +
+        '<span class="rival-badge defeated">SUPERADO</span>' +
+      '</div>' +
+      '<div style="text-align:center;font-size:12px;color:var(--green);margin-bottom:8px;">Bonus: ' + bonusParts.join(', ') + '</div>';
+    } else if (promoActive) {
+      var timeLeft = Math.ceil((state.promoUntil - Date.now()) / 1000);
+      var totalDuration = r.promoDuration;
+      var progressPct = Math.round(((totalDuration - timeLeft) / totalDuration) * 100);
+      statusHTML = '<div style="text-align:center;margin-bottom:8px;">' +
+        '<span class="rival-badge promo">NEUTRALIZADO — ' + fmtTime(timeLeft) + '</span>' +
+        '<div class="rival-progress-bar" style="margin-top:6px;"><div class="rival-progress-fill" style="width:' + progressPct + '%"></div></div>' +
+      '</div>';
+      actionsHTML = '<button class="btn btn-red" ' + (game.money >= defeatCost ? '' : 'disabled') + ' onclick="defeatRival(\'' + r.id + '\')">🏆 SUPERAR — ' + fmtMoney(defeatCost) + '</button>';
+    } else {
+      statusHTML = '<div style="text-align:center;margin-bottom:8px;">' +
+        '<span class="rival-badge threat">AMENAZA — -' + r.memberSteal + ' miembros</span>' +
+      '</div>';
+      actionsHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+        '<button class="btn btn-cyan" style="flex:1;" ' + (game.money >= promoCost ? '' : 'disabled') + ' onclick="launchRivalPromo(\'' + r.id + '\')">📣 PROMO — ' + fmtMoney(promoCost) + '</button>' +
+        '<button class="btn btn-red" style="flex:1;" ' + (game.money >= defeatCost ? '' : 'disabled') + ' onclick="defeatRival(\'' + r.id + '\')">🏆 SUPERAR — ' + fmtMoney(defeatCost) + '</button>' +
+      '</div>';
+    }
+
+    return (
+      '<div class="rival-card ' + (locked ? 'locked' : '') + ' ' + (defeated ? 'defeated' : '') + ' ' + (promoActive ? 'promo' : '') + '">' +
+        '<div class="rival-header">' +
+          '<span class="rival-icon">' + r.icon + '</span>' +
+        '</div>' +
+        '<div class="rival-name">' + r.name + '</div>' +
+        '<div class="rival-desc">' + r.desc + '</div>' +
+        (!locked && !defeated ? '<div class="rival-stats">' +
+          '<div class="rival-stat">👥 <span class="val">-' + r.memberSteal + ' miembros</span></div>' +
+          '<div class="rival-stat">⏱️ <span class="val">Promo: ' + fmtTime(r.promoDuration) + '</span></div>' +
+        '</div>' : '') +
+        statusHTML +
+        actionsHTML +
+      '</div>'
+    );
+  }).join('');
+
+  grid.innerHTML = summaryHTML + cardsHTML;
+}
+
 // ===== TUTORIAL =====
 function startTutorial() {
   game.tutorialStep = 0;
@@ -1066,6 +1165,25 @@ function updateTabNotifications() {
     } else {
       vipDot.classList.add('hidden');
       vipDot.textContent = '';
+    }
+  }
+
+  // Rivals tab - count active threats
+  var rivalsDot = document.getElementById('dot-rivals');
+  if (rivalsDot) {
+    var threatCount = RIVAL_GYMS.filter(function(r) {
+      if (game.level < r.reqLevel) return false;
+      var state = game.rivals[r.id];
+      if (state && state.defeated) return false;
+      if (state && state.promoUntil && Date.now() < state.promoUntil) return false;
+      return true;
+    }).length;
+    if (threatCount > 0) {
+      rivalsDot.classList.remove('hidden');
+      rivalsDot.textContent = threatCount;
+    } else {
+      rivalsDot.classList.add('hidden');
+      rivalsDot.textContent = '';
     }
   }
 

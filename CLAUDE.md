@@ -48,7 +48,7 @@ CNAME               - Custom domain config
 - Required Firebase services: Authentication, Firestore
 - Firestore collections: `users` (profiles), `saves` (game data)
 
-## Key Game Systems (14 total)
+## Key Game Systems (16 total)
 1. **Equipment** (12 items) - Buy/upgrade, each gives income/members/capacity
 2. **Staff** (8 types) - One-time hire, passive bonuses
 3. **Competitions** (6 tiers) - Win chance + cooldown, rewards money/rep/XP
@@ -63,6 +63,8 @@ CNAME               - Custom domain config
 12. **Skill Tree** (4 branches x 4 skills) - Permanent upgrades, persist through prestige
 13. **Gym Expansion** (6 zones) - Capacity + income per zone
 14. **VIP Members** (10 types) - Spawn every 4-7 min, require specific equipment/zones/staff
+15. **Supplements** (8 types) - Temporary buffs: income, capacity, rep, class/equip/marketing boosts
+16. **Rival Gyms** (6 NPCs) - Steal members passively, player can promo (temp) or defeat (permanent bonus)
 
 ## Development Conventions
 - Language: All UI text in Argentine Spanish (vos form: "comprá", "mejorá", "elegí")
@@ -80,16 +82,13 @@ CNAME               - Custom domain config
 
 ## Planned Future Features (by priority)
 ### Phase 4 - Social & Meta
-- Rival NPC gyms competing for members
 - Training programs (assign routines to members)
 - Seasonal competition leagues
 - Leaderboard (Firebase)
 - Player profiles with stats/badges
 - Gym decoration/customization
-- Supplement shop
 
 ### Phase 5 - Polish & Endgame
 - Multiple simultaneous branches (evolved prestige)
 - Sound effects & music
-- Animated gym visual with members
 - Income/growth charts

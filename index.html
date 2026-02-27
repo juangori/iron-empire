@@ -232,6 +232,7 @@
   <button class="nav-tab" data-tab="missions"><span class="tab-icon">📋</span>Misiones<span class="notification-dot hidden" id="dot-missions"></span></button>
   <button class="nav-tab" data-tab="vip"><span class="tab-icon">⭐</span>VIP<span class="notification-dot hidden" id="dot-vip"></span></button>
   <button class="nav-tab" data-tab="competitions"><span class="tab-icon">🏆</span>Competencias</button>
+  <button class="nav-tab" data-tab="rivals"><span class="tab-icon">🏪</span>Rivales<span class="notification-dot hidden" id="dot-rivals"></span></button>
   <button class="nav-tab" data-tab="skills"><span class="tab-icon">🔬</span>Mejoras</button>
   <button class="nav-tab" data-tab="expansion"><span class="tab-icon">🏗️</span>Expansión</button>
   <button class="nav-tab" data-tab="achievements"><span class="tab-icon">🎖️</span>Logros</button>
@@ -366,6 +367,13 @@
     <div class="comp-list" id="compList"></div>
   </div>
 
+  <!-- RIVALS TAB -->
+  <div class="tab-content" id="tab-rivals">
+    <div class="section-title">🏪 Gimnasios Rivales</div>
+    <p class="section-subtitle">Otros gyms compiten por tus miembros. Lanzá promociones para neutralizarlos o superalos definitivamente.</p>
+    <div class="rival-grid" id="rivalsGrid"></div>
+  </div>
+
   <!-- SKILLS TAB -->
   <div class="tab-content" id="tab-skills">
     <div class="section-title">🔬 Árbol de Mejoras</div>
@@ -436,6 +444,7 @@
           <div>🧘 Clases completadas: <span style="color:var(--text);" id="statClasses">0</span></div>
           <div>📢 Campañas lanzadas: <span style="color:var(--text);" id="statCampaigns">0</span></div>
           <div>🧃 Suplementos tomados: <span style="color:var(--text);" id="statSupplements">0</span></div>
+          <div>🏪 Rivales superados: <span style="color:var(--text);" id="statRivals">0</span></div>
           <div>📋 Misiones completadas: <span style="color:var(--text);" id="statMissions">0</span></div>
           <div>⚡ Eventos resueltos: <span style="color:var(--text);" id="statEvents">0</span></div>
           <div>🔬 Mejoras investigadas: <span style="color:var(--text);" id="statSkills">0</span></div>
@@ -491,6 +500,8 @@ setInterval(function() {
   if (el) el.textContent = game.stats.campaignsLaunched;
   el = document.getElementById('statSupplements');
   if (el) el.textContent = game.stats.supplementsBought;
+  el = document.getElementById('statRivals');
+  if (el) el.textContent = game.stats.rivalsDefeated;
   el = document.getElementById('statMissions');
   if (el) el.textContent = game.stats.missionsCompleted;
   el = document.getElementById('statEvents');

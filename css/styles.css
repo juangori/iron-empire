@@ -1010,6 +1010,138 @@ body::before {
 
 .supplement-stat .val { color: var(--green); font-weight: 600; }
 
+/* ===== RIVALS ===== */
+.rival-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.rival-card {
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s;
+}
+
+.rival-card:hover {
+  border-color: var(--red);
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.15);
+}
+
+.rival-card.locked { opacity: 0.45; pointer-events: none; }
+
+.rival-card.defeated {
+  border-color: var(--green);
+  box-shadow: 0 0 15px var(--green-glow);
+}
+
+.rival-card.defeated:hover {
+  border-color: var(--green);
+  box-shadow: 0 0 20px var(--green-glow);
+}
+
+.rival-card.promo {
+  border-color: var(--cyan);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+}
+
+.rival-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.rival-icon { font-size: 36px; }
+
+.rival-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.rival-badge.threat { background: var(--red); color: #fff; }
+.rival-badge.promo { background: var(--cyan); color: #000; }
+.rival-badge.defeated { background: var(--green); color: #000; }
+
+.rival-summary {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.rival-summary-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--red);
+  margin-bottom: 12px;
+}
+
+.rival-summary-stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.rival-summary-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rival-summary-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rival-summary-value {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.rival-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--bg-dark);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.rival-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--blue));
+  border-radius: 2px;
+  transition: width 1s;
+}
+
+.rival-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.rival-desc { font-size: 13px; color: var(--text-dim); margin-bottom: 12px; line-height: 1.4; }
+
+.rival-stats { display: flex; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+
+.rival-stat {
+  font-size: 12px;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rival-stat .val { color: var(--red); font-weight: 600; }
+
 /* ===== CLASSES ===== */
 .classes-grid {
   display: grid;
@@ -1920,7 +2052,7 @@ body::before {
   .nav-tab { padding: 8px 14px; font-size: 13px; }
   .tab-content { padding: 16px; }
   .gym-name-display { font-size: 26px; }
-  .equipment-grid, .marketing-grid, .supplement-grid, .classes-grid, .expansion-grid { grid-template-columns: 1fr; }
+  .equipment-grid, .marketing-grid, .supplement-grid, .rival-grid, .classes-grid, .expansion-grid { grid-template-columns: 1fr; }
   .staff-grid { grid-template-columns: 1fr; }
   .skill-branch-skills { flex-direction: column; align-items: stretch; }
   .skill-node { max-width: 100%; min-width: auto; }

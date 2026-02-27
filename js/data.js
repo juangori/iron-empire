@@ -361,3 +361,13 @@ const SUPPLEMENTS = [
   { id: 'massgainer', name: 'Mass Gainer', icon: '🏋️', desc: 'Calorías y proteína masiva. El equipamiento rinde más.', cost: 15000, duration: 300, effects: { equipIncomeMult: 1.4 }, reqLevel: 16 },
   { id: 'multivitamin', name: 'Multivitamínico Premium', icon: '🌟', desc: 'El suplemento definitivo. Mejora todo.', cost: 30000, duration: 360, effects: { incomeMult: 1.25, repPerMin: 5 }, reqLevel: 20 },
 ];
+
+// ===== RIVAL GYMS =====
+const RIVAL_GYMS = [
+  { id: 'barrio', name: 'Garage Gym del Barrio', icon: '🏚️', desc: 'El vecino armó un gym en su garage. Básico pero barato, te roba principiantes.', memberSteal: 2, promoCost: 500, promoDuration: 300, defeatCost: 5000, defeatBonus: { income: 5, capacity: 0 }, reqLevel: 3 },
+  { id: 'fitzone', name: 'FitZone Express', icon: '🏃', desc: 'Cadena low-cost con máquinas nuevas. Atrae a los que buscan precio.', memberSteal: 4, promoCost: 1500, promoDuration: 300, defeatCost: 15000, defeatBonus: { income: 0, capacity: 10 }, reqLevel: 5 },
+  { id: 'powerhouse', name: 'PowerHouse Gym', icon: '💪', desc: 'Gym hardcore para levantadores serios. Competencia directa.', memberSteal: 7, promoCost: 4000, promoDuration: 300, defeatCost: 40000, defeatBonus: { income: 10, capacity: 0 }, reqLevel: 8 },
+  { id: 'crossfit_box', name: 'CrossFit Box del Centro', icon: '🤸', desc: 'La moda del CrossFit. Comunidad fanática que arrastra miembros.', memberSteal: 12, promoCost: 10000, promoDuration: 300, defeatCost: 100000, defeatBonus: { income: 0, capacity: 20 }, reqLevel: 11 },
+  { id: 'megafit', name: 'MegaFit Premium', icon: '💎', desc: 'Gym premium con spa, pileta y todo. Difícil de competir.', memberSteal: 18, promoCost: 25000, promoDuration: 300, defeatCost: 250000, defeatBonus: { income: 25, capacity: 0 }, reqLevel: 15 },
+  { id: 'empire', name: 'Empire Fitness', icon: '🏛️', desc: 'Tu mayor rival. Una cadena enorme con recursos ilimitados. El jefe final.', memberSteal: 30, promoCost: 60000, promoDuration: 300, defeatCost: 600000, defeatBonus: { income: 50, capacity: 20 }, reqLevel: 18 },
+];
