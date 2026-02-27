@@ -1155,61 +1155,242 @@ body::before {
   letter-spacing: 0.5px;
 }
 
-/* ===== GYM VISUAL ===== */
-.gym-visual {
+/* ===== ANIMATED GYM SCENE ===== */
+.gym-scene-container {
   background: linear-gradient(135deg, #0d0d15, #15152a);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 24px;
   margin-bottom: 24px;
-  text-align: center;
-  position: relative;
   overflow: hidden;
-  min-height: 140px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
+  position: relative;
 }
 
-.gym-visual::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center, var(--accent-glow) 0%, transparent 70%);
-  opacity: 0.3;
+.gym-scene-header {
+  text-align: center;
+  padding: 16px 24px 8px;
+  position: relative;
+  z-index: 5;
 }
 
 .gym-name-display {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 36px;
+  font-size: 32px;
   letter-spacing: 4px;
   color: var(--accent);
   text-shadow: 0 0 40px var(--accent-glow);
-  position: relative;
-  z-index: 1;
-  margin-bottom: 6px;
 }
 
 .gym-tier {
   font-family: 'Barlow Condensed', sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   color: var(--text-dim);
   letter-spacing: 2px;
   text-transform: uppercase;
-  position: relative;
-  z-index: 1;
 }
 
-.gym-equipment-display {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: center;
-  margin-top: 12px;
+.gym-scene {
   position: relative;
-  z-index: 1;
-  font-size: 24px;
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+}
+
+/* Back wall */
+.gym-wall {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 55%;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16162a 100%);
+  border-bottom: 2px solid #2a2a44;
+}
+
+.gym-wall::before {
+  content: '';
+  position: absolute;
+  top: 8px; left: 50%;
+  transform: translateX(-50%);
+  width: 60px; height: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+  box-shadow: 0 0 12px var(--accent-glow);
+  opacity: 0.6;
+}
+
+/* Mirrors on wall */
+.gym-wall::after {
+  content: '';
+  position: absolute;
+  bottom: 10px; left: 10%;
+  width: 80%; height: 40%;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  border-radius: 4px;
+}
+
+/* Floor */
+.gym-floor {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 45%;
+  background:
+    repeating-linear-gradient(90deg, #12121e 0px, #12121e 48px, #151528 48px, #151528 50px),
+    linear-gradient(180deg, #141425, #10101c);
+  background-size: 50px 100%, 100% 100%;
+}
+
+.gym-floor::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+}
+
+/* Equipment layer */
+.gym-equipment-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+.gym-equip-item {
+  position: absolute;
+  font-size: 28px;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  transition: transform 0.3s;
+  cursor: default;
+}
+
+.gym-equip-item:hover {
+  transform: scale(1.2);
+}
+
+.gym-equip-item .equip-lvl {
+  position: absolute;
+  bottom: -10px; right: -6px;
+  background: var(--accent);
+  color: #000;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: 'Barlow Condensed', sans-serif;
+}
+
+/* People layer */
+.gym-people-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+}
+
+.gym-person {
+  position: absolute;
+  font-size: 20px;
+  animation: personWalk linear infinite;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.4));
+}
+
+.gym-person.walking-right {
+  animation-name: walkRight;
+}
+
+.gym-person.walking-left {
+  animation-name: walkLeft;
+}
+
+.gym-person.working-out {
+  animation: workingOut 1s ease-in-out infinite alternate;
+}
+
+@keyframes walkRight {
+  0%   { transform: translateX(-30px); opacity: 0; }
+  5%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { transform: translateX(calc(100vw)); opacity: 0; }
+}
+
+@keyframes walkLeft {
+  0%   { transform: translateX(calc(100vw)); opacity: 0; }
+  5%   { opacity: 1; }
+  95%  { opacity: 1; }
+  100% { transform: translateX(-30px); opacity: 0; }
+}
+
+@keyframes workingOut {
+  0%   { transform: translateY(0) scale(1); }
+  100% { transform: translateY(-4px) scale(1.05); }
+}
+
+/* Staff layer */
+.gym-staff-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+}
+
+.gym-staff-member {
+  position: absolute;
+  font-size: 22px;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+  animation: staffIdle 2s ease-in-out infinite alternate;
+}
+
+.gym-staff-member .staff-tag {
+  position: absolute;
+  bottom: -14px; left: 50%;
+  transform: translateX(-50%);
+  background: var(--purple);
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  font-family: 'Barlow Condensed', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+@keyframes staffIdle {
+  0%   { transform: translateY(0); }
+  100% { transform: translateY(-3px); }
+}
+
+/* Ambient light effects per tier */
+.gym-scene-container.tier-garage { }
+.gym-scene-container.tier-barrio .gym-wall { background: linear-gradient(180deg, #1c1c30, #18182c); }
+.gym-scene-container.tier-comercial .gym-wall { background: linear-gradient(180deg, #1e1e34, #1a1a30); }
+.gym-scene-container.tier-comercial .gym-wall::before { width: 120px; }
+.gym-scene-container.tier-premium .gym-wall { background: linear-gradient(180deg, #201e38, #1c1a34); }
+.gym-scene-container.tier-premium .gym-wall::before { width: 180px; box-shadow: 0 0 20px var(--accent-glow); }
+.gym-scene-container.tier-elite .gym-wall { background: linear-gradient(180deg, #241e3c, #1e1a36); }
+.gym-scene-container.tier-elite .gym-wall::before { width: 240px; box-shadow: 0 0 30px var(--accent-glow); }
+.gym-scene-container.tier-imperio .gym-wall { background: linear-gradient(180deg, #2a1e40, #221a3a); }
+.gym-scene-container.tier-imperio .gym-wall::before { width: 300px; height: 4px; box-shadow: 0 0 40px var(--accent-glow), 0 0 80px var(--accent-glow); }
+
+/* Member count indicator */
+.gym-member-count {
+  position: absolute;
+  bottom: 6px; right: 10px;
+  z-index: 5;
+  font-size: 11px;
+  color: var(--text-dim);
+  font-family: 'Barlow Condensed', sans-serif;
+  background: rgba(0,0,0,0.5);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.gym-member-count span {
+  color: var(--green);
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .gym-scene { height: 180px; }
+  .gym-equip-item { font-size: 22px; }
+  .gym-person { font-size: 16px; }
+  .gym-name-display { font-size: 26px; }
 }
 
 /* ===== STATS BOXES ===== */

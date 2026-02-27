@@ -305,7 +305,7 @@ const VIP_MEMBERS = [
 
 const TUTORIAL_STEPS = [
   // Intro
-  { target: '.gym-visual', title: '¡Bienvenido a tu Gimnasio!', text: 'Este es tu gym. Acá ves el nombre, la categoría y el equipamiento instalado. Ahora está vacío... ¡vamos a cambiarlo!', tab: 'gym' },
+  { target: '.gym-scene-container', title: '¡Bienvenido a tu Gimnasio!', text: 'Este es tu gym. Acá ves el nombre, la categoría y el equipamiento instalado. Ahora está vacío... ¡vamos a cambiarlo!', tab: 'gym' },
   { target: '.stats-grid', title: 'Tus Estadísticas', text: 'Estos números son clave: ingresos por segundo (tu ganancia), miembros activos, capacidad máxima y reputación. El objetivo es hacer crecer todo.' },
   { target: '.stats-bar', title: 'Barra de Recursos', text: 'Arriba siempre ves tu plata 💰, miembros 👥, reputación ⭐, ingresos 💵 y nivel. Pasá el mouse por encima para ver qué es cada cosa.' },
 
@@ -347,5 +347,5 @@ const TUTORIAL_STEPS = [
   { target: '[data-tab="prestige"]', title: 'Franquicia (Prestige)', text: 'Cuando acumules $100K en total, podés abrir una franquicia. Se reinicia tu gym pero ganás estrellas que multiplican TODOS tus ingresos para siempre.', tab: 'prestige' },
 
   // Consejos finales
-  { target: '.gym-visual', title: '¡A Jugar!', text: 'Consejo: el juego genera plata aunque cierres el navegador (hasta 2 horas). Entrá todos los días por el bonus, hacé misiones, dictá clases y competí. ¡Construí tu Iron Empire!', tab: 'gym' },
+  { target: '.gym-scene-container', title: '¡A Jugar!', text: 'Consejo: el juego genera plata aunque cierres el navegador (hasta 2 horas). Entrá todos los días por el bonus, hacé misiones, dictá clases y competí. ¡Construí tu Iron Empire!', tab: 'gym' },
 ];

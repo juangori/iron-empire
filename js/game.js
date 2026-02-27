@@ -335,6 +335,7 @@ function buyEquipment(id) {
 
   updateMembers();
   renderEquipment();
+  renderGymScene();
   updateUI();
   checkAchievements();
   checkMissionProgress();
@@ -358,6 +359,7 @@ function hireStaff(id) {
   updateMembers();
   renderStaff();
   renderEquipment();
+  renderGymScene();
   updateUI();
   checkAchievements();
   checkMissionProgress();
@@ -600,6 +602,11 @@ function gameTick() {
 
   updateUI();
   renderCompetitions();
+
+  // Refresh gym scene every 10 ticks (people count may change)
+  if (game.tickCount % 10 === 0) {
+    renderGymScene();
+  }
 }
 
 // ===== MANUAL SAVE (button) =====
@@ -707,6 +714,7 @@ function renderAll() {
   renderExpansion();
   renderVipMembers();
   renderLog();
+  renderGymScene();
   updateUI();
   updateTabNotifications();
 }

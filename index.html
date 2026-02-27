@@ -242,10 +242,23 @@
 
   <!-- GYM TAB -->
   <div class="tab-content active" id="tab-gym">
-    <div class="gym-visual">
-      <div class="gym-name-display" id="gymNameBanner">MI GIMNASIO</div>
-      <div class="gym-tier" id="gymTier">Garage Gym</div>
-      <div class="gym-equipment-display" id="gymEquipIcons"></div>
+    <div class="gym-scene-container">
+      <div class="gym-scene-header">
+        <div class="gym-name-display" id="gymNameBanner">MI GIMNASIO</div>
+        <div class="gym-tier" id="gymTier">Garage Gym</div>
+      </div>
+      <div class="gym-scene" id="gymScene">
+        <!-- Floor -->
+        <div class="gym-floor"></div>
+        <!-- Wall -->
+        <div class="gym-wall"></div>
+        <!-- Equipment slots populated by JS -->
+        <div class="gym-equipment-layer" id="gymEquipLayer"></div>
+        <!-- People layer -->
+        <div class="gym-people-layer" id="gymPeopleLayer"></div>
+        <!-- Staff layer -->
+        <div class="gym-staff-layer" id="gymStaffLayer"></div>
+      </div>
     </div>
 
     <div class="stats-grid">

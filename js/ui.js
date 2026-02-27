@@ -219,12 +219,9 @@ function updateUI() {
   el = document.getElementById('gymTier');
   if (el) el.textContent = getGymTier();
 
-  // Equipment icons in gym
-  var icons = EQUIPMENT.filter(function(eq) {
-    return (game.equipment[eq.id]?.level || 0) > 0;
-  }).map(function(eq) { return eq.icon; });
-  el = document.getElementById('gymEquipIcons');
-  if (el) el.innerHTML = icons.map(function(i) { return '<span>' + i + '</span>'; }).join('');
+  // Update gym scene people count (lightweight, full render on renderAll)
+  var memberCountEl = document.querySelector('.gym-member-count span');
+  if (memberCountEl) memberCountEl.textContent = game.members;
 
   // Prestige
   el = document.getElementById('currentStars');
@@ -240,4 +237,122 @@ function updateUI() {
 
   // Tab notifications
   updateTabNotifications();
+}
+
+// ===== RENDER GYM SCENE (Animated) =====
+var _gymScenePeopleSeeds = []; // persistent random seeds for people
+
+function renderGymScene() {
+  var scene = document.getElementById('gymScene');
+  var container = document.querySelector('.gym-scene-container');
+  if (!scene || !container) return;
+
+  // --- Tier class ---
+  var tier = getGymTier();
+  container.className = 'gym-scene-container';
+  if (tier.indexOf('Garage') >= 0) container.classList.add('tier-garage');
+  else if (tier.indexOf('Barrio') >= 0) container.classList.add('tier-barrio');
+  else if (tier.indexOf('Comercial') >= 0) container.classList.add('tier-comercial');
+  else if (tier.indexOf('Premium') >= 0) container.classList.add('tier-premium');
+  else if (tier.indexOf('Elite') >= 0) container.classList.add('tier-elite');
+  else container.classList.add('tier-imperio');
+
+  // --- Equipment layer ---
+  var equipLayer = document.getElementById('gymEquipLayer');
+  if (equipLayer) {
+    var ownedEquip = EQUIPMENT.filter(function(eq) {
+      return (game.equipment[eq.id]?.level || 0) > 0;
+    });
+
+    // Pre-defined positions for equipment (spread across the scene)
+    var positions = [
+      { left: '8%',  top: '42%' },   // dumbbells
+      { left: '22%', top: '38%' },   // bench
+      { left: '38%', top: '44%' },   // squat rack
+      { left: '54%', top: '40%' },   // treadmill
+      { left: '70%', top: '42%' },   // cables
+      { left: '84%', top: '38%' },   // leg press
+      { left: '14%', top: '60%' },   // smith
+      { left: '32%', top: '62%' },   // pool
+      { left: '50%', top: '58%' },   // sauna
+      { left: '68%', top: '62%' },   // crossfit
+      { left: '82%', top: '60%' },   // boxing
+      { left: '50%', top: '22%' },   // spa (on wall)
+    ];
+
+    equipLayer.innerHTML = ownedEquip.map(function(eq) {
+      var idx = EQUIPMENT.indexOf(eq);
+      var pos = positions[idx] || { left: '50%', top: '50%' };
+      var lvl = game.equipment[eq.id].level;
+      return '<div class="gym-equip-item" style="left:' + pos.left + ';top:' + pos.top + ';" title="' + eq.name + ' LVL ' + lvl + '">' +
+        eq.icon + '<span class="equip-lvl">' + lvl + '</span></div>';
+    }).join('');
+  }
+
+  // --- People layer ---
+  var peopleLayer = document.getElementById('gymPeopleLayer');
+  if (peopleLayer) {
+    // Show people proportional to members (max ~15 visible)
+    var visiblePeople = Math.min(Math.floor(game.members / 5) + 1, 15);
+    if (game.members <= 0) visiblePeople = 0;
+
+    // Regenerate seeds only when count changes
+    if (_gymScenePeopleSeeds.length !== visiblePeople) {
+      _gymScenePeopleSeeds = [];
+      for (var i = 0; i < visiblePeople; i++) {
+        _gymScenePeopleSeeds.push({
+          type: Math.random(),      // walking vs working out
+          topPct: 48 + Math.random() * 40,
+          duration: 8 + Math.random() * 14,
+          delay: Math.random() * -20,
+          emoji: _randomPersonEmoji()
+        });
+      }
+    }
+
+    var peopleHTML = _gymScenePeopleSeeds.map(function(seed, i) {
+      var isWalking = seed.type > 0.4;
+      if (isWalking) {
+        var dir = i % 2 === 0 ? 'walking-right' : 'walking-left';
+        return '<div class="gym-person ' + dir + '" style="top:' + seed.topPct + '%;animation-duration:' + seed.duration + 's;animation-delay:' + seed.delay + 's;">' + seed.emoji + '</div>';
+      } else {
+        // Working out near equipment
+        var leftPct = 10 + (i * 7) % 80;
+        return '<div class="gym-person working-out" style="top:' + seed.topPct + '%;left:' + leftPct + '%;animation-delay:' + (seed.delay * 0.3) + 's;">' + seed.emoji + '</div>';
+      }
+    }).join('');
+
+    // Member count badge
+    peopleHTML += '<div class="gym-member-count">👥 <span>' + game.members + '</span> miembros</div>';
+    peopleLayer.innerHTML = peopleHTML;
+  }
+
+  // --- Staff layer ---
+  var staffLayer = document.getElementById('gymStaffLayer');
+  if (staffLayer) {
+    var hiredStaff = STAFF.filter(function(s) { return game.staff[s.id]?.hired; });
+
+    // Staff positions along the bottom-left area
+    var staffPositions = [
+      { left: '5%',  top: '55%' },
+      { left: '92%', top: '50%' },
+      { left: '16%', top: '70%' },
+      { left: '88%', top: '68%' },
+      { left: '45%', top: '72%' },
+      { left: '60%', top: '50%' },
+      { left: '30%', top: '52%' },
+      { left: '75%', top: '70%' },
+    ];
+
+    staffLayer.innerHTML = hiredStaff.map(function(s, i) {
+      var pos = staffPositions[i] || { left: (10 + i * 12) + '%', top: '65%' };
+      return '<div class="gym-staff-member" style="left:' + pos.left + ';top:' + pos.top + ';animation-delay:' + (i * 0.4) + 's;" title="' + s.name + ' - ' + s.role + '">' +
+        s.icon + '<span class="staff-tag">' + s.role.split(' ')[0] + '</span></div>';
+    }).join('');
+  }
+}
+
+function _randomPersonEmoji() {
+  var people = ['🧑','👨','👩','🧔','👱','🏃','🚶','💪','🧘','🤸'];
+  return people[Math.floor(Math.random() * people.length)];
 }
