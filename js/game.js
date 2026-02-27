@@ -454,6 +454,24 @@ function doPrestige() {
   saveGame();
 }
 
+// ===== SESSION TIMER =====
+let sessionSeconds = 0;
+
+function updateSessionTimer() {
+  sessionSeconds++;
+  const el = document.getElementById('sessionTimeDisplay');
+  if (el) {
+    const h = Math.floor(sessionSeconds / 3600);
+    const m = Math.floor((sessionSeconds % 3600) / 60);
+    const s = sessionSeconds % 60;
+    if (h > 0) {
+      el.textContent = h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+    } else {
+      el.textContent = m + ':' + String(s).padStart(2, '0');
+    }
+  }
+}
+
 // ===== AUTO-MEMBER TICK =====
 let autoMemberTimer = 0;
 function autoMemberTick() {
@@ -531,6 +549,7 @@ function gameTick() {
 
   game.tickCount++;
   game.stats.totalPlayTime++;
+  updateSessionTimer();
   autoMemberTick();
   repTick();
   classTick();

@@ -884,27 +884,55 @@ function renderVipMembers() {
 
 // ===== TAB NOTIFICATIONS =====
 function updateTabNotifications() {
-  // Missions tab - has unclaimed missions
+  // Missions tab - count unclaimed completed missions
   const missionsDot = document.getElementById('dot-missions');
   if (missionsDot) {
-    const hasUnclaimed = game.dailyMissions.missions?.some(m => m.completed && !m.claimed);
-    missionsDot.classList.toggle('hidden', !hasUnclaimed);
+    const unclaimedCount = (game.dailyMissions.missions || []).filter(m => m.completed && !m.claimed).length;
+    if (unclaimedCount > 0) {
+      missionsDot.classList.remove('hidden');
+      missionsDot.textContent = unclaimedCount;
+    } else {
+      missionsDot.classList.add('hidden');
+      missionsDot.textContent = '';
+    }
   }
 
-  // Classes tab - class finished
+  // Classes tab - count finished classes ready to collect
   const classesDot = document.getElementById('dot-classes');
   if (classesDot) {
-    const hasFinished = GYM_CLASSES.some(gc => {
+    const finishedCount = GYM_CLASSES.filter(gc => {
       const state = game.classes[gc.id];
       return state?.runningUntil && Date.now() >= state.runningUntil && !state.collected;
-    });
-    classesDot.classList.toggle('hidden', !hasFinished);
+    }).length;
+    // Also count classes available to start (not running, not on cooldown)
+    const availableCount = GYM_CLASSES.filter(gc => {
+      if (game.level < gc.reqLevel) return false;
+      const state = game.classes[gc.id];
+      if (!state) return true;
+      if (state.runningUntil && Date.now() < state.runningUntil) return false;
+      if (state.cooldownUntil && Date.now() < state.cooldownUntil) return false;
+      return true;
+    }).length;
+    const totalNotif = finishedCount > 0 ? finishedCount : 0;
+    if (totalNotif > 0) {
+      classesDot.classList.remove('hidden');
+      classesDot.textContent = totalNotif;
+    } else {
+      classesDot.classList.add('hidden');
+      classesDot.textContent = '';
+    }
   }
 
-  // VIP tab - has pending VIPs
+  // VIP tab - count pending VIPs
   const vipDot = document.getElementById('dot-vip');
   if (vipDot) {
-    const hasPending = game.vipMembers?.some(v => !v.accepted);
-    vipDot.classList.toggle('hidden', !hasPending);
+    const pendingCount = (game.vipMembers || []).filter(v => !v.accepted).length;
+    if (pendingCount > 0) {
+      vipDot.classList.remove('hidden');
+      vipDot.textContent = pendingCount;
+    } else {
+      vipDot.classList.add('hidden');
+      vipDot.textContent = '';
+    }
   }
 }

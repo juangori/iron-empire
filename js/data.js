@@ -304,16 +304,48 @@ const VIP_MEMBERS = [
 ];
 
 const TUTORIAL_STEPS = [
-  { target: '.gym-visual', title: 'Tu Gimnasio', text: 'Este es tu gym. Acá ves el nombre, la categoría y el equipamiento que tenés instalado.', tab: 'gym' },
-  { target: '.stats-bar', title: 'Tus Recursos', text: 'Arriba ves tu dinero, miembros, reputación, ingresos por segundo y nivel. Todo lo que hagas afecta estos números.' },
-  { target: '[data-tab="equipment"]', title: 'Equipamiento', text: 'Comprá y mejorá equipos para atraer más miembros y generar más plata. Cada equipo tiene stats diferentes.', tab: 'equipment' },
-  { target: '[data-tab="staff"]', title: 'Personal', text: 'Contratá staff para automatizar cosas: entrenadores suben tus ingresos, recepcionistas atraen miembros solos, etc.', tab: 'staff' },
-  { target: '[data-tab="marketing"]', title: 'Marketing', text: 'Lanzá campañas de publicidad para atraer miembros rápidamente. Desde flyers hasta spots de TV.', tab: 'marketing' },
-  { target: '[data-tab="classes"]', title: 'Clases', text: 'Dictá clases especiales (yoga, spinning, HIIT) para ganar plata extra, XP y reputación.', tab: 'classes' },
-  { target: '[data-tab="missions"]', title: 'Misiones Diarias', text: 'Cada día tenés misiones nuevas con objetivos y rewards. Completalas todas para bonus extra.', tab: 'missions' },
-  { target: '[data-tab="competitions"]', title: 'Competencias', text: 'Mandá a tus miembros a competir por premios y reputación. A mayor reputación, mejores competencias.', tab: 'competitions' },
-  { target: '.daily-bonus-banner', title: 'Bonus Diario', text: 'Entrá todos los días para reclamar tu bonus. Si mantenés el streak, los premios crecen.' },
-  { target: '[data-tab="skills"]', title: 'Árbol de Mejoras', text: 'Investigá mejoras permanentes en 4 ramas: Equipamiento, Marketing, Staff y Miembros. Cada una tiene 4 niveles.', tab: 'skills' },
-  { target: '[data-tab="expansion"]', title: 'Expansión', text: 'Comprá nuevas zonas para tu gym: primer piso, sótano, terraza y más. Cada zona da capacidad e ingresos extra.', tab: 'expansion' },
-  { target: '[data-tab="prestige"]', title: 'Prestigio', text: 'Cuando ya seas grande, podés abrir una franquicia (prestige). Se reinicia todo pero ganás multiplicadores permanentes.' },
+  // Intro
+  { target: '.gym-visual', title: '¡Bienvenido a tu Gimnasio!', text: 'Este es tu gym. Acá ves el nombre, la categoría y el equipamiento instalado. Ahora está vacío... ¡vamos a cambiarlo!', tab: 'gym' },
+  { target: '.stats-grid', title: 'Tus Estadísticas', text: 'Estos números son clave: ingresos por segundo (tu ganancia), miembros activos, capacidad máxima y reputación. El objetivo es hacer crecer todo.' },
+  { target: '.stats-bar', title: 'Barra de Recursos', text: 'Arriba siempre ves tu plata 💰, miembros 👥, reputación ⭐, ingresos 💵 y nivel. Pasá el mouse por encima para ver qué es cada cosa.' },
+
+  // Primera acción: comprar equipo
+  { target: '[data-tab="equipment"]', title: '¡Comprá tu Primer Equipo!', text: 'Lo primero que necesitás es equipamiento. Andá a la pestaña Equipamiento y comprá unas Mancuernas. Con eso empezás a generar ingresos y atraer miembros.', tab: 'equipment' },
+  { target: '.equipment-grid', title: 'Equipamiento Disponible', text: 'Cada equipo muestra cuánta plata genera por segundo 💰, cuántos miembros atrae 👥 y cuánta capacidad agrega 📦. Empezá por las Mancuernas, que son baratas.', tab: 'equipment' },
+
+  // Explicar ingresos
+  { target: '#incomeBig', title: 'Ingresos por Segundo', text: '¡Bien! Ahora tu gym genera plata automáticamente cada segundo. Cuanto más equipamiento y miembros, más ganás. La plata se acumula sola.', tab: 'gym' },
+
+  // Staff
+  { target: '[data-tab="staff"]', title: 'Contratá Personal', text: 'Cuando juntes más plata, contratá staff. Un Entrenador aumenta tus ingresos 50%, una Recepcionista atrae miembros sola. Cada empleado tiene un efecto único.', tab: 'staff' },
+
+  // Marketing
+  { target: '[data-tab="marketing"]', title: 'Hacé Publicidad', text: 'Las campañas de marketing atraen miembros rápido y suben tu reputación. Empezá con Flyers cuando puedas. Duran un tiempo limitado.', tab: 'marketing' },
+
+  // Clases
+  { target: '[data-tab="classes"]', title: 'Dictá Clases', text: 'Las clases son una forma de ganar plata extra, XP y reputación. Las iniciás y se completan solas después de un tiempo. Tienen cooldown entre usos.', tab: 'classes' },
+
+  // Misiones
+  { target: '[data-tab="missions"]', title: 'Misiones Diarias', text: 'Cada día tenés 3 misiones con objetivos como "Ganá $X" o "Comprá X equipos". Completar las 3 te da un bonus extra. ¡Revisalas todos los días!', tab: 'missions' },
+
+  // Competencias
+  { target: '[data-tab="competitions"]', title: 'Competencias', text: 'Mandá a tus miembros a competir por premios y reputación. Empezá por el Torneo de Barrio que tiene 80% de probabilidad de ganar.', tab: 'competitions' },
+
+  // Daily bonus
+  { target: '.daily-bonus-banner', title: 'Bonus Diario', text: '¡Importante! Entrá todos los días para reclamar tu bonus. Si mantenés el streak, los premios son cada vez mejores. 7 días seguidos = mega premio.' },
+
+  // VIP
+  { target: '[data-tab="vip"]', title: 'Miembros VIP', text: 'Cada unos minutos aparecen VIPs buscando un gym con lo que necesitan. Si cumplís sus requisitos, te dan grandes recompensas. ¡Revisá la pestaña VIP seguido!', tab: 'vip' },
+
+  // Mejoras
+  { target: '[data-tab="skills"]', title: 'Árbol de Mejoras', text: 'Investigá mejoras permanentes en 4 ramas. ¡Las mejoras se mantienen incluso si hacés prestige! Son la clave del progreso a largo plazo.', tab: 'skills' },
+
+  // Expansión
+  { target: '[data-tab="expansion"]', title: 'Expansión', text: 'A medida que subas de nivel, podés construir nuevas zonas: primer piso, sótano, terraza y más. Cada zona agrega capacidad e ingresos.', tab: 'expansion' },
+
+  // Prestige
+  { target: '[data-tab="prestige"]', title: 'Franquicia (Prestige)', text: 'Cuando acumules $100K en total, podés abrir una franquicia. Se reinicia tu gym pero ganás estrellas que multiplican TODOS tus ingresos para siempre.', tab: 'prestige' },
+
+  // Consejos finales
+  { target: '.gym-visual', title: '¡A Jugar!', text: 'Consejo: el juego genera plata aunque cierres el navegador (hasta 2 horas). Entrá todos los días por el bonus, hacé misiones, dictá clases y competí. ¡Construí tu Iron Empire!', tab: 'gym' },
 ];

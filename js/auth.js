@@ -1,14 +1,14 @@
 // ===== IRON EMPIRE - AUTHENTICATION SYSTEM =====
 // Firebase Auth: Google, Facebook, Email/Password
 
-// Firebase config - REPLACE with your project's config
+// Firebase config
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCghDMch1X1U989kzLXN1POnYWtph15R4o",
+  authDomain: "iron-empire-fac57.firebaseapp.com",
+  projectId: "iron-empire-fac57",
+  storageBucket: "iron-empire-fac57.firebasestorage.app",
+  messagingSenderId: "1039622184703",
+  appId: "1:1039622184703:web:ff914b0ccc8f2b526576ca"
 };
 
 // Initialize Firebase

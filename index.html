@@ -181,27 +181,37 @@
       <span>IRON EMPIRE</span>
     </div>
     <div class="stats-bar">
-      <div class="stat-pill money">
+      <div class="stat-pill money" title="Dinero disponible para gastar">
         <span class="icon">💰</span>
         <span class="value" id="moneyDisplay">$0</span>
+        <div class="stat-tooltip">Tu plata disponible. Comprá equipos, contratá staff y lanzá campañas.</div>
       </div>
-      <div class="stat-pill members">
+      <div class="stat-pill members" title="Miembros activos de tu gym">
         <span class="icon">👥</span>
         <span class="value" id="membersDisplay">0</span>
+        <div class="stat-tooltip">Miembros activos. Más equipos = más miembros. Más miembros = más ingresos.</div>
       </div>
-      <div class="stat-pill rep">
+      <div class="stat-pill rep" title="Reputación de tu gym">
         <span class="icon">⭐</span>
         <span class="value" id="repDisplay">0</span>
+        <div class="stat-tooltip">Reputación. Sube con miembros, campañas y clases. Desbloquea competencias.</div>
       </div>
-      <div class="stat-pill">
+      <div class="stat-pill" title="Ingresos automáticos por segundo">
         <span class="icon">💵</span>
         <span class="value" id="incomeDisplay">$0/s</span>
+        <div class="stat-tooltip">Ingresos por segundo. Generás plata automáticamente cada segundo.</div>
       </div>
-      <div class="level-display">
+      <div class="stat-pill time-pill" title="Tiempo de sesión actual">
+        <span class="icon">🕐</span>
+        <span class="value" id="sessionTimeDisplay">0:00</span>
+        <div class="stat-tooltip">Tiempo de esta sesión. El juego genera plata incluso offline (hasta 2hs).</div>
+      </div>
+      <div class="level-display" title="Tu nivel. Subí de nivel ganando XP para desbloquear más contenido.">
         <div class="level-badge" id="levelBadge">NIVEL 1</div>
         <div class="xp-bar-container">
           <div class="xp-bar-fill" id="xpBar" style="width:0%"></div>
         </div>
+        <div class="stat-tooltip level-tooltip">Nivel y experiencia. Ganás XP comprando equipos, haciendo clases, misiones y más. Cada nivel desbloquea nuevo contenido.</div>
       </div>
     </div>
   </div>

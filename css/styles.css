@@ -98,6 +98,12 @@ body::before {
   font-weight: 600;
   font-family: 'Barlow Condensed', sans-serif;
   transition: all 0.3s;
+  position: relative;
+  cursor: default;
+}
+.stat-pill:hover {
+  border-color: var(--accent);
+  background: var(--bg-card-hover);
 }
 
 .stat-pill .icon { font-size: 16px; }
@@ -105,8 +111,58 @@ body::before {
 .stat-pill.money .value { color: var(--green); }
 .stat-pill.members .value { color: var(--blue); }
 .stat-pill.rep .value { color: var(--purple); }
+.stat-pill.time-pill .value { color: var(--cyan); }
 
-.level-display { display: flex; align-items: center; gap: 10px; }
+/* Stat tooltips */
+.stat-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a28;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 400;
+  font-family: 'Barlow', sans-serif;
+  color: var(--text-dim);
+  white-space: nowrap;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  pointer-events: none;
+}
+.stat-tooltip::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 8px;
+  height: 8px;
+  background: #1a1a28;
+  border-left: 1px solid var(--border);
+  border-top: 1px solid var(--border);
+}
+.stat-pill:hover .stat-tooltip,
+.level-display:hover .stat-tooltip {
+  display: block;
+}
+
+.level-tooltip {
+  white-space: normal;
+  width: 220px;
+  text-align: center;
+}
+
+.level-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  cursor: default;
+}
 
 .level-badge {
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
@@ -270,23 +326,31 @@ body::before {
 .nav-tab .tab-icon { margin-right: 6px; }
 
 .notification-dot {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
   background: var(--red);
-  border-radius: 50%;
-  margin-left: 6px;
-  animation: pulse-dot 2s infinite;
+  color: #fff;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Barlow Condensed', sans-serif;
+  animation: pulse-badge 2s infinite;
   position: absolute;
-  top: 6px;
-  right: 6px;
+  top: 0px;
+  right: 0px;
+  line-height: 1;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
 }
 
 .notification-dot.hidden { display: none; }
 
-@keyframes pulse-dot {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+@keyframes pulse-badge {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+  50% { transform: scale(1.1); box-shadow: 0 0 14px rgba(239, 68, 68, 0.8); }
 }
 
 /* ===== MAIN CONTENT ===== */
