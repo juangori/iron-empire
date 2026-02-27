@@ -261,7 +261,7 @@ function checkRandomEvent() {
   game.lastEventTime++;
   if (game.lastEventTime >= game.nextEventIn) {
     game.lastEventTime = 0;
-    game.nextEventIn = 180 + Math.floor(Math.random() * 180); // 3-6 minutes
+    game.nextEventIn = 300 + Math.floor(Math.random() * 300); // 5-10 minutes
 
     // Filter events by level
     const available = RANDOM_EVENTS.filter(e => game.level >= e.minLevel);
@@ -270,6 +270,15 @@ function checkRandomEvent() {
     const event = available[Math.floor(Math.random() * available.length)];
     showRandomEvent(event);
   }
+}
+
+function scaleEventText(text) {
+  var scale = getEventCostScale();
+  if (scale <= 1) return text;
+  return text.replace(/\$(\d[\d,\.]*)/g, function(match, num) {
+    var amount = parseInt(num.replace(/[,\.]/g, ''));
+    return '$' + fmt(Math.ceil(amount * scale));
+  });
 }
 
 function showRandomEvent(event) {
@@ -282,9 +291,9 @@ function showRandomEvent(event) {
       '<div class="event-choice" onclick="handleEventChoice(\'' + event.id + '\',' + i + ')">' +
         '<div class="event-choice-main">' +
           '<span class="event-choice-text">' + choice.text + '</span>' +
-          '<span class="event-choice-cost">' + choice.cost + '</span>' +
+          '<span class="event-choice-cost">' + scaleEventText(choice.cost) + '</span>' +
         '</div>' +
-        (choice.hint ? '<div class="event-choice-hint">' + choice.hint + '</div>' : '') +
+        (choice.hint ? '<div class="event-choice-hint">' + scaleEventText(choice.hint) + '</div>' : '') +
       '</div>';
   });
 
@@ -303,24 +312,38 @@ function handleEventChoice(eventId, choiceIndex) {
   if (!event || event.id !== eventId) return;
 
   const choice = event.choices[choiceIndex];
+  var scale = getEventCostScale();
 
-  // Check if player can afford
+  // Check if player can afford (scaled cost)
   if (choice.cost.includes('-$')) {
-    const costAmount = parseInt(choice.cost.replace('-$', '').replace(',', ''));
+    const costAmount = Math.ceil(parseInt(choice.cost.replace('-$', '').replace(',', '')) * scale);
     if (game.money < costAmount) {
       showToast('❌', '¡No tenés suficiente plata!');
       return;
     }
   }
 
-  // Apply effect
+  // Apply effect with money scaling
+  var moneyBefore = game.money;
+  var totalBefore = game.totalMoneyEarned;
   choice.effect(game);
+  var moneyDiff = game.money - moneyBefore;
+  if (moneyDiff !== 0 && scale > 1) {
+    var scaledDiff = Math.ceil(moneyDiff * scale);
+    var adjustment = scaledDiff - moneyDiff;
+    game.money += adjustment;
+    // Scale totalMoneyEarned if it was a gain
+    if (moneyDiff > 0) {
+      var totalDiff = game.totalMoneyEarned - totalBefore;
+      if (totalDiff > 0) game.totalMoneyEarned += Math.ceil(totalDiff * (scale - 1));
+    }
+  }
 
   game.stats.eventsHandled++;
   game.dailyTracking.eventsHandled++;
 
-  addLog('⚡ Evento: <span class="highlight">' + event.title + '</span> → ' + choice.text + ' (' + choice.result + ')');
-  showToast(event.icon, choice.result);
+  addLog('⚡ Evento: <span class="highlight">' + event.title + '</span> → ' + choice.text + ' (' + scaleEventText(choice.result) + ')');
+  showToast(event.icon, scaleEventText(choice.result));
 
   document.getElementById('eventOverlay').classList.add('hidden');
   window._currentEvent = null;
@@ -335,6 +358,16 @@ function handleEventChoice(eventId, choiceIndex) {
 function startClass(id) {
   const gc = GYM_CLASSES.find(c => c.id === id);
   if (!gc) return;
+
+  // Check equipment requirement
+  if (gc.reqEquipment) {
+    var eqLevel = game.equipment[gc.reqEquipment]?.level || 0;
+    if (eqLevel <= 0) {
+      var eqData = EQUIPMENT.find(function(e) { return e.id === gc.reqEquipment; });
+      showToast('❌', '¡Necesitás ' + (eqData ? eqData.name : gc.reqEquipment) + '!');
+      return;
+    }
+  }
 
   const state = game.classes[id];
   // Check cooldown
@@ -362,6 +395,7 @@ function renderClasses() {
   grid.innerHTML = GYM_CLASSES.map(gc => {
     const state = game.classes[gc.id] || {};
     const locked = game.level < gc.reqLevel;
+    const missingEquip = gc.reqEquipment && (game.equipment[gc.reqEquipment]?.level || 0) <= 0;
     const isRunning = state.runningUntil && Date.now() < state.runningUntil;
     const onCooldown = state.cooldownUntil && Date.now() < state.cooldownUntil;
 
@@ -374,7 +408,15 @@ function renderClasses() {
     let btnHTML = '';
 
     if (locked) {
-      btnHTML = '<div style="color:var(--text-muted);font-size:12px;">Requiere Nivel ' + gc.reqLevel + '</div>';
+      var reqParts = ['Requiere Nivel ' + gc.reqLevel];
+      if (gc.reqEquipment) {
+        var eqData = EQUIPMENT.find(function(e) { return e.id === gc.reqEquipment; });
+        reqParts.push('Requiere ' + (eqData ? eqData.name : gc.reqEquipment));
+      }
+      btnHTML = '<div style="color:var(--text-muted);font-size:12px;">' + reqParts.join('<br>') + '</div>';
+    } else if (missingEquip) {
+      var eqData2 = EQUIPMENT.find(function(e) { return e.id === gc.reqEquipment; });
+      btnHTML = '<div style="color:var(--red);font-size:12px;">❌ Necesitás ' + (eqData2 ? eqData2.icon + ' ' + eqData2.name : gc.reqEquipment) + '</div>';
     } else if (isRunning) {
       const timeLeft = Math.ceil((state.runningUntil - Date.now()) / 1000);
       timerText = '<div class="class-timer">⏳ ' + fmtTime(timeLeft) + '</div>';
@@ -393,10 +435,10 @@ function renderClasses() {
         '<div class="class-name">' + gc.name + '</div>' +
         '<div class="class-desc">' + gc.desc + '</div>' +
         '<div class="class-stats">' +
-          '<div class="class-stat">💰 <span class="val">' + fmtMoney(gc.income) + '</span></div>' +
-          '<div class="class-stat">✨ <span class="val">' + gc.xp + ' XP</span></div>' +
-          '<div class="class-stat">⭐ <span class="val">+' + gc.rep + '</span></div>' +
-          '<div class="class-stat">⏱️ <span class="val">' + fmtTime(gc.duration) + '</span></div>' +
+          '<div class="class-stat"><span style="color:var(--green);">💰 ' + fmtMoney(gc.income) + '</span></div>' +
+          '<div class="class-stat"><span style="color:var(--cyan);">✨ +' + gc.xp + ' XP</span></div>' +
+          '<div class="class-stat"><span style="color:var(--purple);">⭐ +' + gc.rep + ' rep</span></div>' +
+          '<div class="class-stat"><span style="color:var(--text-dim);">⏱️ ' + fmtTime(gc.duration) + ' · CD: ' + fmtTime(gc.cooldown) + '</span></div>' +
         '</div>' +
         timerText +
         btnHTML +
@@ -431,7 +473,7 @@ function launchCampaign(id) {
   game.dailyTracking.campaignsLaunched++;
   game.dailyTracking.reputationGained += mc.repBoost;
 
-  const xpGain = 30;
+  const xpGain = 20;
   game.xp += xpGain;
   game.dailyTracking.xpEarned += xpGain;
 
@@ -510,10 +552,10 @@ function renderMarketing() {
         '<div class="marketing-name">' + mc.name + '</div>' +
         '<div class="marketing-desc">' + mc.desc + '</div>' +
         '<div class="marketing-stats">' +
-          '<div class="marketing-stat">👥 <span class="val">+' + mc.membersBoost + '</span></div>' +
-          '<div class="marketing-stat">⭐ <span class="val">+' + mc.repBoost + '</span></div>' +
-          '<div class="marketing-stat">⏱️ <span class="val">' + fmtTime(mc.duration) + '</span></div>' +
-          '<div class="marketing-stat">💰 <span class="val">' + fmtMoney(cost) + '</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--cyan);">👥 +' + mc.membersBoost + ' miembros</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--purple);">⭐ +' + mc.repBoost + ' rep</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--text-dim);">⏱️ Duración: ' + fmtTime(mc.duration) + '</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--red);">💰 Costo: ' + fmtMoney(cost) + '</span></div>' +
         '</div>' +
         timerHTML +
         btnHTML +
@@ -1044,7 +1086,33 @@ function renderExpansion() {
   });
   cardsHTML += '</div>';
 
-  container.innerHTML = mapHTML + cardsHTML;
+  // Property purchase section
+  var propertyHTML = '';
+  var propLocked = game.level < OPERATING_COSTS.propertyReqLevel;
+  var opDaily = getOperatingCostsPerDay();
+  var rentDaily = 0;
+  if (!game.ownProperty) {
+    rentDaily = OPERATING_COSTS.baseRent;
+    var extraZ = 0;
+    GYM_ZONES.forEach(function(z) { if (z.id !== 'ground_floor' && game.zones[z.id]) extraZ++; });
+    rentDaily += extraZ * OPERATING_COSTS.rentPerExtraZone;
+  }
+  propertyHTML = '<div class="expansion-property">';
+  propertyHTML += '<div class="section-title" style="font-size:16px;margin-top:16px;">🏠 Propiedad del Local</div>';
+  if (game.ownProperty) {
+    propertyHTML += '<p style="color:var(--green);text-align:center;">✅ Sos dueño del local. No pagás alquiler.</p>';
+  } else if (propLocked) {
+    propertyHTML += '<p style="color:var(--text-muted);text-align:center;">🔒 Requiere Nivel ' + OPERATING_COSTS.propertyReqLevel + ' para comprar el local.</p>';
+    propertyHTML += '<p style="color:var(--red);text-align:center;font-size:13px;">Alquiler actual: ' + fmtMoney(rentDaily) + '/día</p>';
+  } else {
+    propertyHTML += '<p style="color:var(--text-dim);text-align:center;font-size:13px;">Comprá el local y dejá de pagar alquiler (' + fmtMoney(rentDaily) + '/día).</p>';
+    var canAffordProp = game.money >= OPERATING_COSTS.propertyPrice;
+    propertyHTML += '<div style="text-align:center;"><button class="btn btn-buy" ' + (canAffordProp ? '' : 'disabled') + ' onclick="buyProperty()">🏠 COMPRAR LOCAL — ' + fmtMoney(OPERATING_COSTS.propertyPrice) + '</button></div>';
+  }
+  propertyHTML += '<p style="color:var(--text-dim);text-align:center;font-size:12px;margin-top:8px;">Gastos operativos totales: ' + fmtMoney(opDaily) + '/día (alquiler + servicios)</p>';
+  propertyHTML += '</div>';
+
+  container.innerHTML = mapHTML + cardsHTML + propertyHTML;
 }
 
 // ===== VIP MEMBERS =====
@@ -1177,14 +1245,40 @@ function renderVipMembers() {
     if (!vipDef) return;
 
     const timeLeft = Math.max(0, Math.ceil((v.expiresAt - Date.now()) / 1000));
-    const meetsReqs = vipDef.requires.every(req => {
-      if (game.equipment[req]?.level > 0) return true;
-      if (game.staff[req]?.hired) return true;
-      if (game.zones[req]) return true;
-      const classId = req.replace('_class', '');
-      const gc = GYM_CLASSES.find(c => c.id === classId);
-      if (gc) return game.level >= gc.reqLevel;
-      return false;
+
+    // Check each requirement individually
+    var reqDetails = [];
+    var allMet = true;
+    vipDef.requires.forEach(function(req) {
+      var met = false;
+      var label = req;
+      // Check equipment
+      var eqDef = EQUIPMENT.find(function(e) { return e.id === req; });
+      if (eqDef) {
+        met = (game.equipment[req]?.level || 0) > 0;
+        label = eqDef.icon + ' ' + eqDef.name;
+      }
+      // Check staff
+      var stDef = STAFF.find(function(s) { return s.id === req; });
+      if (stDef) {
+        met = !!game.staff[req]?.hired;
+        label = stDef.icon + ' ' + stDef.name;
+      }
+      // Check zones
+      var znDef = GYM_ZONES.find(function(z) { return z.id === req; });
+      if (znDef) {
+        met = !!game.zones[req];
+        label = znDef.icon + ' ' + znDef.name;
+      }
+      // Check class types
+      var classId = req.replace('_class', '');
+      var gcDef = GYM_CLASSES.find(function(c) { return c.id === classId; });
+      if (gcDef && !eqDef && !stDef && !znDef) {
+        met = game.level >= gcDef.reqLevel;
+        label = gcDef.icon + ' ' + gcDef.name;
+      }
+      if (!met) allMet = false;
+      reqDetails.push({ label: label, met: met });
     });
 
     html += '<div class="vip-card ' + (v.accepted ? 'accepted' : '') + '">';
@@ -1192,13 +1286,23 @@ function renderVipMembers() {
     html += '<div class="vip-info">';
     html += '<div class="vip-name">' + vipDef.name + '</div>';
     html += '<div class="vip-request">"' + vipDef.request + '"</div>';
+
+    // Show detailed requirements
+    if (!v.accepted) {
+      html += '<div class="vip-reqs" style="display:flex;flex-wrap:wrap;gap:6px;margin:6px 0;">';
+      reqDetails.forEach(function(rd) {
+        html += '<span style="font-size:11px;padding:2px 6px;border-radius:4px;background:' + (rd.met ? 'rgba(0,200,100,0.15)' : 'rgba(255,50,50,0.15)') + ';color:' + (rd.met ? 'var(--green)' : 'var(--red)') + ';">' + (rd.met ? '✅' : '❌') + ' ' + rd.label + '</span>';
+      });
+      html += '</div>';
+    }
+
     html += '<div class="vip-reward">💰 ' + fmtMoney(vipDef.reward.money) + ' · ⭐ ' + vipDef.reward.rep + ' · ✨ ' + vipDef.reward.xp + ' XP</div>';
     html += '<div class="vip-timer">' + (v.accepted ? '✅ Miembro activo' : '⏱️ Se va en: ' + fmtTime(timeLeft)) + '</div>';
     html += '</div>';
 
     if (!v.accepted) {
-      html += '<button class="btn ' + (meetsReqs ? 'btn-buy' : 'btn-red') + ' btn-small" onclick="acceptVip(\'' + v.id + '\')">';
-      html += meetsReqs ? '✅ ACEPTAR' : '❌ NO CUMPLÍS';
+      html += '<button class="btn ' + (allMet ? 'btn-buy' : 'btn-red') + ' btn-small" onclick="acceptVip(\'' + v.id + '\')">';
+      html += allMet ? '✅ ACEPTAR' : '❌ NO CUMPLÍS';
       html += '</button>';
     }
 

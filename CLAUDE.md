@@ -49,23 +49,33 @@ CNAME               - Custom domain config
 - Firestore collections: `users` (profiles), `saves` (game data)
 
 ## Key Game Systems (17 total)
-1. **Equipment** (12 items) - Buy/upgrade, each gives income/members/capacity
-2. **Staff** (8 types) - One-time hire, passive bonuses
-3. **Competitions** (6 tiers) - Win chance + cooldown, rewards money/rep/XP
+1. **Equipment** (12 items) - Buy/upgrade, each gives income/members/capacity. Level cap = player level.
+2. **Staff** (8 types) - One-time hire, passive bonuses. Higher salaries for balance.
+3. **Competitions** (6 tiers) - Win chance + cooldown (increased), rewards money/rep/XP
 4. **Achievements** (33) - Auto-checked conditions, grant XP
 5. **Prestige/Franchise** - Reset for permanent income multiplier stars
 6. **Daily Bonus** - 7-day streak cycle with escalating rewards
 7. **Daily Missions** (3/day) - Random from pool of 8 types, bonus for all 3
-8. **Random Events** (every 3-6 min) - 10 events with player choices
-9. **Gym Classes** (8 types) - Real-time duration + cooldown
+8. **Random Events** (every 5-10 min) - 16 events with player choices, costs scale with level
+9. **Gym Classes** (8 types) - Real-time duration + cooldown, some require specific equipment
 10. **Marketing Campaigns** (7 tiers) - Temporary member/rep boost
 11. **Tutorial** - 12-step interactive walkthrough
 12. **Skill Tree** (4 branches x 4 skills) - Permanent upgrades, persist through prestige
-13. **Gym Expansion** (6 zones) - Capacity + income per zone
-14. **VIP Members** (10 types) - Spawn every 4-7 min, require specific equipment/zones/staff
+13. **Gym Expansion** (6 zones) - Capacity + income per zone, buy property option
+14. **VIP Members** (10 types) - Spawn every 4-7 min, show detailed req status (met/unmet)
 15. **Supplements** (8 types) - Temporary buffs: income, capacity, rep, class/equip/marketing boosts
 16. **Rival Gyms** (6 NPCs) - Steal members passively, player can promo (temp) or defeat (permanent bonus)
 17. **Leaderboard** - Firebase-synced global ranking by total money earned, in Prestige tab
+
+## Balance & Economy
+- XP curve: `100 * 1.55^(level-1)` — slower progression than original 1.4 curve
+- Operating costs: base rent ($60/day) + zone rent ($30/zone/day) + utilities ($2/equip level/day)
+- Property purchase ($250K, lvl 14) eliminates rent
+- Equipment level capped at player level
+- Event costs scale: `1 + (level-1) * 0.2` multiplier on all money effects
+- Staff salaries: $323/day total (all 8 hired)
+- Game day = 600 ticks = 10 min real time
+- Timers auto-refresh every 2 seconds in game tick
 
 ## Development Conventions
 - Language: All UI text in Argentine Spanish (vos form: "comprá", "mejorá", "elegí")
@@ -81,7 +91,17 @@ CNAME               - Custom domain config
 - Use gh CLI for GitHub operations (installed at "C:\Program Files\GitHub CLI\gh.exe")
 - PATH needs: `export PATH="$PATH:/c/Program Files/GitHub CLI"`
 
-## Planned Future Features (by priority)
+## Planned Improvements (by priority)
+### Balance & Depth (Bloques pendientes)
+- Equipment/Zones separation: split into "Máquinas" and "Instalaciones"
+- Staff training system: levels, training costs money + time
+- Champion system: hire/train champion, daily tokens, competition rework
+- Equipment breakdown + staff illness (chaos mechanics)
+- Skill tree expansion (currently 4x4 = 16, needs more)
+- Class weekly calendar system + class costs
+- More VIP types: celebrities, politicians, athletes, etc.
+- Construction timers: equipment upgrades take time, max 2 concurrent; zone expansion takes hours
+
 ### Phase 4 - Social & Meta
 - Training programs (assign routines to members)
 - Seasonal competition leagues

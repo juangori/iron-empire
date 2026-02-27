@@ -20,12 +20,26 @@ function renderEquipment() {
     var canAfford = game.money >= cost;
     var locked = game.level < eq.reqLevel;
     var isNew = state.level === 0;
+    var atLevelCap = state.level >= game.level;
+
+    var btnHTML = '';
+    if (locked) {
+      btnHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;margin-top:8px;">🔒 Requiere Nivel ' + eq.reqLevel + '</div>';
+    } else if (atLevelCap && state.level > 0) {
+      btnHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;margin-top:8px;">⚠️ Máx. nivel del equipo = tu nivel (' + game.level + ')</div>';
+    } else {
+      btnHTML = '<button class="btn ' + (isNew ? 'btn-buy' : 'btn-upgrade') + '" ' +
+        (canAfford ? '' : 'disabled') +
+        ' onclick="buyEquipment(\'' + eq.id + '\')">' +
+        (isNew ? '🛒 COMPRAR' : '⬆️ MEJORAR') + ' — ' + fmtMoney(cost) +
+      '</button>';
+    }
 
     return (
       '<div class="equip-card ' + (locked ? 'locked' : '') + '">' +
         '<div class="equip-header">' +
           '<span class="equip-icon">' + eq.icon + '</span>' +
-          (state.level > 0 ? '<span class="equip-level">LVL ' + state.level + '</span>' : '') +
+          (state.level > 0 ? '<span class="equip-level">LVL ' + state.level + (atLevelCap ? ' (MAX)' : '') + '</span>' : '') +
         '</div>' +
         '<div class="equip-name">' + eq.name + '</div>' +
         '<div class="equip-desc">' + eq.desc + '</div>' +
@@ -34,13 +48,7 @@ function renderEquipment() {
           '<div class="equip-stat">👥 <span class="val">+' + eq.membersPerLevel + '</span></div>' +
           (eq.capacityPerLevel ? '<div class="equip-stat">📦 <span class="val">+' + eq.capacityPerLevel + '</span></div>' : '') +
         '</div>' +
-        (locked ? '<div style="text-align:center;color:var(--text-muted);font-size:12px;margin-top:8px;">Requiere Nivel ' + eq.reqLevel + '</div>' :
-          '<button class="btn ' + (isNew ? 'btn-buy' : 'btn-upgrade') + '" ' +
-            (canAfford ? '' : 'disabled') +
-            ' onclick="buyEquipment(\'' + eq.id + '\')">' +
-            (isNew ? '🛒 COMPRAR' : '⬆️ MEJORAR') + ' — ' + fmtMoney(cost) +
-          '</button>'
-        ) +
+        btnHTML +
       '</div>'
     );
   }).join('');
@@ -123,10 +131,15 @@ function renderCompetitions() {
           '<div class="comp-name">' + c.name + '</div>' +
           '<div class="comp-desc">' + c.desc + '</div>' +
           '<div class="comp-reward">' +
-            '🏆 ' + fmtMoney(c.reward * rewardMult) + ' · ⭐ ' + c.repReward + ' rep · ✨ ' + c.xpReward + ' XP' +
+            '<span style="color:var(--green);">💰 ' + fmtMoney(c.reward * rewardMult) + '</span> · ' +
+            '<span style="color:var(--purple);">⭐ +' + c.repReward + ' rep</span> · ' +
+            '<span style="color:var(--cyan);">✨ +' + c.xpReward + ' XP</span>' +
           '</div>' +
           '<div style="font-size:12px;color:var(--text-muted);margin-top:4px;">' +
-            'Record: ' + (state.wins || 0) + 'W - ' + (state.losses || 0) + 'L · Prob: ' + Math.round(c.winChance * 100) + '%' +
+            'Record: ' + (state.wins || 0) + 'W - ' + (state.losses || 0) + 'L · ' +
+            '<span style="color:' + (c.winChance >= 0.5 ? 'var(--green)' : c.winChance >= 0.3 ? 'var(--orange)' : 'var(--red)') + ';">' +
+            '🎯 ' + Math.round(c.winChance * 100) + '% chance</span>' +
+            ' · ⏱️ CD: ' + fmtTime(c.cooldown) +
           '</div>' +
         '</div>' +
         '<div class="comp-actions">' + actionHTML + '</div>' +
@@ -169,7 +182,8 @@ function checkAchievements() {
 function updateUI() {
   const income = getIncomePerSecond();
   const salaries = getStaffSalaryPerSecond();
-  const netIncome = income - salaries;
+  const opCosts = getOperatingCostsPerSecond();
+  const netIncome = income - salaries - opCosts;
 
   // Header stats
   document.getElementById('moneyDisplay').textContent = fmtMoney(game.money);
@@ -191,6 +205,11 @@ function updateUI() {
   // Extra stat boxes
   el = document.getElementById('salaryBig');
   if (el) el.textContent = '-' + fmtMoney(getTotalStaffSalaryPerDay()) + '/día';
+  el = document.getElementById('opCostsBig');
+  if (el) {
+    var opDaily = getOperatingCostsPerDay();
+    el.textContent = '-' + fmtMoney(opDaily) + '/día';
+  }
   el = document.getElementById('grossIncomeBig');
   if (el) el.textContent = fmtMoney(income);
   el = document.getElementById('totalEarnedBig');

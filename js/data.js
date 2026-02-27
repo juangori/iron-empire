@@ -16,23 +16,23 @@ const EQUIPMENT = [
 ];
 
 const STAFF = [
-  { id: 'trainer', name: 'Entrenador', icon: '💪', role: 'Personal Trainer', effect: '+50% ingresos de equipamiento', costBase: 500, costMult: 2.5, salary: 5, incomeMult: 0.5, reqLevel: 2 },
-  { id: 'receptionist', name: 'Recepcionista', icon: '👩‍💼', role: 'Atención al Cliente', effect: '+1 miembro cada 10s automático', costBase: 1000, costMult: 2.5, salary: 8, autoMembers: 1, reqLevel: 3 },
-  { id: 'cleaner', name: 'Personal de Limpieza', icon: '🧹', role: 'Mantenimiento', effect: '+20% reputación por tick', costBase: 800, costMult: 2.0, salary: 4, repMult: 0.2, reqLevel: 4 },
-  { id: 'nutritionist', name: 'Nutricionista', icon: '🥗', role: 'Asesor Nutricional', effect: '+30% ingresos, +5 capacidad', costBase: 3000, costMult: 2.5, salary: 15, incomeMult: 0.3, capacityBonus: 5, reqLevel: 6 },
-  { id: 'physio', name: 'Kinesiólogo', icon: '🩺', role: 'Rehabilitación', effect: '+40% reputación, reduce lesiones', costBase: 5000, costMult: 2.5, salary: 20, repMult: 0.4, reqLevel: 8 },
-  { id: 'influencer', name: 'Influencer Fitness', icon: '📱', role: 'Marketing', effect: '+2 miembros cada 10s, +reputación', costBase: 8000, costMult: 3.0, salary: 30, autoMembers: 2, repMult: 0.3, reqLevel: 10 },
-  { id: 'manager', name: 'Gerente', icon: '👔', role: 'Administración', effect: '-20% costos de todo', costBase: 15000, costMult: 3.0, salary: 50, costReduction: 0.2, reqLevel: 12 },
-  { id: 'champion', name: 'Campeón Retirado', icon: '🏅', role: 'Embajador', effect: 'x2 premios de competencias', costBase: 50000, costMult: 3.5, salary: 100, compMult: 2, reqLevel: 15 },
+  { id: 'trainer', name: 'Entrenador', icon: '💪', role: 'Personal Trainer', effect: '+50% ingresos de equipamiento', costBase: 500, costMult: 2.5, salary: 8, incomeMult: 0.5, reqLevel: 2 },
+  { id: 'receptionist', name: 'Recepcionista', icon: '👩‍💼', role: 'Atención al Cliente', effect: '+1 miembro cada 10s automático', costBase: 1000, costMult: 2.5, salary: 12, autoMembers: 1, reqLevel: 3 },
+  { id: 'cleaner', name: 'Personal de Limpieza', icon: '🧹', role: 'Mantenimiento', effect: '+20% reputación por tick', costBase: 800, costMult: 2.0, salary: 6, repMult: 0.2, reqLevel: 4 },
+  { id: 'nutritionist', name: 'Nutricionista', icon: '🥗', role: 'Asesor Nutricional', effect: '+30% ingresos, +5 capacidad', costBase: 3000, costMult: 2.5, salary: 22, incomeMult: 0.3, capacityBonus: 5, reqLevel: 6 },
+  { id: 'physio', name: 'Kinesiólogo', icon: '🩺', role: 'Rehabilitación', effect: '+40% reputación, reduce lesiones', costBase: 5000, costMult: 2.5, salary: 30, repMult: 0.4, reqLevel: 8 },
+  { id: 'influencer', name: 'Influencer Fitness', icon: '📱', role: 'Marketing', effect: '+2 miembros cada 10s, +reputación', costBase: 8000, costMult: 3.0, salary: 45, autoMembers: 2, repMult: 0.3, reqLevel: 10 },
+  { id: 'manager', name: 'Gerente', icon: '👔', role: 'Administración', effect: '-20% costos de todo', costBase: 15000, costMult: 3.0, salary: 70, costReduction: 0.2, reqLevel: 12 },
+  { id: 'champion', name: 'Campeón Retirado', icon: '🏅', role: 'Embajador', effect: 'x2 premios de competencias', costBase: 50000, costMult: 3.5, salary: 130, compMult: 2, reqLevel: 15 },
 ];
 
 const COMPETITIONS = [
-  { id: 'local', name: 'Torneo de Barrio', icon: '🏠', desc: 'Competencia local de pesas. Bajo riesgo.', reward: 500, repReward: 10, xpReward: 30, cooldown: 30, minRep: 0, winChance: 0.8 },
-  { id: 'city', name: 'Campeonato Municipal', icon: '🏙️', desc: 'Los mejores del municipio. Nivel intermedio.', reward: 2000, repReward: 30, xpReward: 80, cooldown: 60, minRep: 50, winChance: 0.6 },
-  { id: 'regional', name: 'Regional de Powerlifting', icon: '🗺️', desc: 'Deadlift, squat, bench. Los tres grandes.', reward: 8000, repReward: 80, xpReward: 200, cooldown: 120, minRep: 200, winChance: 0.45 },
-  { id: 'national', name: 'Nacional de Fuerza', icon: '🇦🇷', desc: 'Lo mejor del país compite acá.', reward: 30000, repReward: 200, xpReward: 500, cooldown: 300, minRep: 500, winChance: 0.3 },
-  { id: 'continental', name: 'Sudamericano', icon: '🌎', desc: 'Argentina vs. Brasil vs. todos. Épico.', reward: 100000, repReward: 500, xpReward: 1200, cooldown: 600, minRep: 1500, winChance: 0.2 },
-  { id: 'world', name: 'Mundial de Pesas', icon: '🌍', desc: 'El pináculo. Solo los mejores del mundo.', reward: 500000, repReward: 2000, xpReward: 5000, cooldown: 1200, minRep: 5000, winChance: 0.1 },
+  { id: 'local', name: 'Torneo de Barrio', icon: '🏠', desc: 'Competencia local de pesas. Bajo riesgo.', reward: 500, repReward: 10, xpReward: 30, cooldown: 45, minRep: 0, winChance: 0.8 },
+  { id: 'city', name: 'Campeonato Municipal', icon: '🏙️', desc: 'Los mejores del municipio. Nivel intermedio.', reward: 2000, repReward: 30, xpReward: 80, cooldown: 90, minRep: 50, winChance: 0.6 },
+  { id: 'regional', name: 'Regional de Powerlifting', icon: '🗺️', desc: 'Deadlift, squat, bench. Los tres grandes.', reward: 8000, repReward: 80, xpReward: 200, cooldown: 180, minRep: 200, winChance: 0.45 },
+  { id: 'national', name: 'Nacional de Fuerza', icon: '🇦🇷', desc: 'Lo mejor del país compite acá.', reward: 30000, repReward: 200, xpReward: 500, cooldown: 480, minRep: 500, winChance: 0.3 },
+  { id: 'continental', name: 'Sudamericano', icon: '🌎', desc: 'Argentina vs. Brasil vs. todos. Épico.', reward: 100000, repReward: 500, xpReward: 1200, cooldown: 900, minRep: 1500, winChance: 0.2 },
+  { id: 'world', name: 'Mundial de Pesas', icon: '🌍', desc: 'El pináculo. Solo los mejores del mundo.', reward: 500000, repReward: 2000, xpReward: 5000, cooldown: 1800, minRep: 5000, winChance: 0.1 },
 ];
 
 const ACHIEVEMENTS = [
@@ -72,13 +72,13 @@ const ACHIEVEMENTS = [
 
 const GYM_CLASSES = [
   { id: 'yoga', name: 'Yoga', icon: '🧘', desc: 'Flexibilidad y paz mental.', duration: 120, income: 200, xp: 40, rep: 5, reqLevel: 2, cooldown: 300 },
-  { id: 'spinning', name: 'Spinning', icon: '🚴', desc: 'Cardio intenso sobre ruedas.', duration: 90, income: 300, xp: 50, rep: 8, reqLevel: 3, cooldown: 240 },
+  { id: 'spinning', name: 'Spinning', icon: '🚴', desc: 'Cardio intenso sobre ruedas. Requiere Cinta de Correr.', duration: 90, income: 300, xp: 50, rep: 8, reqLevel: 3, cooldown: 240, reqEquipment: 'treadmill' },
   { id: 'hiit', name: 'HIIT', icon: '💥', desc: 'Intervalos de alta intensidad. Quemá todo.', duration: 60, income: 400, xp: 60, rep: 10, reqLevel: 5, cooldown: 180 },
   { id: 'pilates', name: 'Pilates', icon: '🤸', desc: 'Core y control corporal.', duration: 120, income: 350, xp: 45, rep: 7, reqLevel: 4, cooldown: 300 },
-  { id: 'boxing_class', name: 'Boxeo Fitness', icon: '🥊', desc: 'Golpeá la bolsa, liberá stress.', duration: 75, income: 500, xp: 70, rep: 12, reqLevel: 7, cooldown: 250 },
+  { id: 'boxing_class', name: 'Boxeo Fitness', icon: '🥊', desc: 'Golpeá la bolsa, liberá stress. Requiere Ring de Boxeo.', duration: 75, income: 500, xp: 70, rep: 12, reqLevel: 7, cooldown: 250, reqEquipment: 'boxing' },
   { id: 'zumba', name: 'Zumba', icon: '💃', desc: 'Bailá y entrenate al mismo tiempo.', duration: 90, income: 350, xp: 45, rep: 10, reqLevel: 4, cooldown: 270 },
-  { id: 'crossfit_class', name: 'WOD CrossFit', icon: '🏋️', desc: 'Workout Of the Day. Intenso.', duration: 60, income: 600, xp: 80, rep: 15, reqLevel: 9, cooldown: 200 },
-  { id: 'swimming', name: 'Natación Guiada', icon: '🏊', desc: 'Técnica y resistencia en el agua.', duration: 90, income: 700, xp: 90, rep: 18, reqLevel: 11, cooldown: 300 },
+  { id: 'crossfit_class', name: 'WOD CrossFit', icon: '🏋️', desc: 'Workout Of the Day. Intenso. Requiere Zona CrossFit.', duration: 60, income: 600, xp: 80, rep: 15, reqLevel: 9, cooldown: 200, reqEquipment: 'crossfit' },
+  { id: 'swimming', name: 'Natación Guiada', icon: '🏊', desc: 'Técnica y resistencia en el agua. Requiere Pileta.', duration: 90, income: 700, xp: 90, rep: 18, reqLevel: 11, cooldown: 300, reqEquipment: 'pool' },
 ];
 
 const MARKETING_CAMPAIGNS = [
@@ -207,6 +207,76 @@ const RANDOM_EVENTS = [
       { text: 'Dejarlo ir', cost: 'Gratis', hint: '⚠️ Peligroso. Puede llevar a otros miembros con él.', result: '-2 miembros, -10 rep', effect: (g) => { g.members = Math.max(0, g.members - 2); g.reputation = Math.max(0, g.reputation - 10); } },
     ],
     minLevel: 2
+  },
+  {
+    id: 'equipment_theft',
+    icon: '🦹',
+    title: 'Robo en el Gym',
+    desc: 'Entraron a robar de noche. Faltan pesas y accesorios. Los miembros están preocupados.',
+    choices: [
+      { text: 'Instalar cámaras de seguridad', cost: '-$1,500', hint: 'Previene futuros robos y da tranquilidad a los miembros.', result: '+20 rep y +40 XP', effect: (g) => { g.money -= 1500; g.reputation += 20; g.xp += 40; } },
+      { text: 'Hacer la denuncia policial', cost: '-$200', hint: 'Trámite burocrático. No soluciona la inseguridad.', result: 'Trámite hecho', effect: (g) => { g.money -= 200; } },
+      { text: 'No hacer nada', cost: 'Gratis', hint: '⚠️ Los miembros se sienten inseguros y se van.', result: '-20 rep, -3 miembros', effect: (g) => { g.reputation = Math.max(0, g.reputation - 20); g.members = Math.max(0, g.members - 3); } },
+    ],
+    minLevel: 3
+  },
+  {
+    id: 'flu_outbreak',
+    icon: '🤒',
+    title: 'Brote de Gripe',
+    desc: 'Varios miembros se enfermaron. El gym está medio vacío y hay riesgo de contagio.',
+    choices: [
+      { text: 'Desinfección profesional', cost: '-$1,000', hint: 'Limpieza profunda. Los miembros lo agradecen mucho.', result: '+15 rep y +30 XP', effect: (g) => { g.money -= 1000; g.reputation += 15; g.xp += 30; } },
+      { text: 'Poner alcohol en gel', cost: '-$200', hint: 'Mínimo esfuerzo. Algo es algo.', result: '+5 rep', effect: (g) => { g.money -= 200; g.reputation += 5; } },
+      { text: 'Esperar que pase', cost: 'Gratis', hint: '⚠️ Los sanos empiezan a irse también.', result: '-3 miembros, -10 rep', effect: (g) => { g.members = Math.max(0, g.members - 3); g.reputation = Math.max(0, g.reputation - 10); } },
+    ],
+    minLevel: 2
+  },
+  {
+    id: 'negative_review',
+    icon: '📱',
+    title: 'Reseña Negativa Viral',
+    desc: 'Un ex-miembro publicó una reseña de 1 estrella en Google que se hizo viral.',
+    choices: [
+      { text: 'Responder profesionalmente', cost: 'Gratis', hint: 'La mejor estrategia. Mostrás madurez y profesionalismo.', result: '+10 rep y +20 XP', effect: (g) => { g.reputation += 10; g.xp += 20; } },
+      { text: 'Campaña de reseñas positivas', cost: '-$800', hint: 'Pedile a miembros actuales que dejen buenas reseñas.', result: '+25 rep y +40 XP', effect: (g) => { g.money -= 800; g.reputation += 25; g.xp += 40; } },
+      { text: 'Ignorarlo', cost: 'Gratis', hint: '⚠️ El algoritmo prioriza la reseña negativa.', result: '-15 reputación', effect: (g) => { g.reputation = Math.max(0, g.reputation - 15); } },
+    ],
+    minLevel: 4
+  },
+  {
+    id: 'gym_tournament',
+    icon: '🏋️',
+    title: 'Torneo en Tu Gym',
+    desc: 'Una federación quiere organizar un torneo amateur de levantamiento en tus instalaciones.',
+    choices: [
+      { text: 'Organizar el torneo', cost: '-$2,000', hint: 'Gran inversión pero enorme visibilidad. El gym se llena.', result: '+$5,000, +50 rep, +100 XP', effect: (g) => { g.money += 3000; g.totalMoneyEarned += 5000; g.reputation += 50; g.xp += 100; } },
+      { text: 'Cobrar entrada y comisión', cost: 'Gratis', hint: 'Menos trabajo. Ganancia segura con menor impacto.', result: '+$2,000, +15 rep', effect: (g) => { g.money += 2000; g.totalMoneyEarned += 2000; g.reputation += 15; } },
+    ],
+    minLevel: 6
+  },
+  {
+    id: 'supplier_deal',
+    icon: '📦',
+    title: 'Oferta de Proveedor',
+    desc: 'Un proveedor de equipamiento te ofrece un lote con descuento por renovación de stock.',
+    choices: [
+      { text: 'Comprar el lote', cost: '-$3,000', hint: 'Mejora la calidad general del gym. Inversión que vale.', result: '+30 rep, +80 XP', effect: (g) => { g.money -= 3000; g.reputation += 30; g.xp += 80; } },
+      { text: 'Negociar financiación', cost: '-$1,500', hint: 'Pagás la mitad ahora. Menor impacto pero más accesible.', result: '+15 rep, +40 XP', effect: (g) => { g.money -= 1500; g.reputation += 15; g.xp += 40; } },
+      { text: 'No me interesa', cost: 'Gratis', hint: 'Sin costo, sin beneficio. Oportunidad perdida.', result: 'Nada', effect: () => {} },
+    ],
+    minLevel: 5
+  },
+  {
+    id: 'journalist_visit',
+    icon: '📰',
+    title: 'Nota Periodística',
+    desc: 'Un periodista local quiere hacer una nota sobre tu gym para el diario del barrio.',
+    choices: [
+      { text: 'Dar la entrevista', cost: 'Gratis', hint: 'Publicidad gratuita. Gran exposición local.', result: '+40 rep, +5 miembros, +60 XP', effect: (g) => { g.reputation += 40; g.members = Math.min(g.members + 5, g.maxMembers); g.xp += 60; } },
+      { text: 'Pagar por publicidad extra', cost: '-$1,500', hint: 'Nota + media página de publicidad en el diario. Máximo impacto.', result: '+80 rep, +10 miembros, +100 XP', effect: (g) => { g.money -= 1500; g.reputation += 80; g.members = Math.min(g.members + 10, g.maxMembers); g.xp += 100; } },
+    ],
+    minLevel: 5
   },
 ];
 
@@ -349,6 +419,15 @@ const TUTORIAL_STEPS = [
   // Consejos finales
   { target: '.gym-scene-container', title: '¡A Jugar!', text: 'Consejo: el juego genera plata aunque cierres el navegador (hasta 2 horas). Entrá todos los días por el bonus, hacé misiones, dictá clases y competí. ¡Construí tu Iron Empire!', tab: 'gym' },
 ];
+
+// ===== OPERATING COSTS =====
+const OPERATING_COSTS = {
+  baseRent: 60,              // per game day (600 ticks = 10 min real)
+  rentPerExtraZone: 30,      // additional rent per zone beyond ground floor
+  utilitiesPerEquipLevel: 2, // utilities cost per total equipment level per game day
+  propertyPrice: 250000,     // one-time purchase to eliminate rent
+  propertyReqLevel: 14,
+};
 
 // ===== SUPPLEMENTS =====
 const SUPPLEMENTS = [

@@ -71,6 +71,9 @@ let game = {
   lastEventTime: 0,
   nextEventIn: 180,
 
+  // Operating costs
+  ownProperty: false,
+
   // Lifetime stats
   stats: {
     classesCompleted: 0,
@@ -247,7 +250,7 @@ function buySupplement(id) {
   game.stats.supplementsBought++;
   game.dailyTracking.supplementsBought++;
 
-  var xpGain = 25;
+  var xpGain = 15;
   game.xp += xpGain;
   game.dailyTracking.xpEarned += xpGain;
 
@@ -404,6 +407,58 @@ function getTotalStaffSalaryPerDay() {
   return total;
 }
 
+// ===== OPERATING COSTS =====
+function getOperatingCostsPerDay() {
+  let daily = 0;
+  // Rent (unless property owned)
+  if (!game.ownProperty) {
+    daily += OPERATING_COSTS.baseRent;
+    let extraZones = 0;
+    GYM_ZONES.forEach(function(z) {
+      if (z.id !== 'ground_floor' && game.zones[z.id]) extraZones++;
+    });
+    daily += extraZones * OPERATING_COSTS.rentPerExtraZone;
+  }
+  // Utilities based on total equipment levels
+  let totalEquipLevels = 0;
+  EQUIPMENT.forEach(function(eq) {
+    totalEquipLevels += (game.equipment[eq.id]?.level || 0);
+  });
+  daily += totalEquipLevels * OPERATING_COSTS.utilitiesPerEquipLevel;
+  return daily;
+}
+
+function getOperatingCostsPerSecond() {
+  return getOperatingCostsPerDay() / 600;
+}
+
+function buyProperty() {
+  if (game.ownProperty) {
+    showToast('❌', '¡Ya sos dueño del local!');
+    return;
+  }
+  if (game.level < OPERATING_COSTS.propertyReqLevel) return;
+  if (game.money < OPERATING_COSTS.propertyPrice) {
+    showToast('❌', '¡No tenés suficiente plata!');
+    return;
+  }
+  if (!confirm('¿Comprar el local por ' + fmtMoney(OPERATING_COSTS.propertyPrice) + '? No pagás más alquiler.')) return;
+  game.money -= OPERATING_COSTS.propertyPrice;
+  game.ownProperty = true;
+  addLog('🏠 ¡Compraste el local! No pagás más alquiler.');
+  showToast('🏠', '¡Local propio! Sin más alquiler.');
+  game.xp += 200;
+  game.dailyTracking.xpEarned += 200;
+  renderExpansion();
+  updateUI();
+  saveGame();
+}
+
+// ===== EVENT COST SCALING =====
+function getEventCostScale() {
+  return 1 + (game.level - 1) * 0.2;
+}
+
 function getMaxMembers() {
   let cap = 0;
   // Zone capacity
@@ -520,6 +575,13 @@ function floatNumber(text, color) {
 function buyEquipment(id) {
   const eq = EQUIPMENT.find(e => e.id === id);
   const state = game.equipment[id] || { level: 0 };
+
+  // Equipment level cannot exceed player level
+  if (state.level >= game.level) {
+    showToast('❌', 'El equipo no puede superar tu nivel (' + game.level + ')');
+    return;
+  }
+
   const cost = getEquipCost(eq, state.level);
   if (game.money < cost) return;
 
@@ -527,7 +589,7 @@ function buyEquipment(id) {
   if (!game.equipment[id]) game.equipment[id] = { level: 0 };
   game.equipment[id].level++;
 
-  const xpGain = 20 + game.equipment[id].level * 5;
+  const xpGain = 15 + game.equipment[id].level * 3;
   game.xp += xpGain;
   game.dailyTracking.equipmentBought++;
   game.dailyTracking.xpEarned += xpGain;
@@ -633,7 +695,7 @@ function checkLevelUp() {
   while (game.xp >= game.xpToNext) {
     game.xp -= game.xpToNext;
     game.level++;
-    game.xpToNext = Math.ceil(100 * Math.pow(1.4, game.level - 1));
+    game.xpToNext = Math.ceil(100 * Math.pow(1.55, game.level - 1));
     addLog('🎉 ¡Subiste al <span class="highlight">Nivel ' + game.level + '</span>!');
     showToast('🎉', '¡Nivel ' + game.level + '!');
     renderEquipment();
@@ -676,6 +738,7 @@ function doPrestige() {
   game.supplements = {};
   game.rivals = {};
   game.zones = { ground_floor: true };
+  game.ownProperty = false;
   game.vipMembers = [];
   // Skills persist through prestige!
   game.log = [];
@@ -793,7 +856,9 @@ function gameTick() {
 
   const income = getIncomePerSecond();
   const salaries = getStaffSalaryPerSecond();
-  const netIncome = income - salaries;
+  const opCosts = getOperatingCostsPerSecond();
+  const totalExpenses = salaries + opCosts;
+  const netIncome = income - totalExpenses;
   game.money += netIncome;
   if (netIncome > 0) game.totalMoneyEarned += netIncome;
   game.dailyTracking.moneyEarned += Math.max(0, netIncome);
@@ -828,6 +893,14 @@ function gameTick() {
 
   updateUI();
   renderCompetitions();
+
+  // Refresh timers every 2 seconds (classes, marketing, supplements, rivals)
+  if (game.tickCount % 2 === 0) {
+    renderClasses();
+    renderMarketing();
+    renderSupplements();
+    renderRivals();
+  }
 
   // Refresh gym scene every 10 ticks (people count may change)
   if (game.tickCount % 10 === 0) {
