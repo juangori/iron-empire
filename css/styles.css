@@ -1142,6 +1142,124 @@ body::before {
 
 .rival-stat .val { color: var(--red); font-weight: 600; }
 
+/* ===== LEADERBOARD ===== */
+.leaderboard-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.leaderboard-myrank {
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  color: var(--text-dim);
+}
+
+.leaderboard-myrank-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 50px 1fr 120px 60px 50px;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  gap: 8px;
+}
+
+.leaderboard-header {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-dim);
+  background: var(--bg-card);
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid var(--border);
+}
+
+.leaderboard-row:not(.leaderboard-header):hover {
+  background: var(--bg-card);
+}
+
+.leaderboard-row.me {
+  background: rgba(245, 158, 11, 0.1);
+  border-left: 3px solid var(--accent);
+}
+
+.lb-rank {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.leaderboard-row.me .lb-rank { color: var(--accent); }
+
+.lb-name { overflow: hidden; }
+
+.lb-username {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lb-gymname {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lb-money {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  color: var(--green);
+  text-align: right;
+}
+
+.lb-level {
+  text-align: center;
+  font-weight: 600;
+  color: var(--cyan);
+}
+
+.lb-stars {
+  text-align: center;
+  font-size: 12px;
+}
+
+.leaderboard-loading {
+  text-align: center;
+  padding: 32px;
+  color: var(--text-dim);
+  font-size: 14px;
+}
+
+.leaderboard-empty {
+  text-align: center;
+  padding: 32px;
+}
+
 /* ===== CLASSES ===== */
 .classes-grid {
   display: grid;

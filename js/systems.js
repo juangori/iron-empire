@@ -714,6 +714,101 @@ function renderRivals() {
   grid.innerHTML = summaryHTML + cardsHTML;
 }
 
+// ===== LEADERBOARD =====
+let leaderboardLoading = false;
+
+function renderLeaderboard() {
+  var container = document.getElementById('leaderboardContainer');
+  if (!container) return;
+
+  // Check if user is authenticated
+  if (typeof currentUser === 'undefined' || !currentUser) {
+    container.innerHTML = '<div class="leaderboard-empty">' +
+      '<div style="font-size:40px;margin-bottom:12px;">🔒</div>' +
+      '<p style="color:var(--text-dim);">Iniciá sesión para ver el ranking global y competir con otros jugadores.</p>' +
+    '</div>';
+    return;
+  }
+
+  if (leaderboardLoading) return;
+  leaderboardLoading = true;
+
+  container.innerHTML = '<div class="leaderboard-loading">Cargando ranking...</div>';
+
+  Promise.all([fetchLeaderboard(false), fetchMyRank()]).then(function(results) {
+    var entries = results[0];
+    var myRank = results[1];
+    leaderboardLoading = false;
+
+    if (!entries || entries.length === 0) {
+      container.innerHTML = '<div class="leaderboard-empty">' +
+        '<div style="font-size:40px;margin-bottom:12px;">🏆</div>' +
+        '<p style="color:var(--text-dim);">Todavía no hay datos en el ranking. ¡Seguí jugando para ser el primero!</p>' +
+      '</div>';
+      return;
+    }
+
+    var rankIcons = ['🥇', '🥈', '🥉'];
+
+    var myRankHTML = '';
+    if (myRank) {
+      myRankHTML = '<div class="leaderboard-myrank">' +
+        '<span>Tu posición:</span> <span class="leaderboard-myrank-value">#' + myRank + '</span>' +
+      '</div>';
+    }
+
+    var headerHTML = '<div class="leaderboard-row leaderboard-header">' +
+      '<div class="lb-rank">#</div>' +
+      '<div class="lb-name">Jugador</div>' +
+      '<div class="lb-money">Total Ganado</div>' +
+      '<div class="lb-level">Nivel</div>' +
+      '<div class="lb-stars">⭐</div>' +
+    '</div>';
+
+    var rowsHTML = entries.map(function(entry, i) {
+      var isMe = currentUser && entry.uid === currentUser.uid;
+      var rankDisplay = i < 3 ? rankIcons[i] : (i + 1);
+      var starsDisplay = entry.prestigeStars > 0 ? ('⭐' + entry.prestigeStars) : '-';
+
+      return '<div class="leaderboard-row ' + (isMe ? 'me' : '') + '">' +
+        '<div class="lb-rank">' + rankDisplay + '</div>' +
+        '<div class="lb-name">' +
+          '<div class="lb-username">' + escapeHtml(entry.username || 'Anónimo') + '</div>' +
+          '<div class="lb-gymname">' + escapeHtml(entry.gymName || 'Sin nombre') + '</div>' +
+        '</div>' +
+        '<div class="lb-money">' + fmtMoney(entry.totalMoneyEarned || 0) + '</div>' +
+        '<div class="lb-level">' + (entry.level || 1) + '</div>' +
+        '<div class="lb-stars">' + starsDisplay + '</div>' +
+      '</div>';
+    }).join('');
+
+    var refreshBtnHTML = '<div style="text-align:center;margin-top:12px;">' +
+      '<button class="btn btn-small btn-cyan" onclick="refreshLeaderboard()">🔄 ACTUALIZAR</button>' +
+    '</div>';
+
+    container.innerHTML = myRankHTML + headerHTML + rowsHTML + refreshBtnHTML;
+  }).catch(function() {
+    leaderboardLoading = false;
+    container.innerHTML = '<div class="leaderboard-empty">' +
+      '<p style="color:var(--text-dim);">Error al cargar el ranking. Intentá de nuevo.</p>' +
+      '<button class="btn btn-small btn-cyan" onclick="refreshLeaderboard()" style="margin-top:8px;">🔄 REINTENTAR</button>' +
+    '</div>';
+  });
+}
+
+function refreshLeaderboard() {
+  leaderboardLoading = false;
+  leaderboardCache = null;
+  leaderboardCacheTime = 0;
+  renderLeaderboard();
+}
+
+function escapeHtml(text) {
+  var div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 // ===== TUTORIAL =====
 function startTutorial() {
   game.tutorialStep = 0;

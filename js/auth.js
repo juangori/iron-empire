@@ -478,6 +478,16 @@ async function saveCloudSave() {
       level: game.level,
       prestigeStars: game.prestigeStars,
     });
+
+    // Sync leaderboard
+    await db.collection('leaderboard').doc(currentUser.uid).set({
+      username: currentUser.displayName || 'Anónimo',
+      gymName: game.gymName,
+      totalMoneyEarned: game.totalMoneyEarned,
+      level: game.level,
+      prestigeStars: game.prestigeStars,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
   } catch (err) {
     console.error('Cloud save failed:', err);
   }
@@ -497,6 +507,52 @@ async function loadCloudSave() {
     console.error('Cloud load failed:', err);
   }
   return false;
+}
+
+// ===== LEADERBOARD =====
+let leaderboardCache = null;
+let leaderboardCacheTime = 0;
+const LEADERBOARD_CACHE_MS = 5 * 60 * 1000; // 5 minutes
+
+async function fetchLeaderboard(forceRefresh) {
+  if (!forceRefresh && leaderboardCache && (Date.now() - leaderboardCacheTime) < LEADERBOARD_CACHE_MS) {
+    return leaderboardCache;
+  }
+
+  try {
+    var snapshot = await db.collection('leaderboard')
+      .orderBy('totalMoneyEarned', 'desc')
+      .limit(20)
+      .get();
+
+    var entries = [];
+    snapshot.forEach(function(doc) {
+      var data = doc.data();
+      data.uid = doc.id;
+      entries.push(data);
+    });
+
+    leaderboardCache = entries;
+    leaderboardCacheTime = Date.now();
+    return entries;
+  } catch (err) {
+    console.error('Leaderboard fetch failed:', err);
+    return leaderboardCache || [];
+  }
+}
+
+async function fetchMyRank() {
+  if (!currentUser || !game.totalMoneyEarned) return null;
+
+  try {
+    var snapshot = await db.collection('leaderboard')
+      .where('totalMoneyEarned', '>', game.totalMoneyEarned)
+      .get();
+    return snapshot.size + 1;
+  } catch (err) {
+    console.error('Rank fetch failed:', err);
+    return null;
+  }
 }
 
 // ===== AUTH STATE LISTENER =====

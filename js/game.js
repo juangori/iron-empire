@@ -986,6 +986,8 @@ window.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+      // Load leaderboard when prestige tab is opened
+      if (tab.dataset.tab === 'prestige') renderLeaderboard();
     });
   });
 
