@@ -272,8 +272,11 @@ function showRandomEvent(event) {
   event.choices.forEach((choice, i) => {
     choicesHTML +=
       '<div class="event-choice" onclick="handleEventChoice(\'' + event.id + '\',' + i + ')">' +
-        '<span class="event-choice-text">' + choice.text + '</span>' +
-        '<span class="event-choice-cost">' + choice.cost + '</span>' +
+        '<div class="event-choice-main">' +
+          '<span class="event-choice-text">' + choice.text + '</span>' +
+          '<span class="event-choice-cost">' + choice.cost + '</span>' +
+        '</div>' +
+        (choice.hint ? '<div class="event-choice-hint">' + choice.hint + '</div>' : '') +
       '</div>';
   });
 
@@ -440,7 +443,31 @@ function renderMarketing() {
   const grid = document.getElementById('marketingGrid');
   if (!grid) return;
 
-  grid.innerHTML = MARKETING_CAMPAIGNS.map(mc => {
+  // Marketing summary
+  var activeCampaigns = MARKETING_CAMPAIGNS.filter(mc => {
+    const state = game.marketing[mc.id];
+    return state?.activeUntil && Date.now() < state.activeUntil;
+  });
+  var summaryHTML = '';
+  if (activeCampaigns.length > 0) {
+    summaryHTML = '<div class="marketing-summary"><div class="marketing-summary-title">📢 Campañas Activas: ' + activeCampaigns.length + '</div>';
+    activeCampaigns.forEach(mc => {
+      const state = game.marketing[mc.id];
+      const timeLeft = Math.ceil((state.activeUntil - Date.now()) / 1000);
+      const totalDuration = mc.duration;
+      const elapsed = totalDuration - timeLeft;
+      const progressPct = Math.round((elapsed / totalDuration) * 100);
+      summaryHTML += '<div class="marketing-active-item">' +
+        '<span>' + mc.icon + ' ' + mc.name + '</span>' +
+        '<span style="color:var(--cyan);">+' + mc.membersBoost + ' miembros</span>' +
+        '<span style="color:var(--text-dim);">⏱️ ' + fmtTime(timeLeft) + '</span>' +
+        '<div class="marketing-progress-bar"><div class="marketing-progress-fill" style="width:' + progressPct + '%"></div></div>' +
+      '</div>';
+    });
+    summaryHTML += '</div>';
+  }
+
+  var cardsHTML = MARKETING_CAMPAIGNS.map(mc => {
     const state = game.marketing[mc.id] || {};
     const locked = game.level < mc.reqLevel;
     const isActive = state.activeUntil && Date.now() < state.activeUntil;
@@ -453,10 +480,15 @@ function renderMarketing() {
     let btnHTML = '';
 
     if (locked) {
-      btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;margin-top:8px;">Requiere Nivel ' + mc.reqLevel + '</div>';
+      btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;margin-top:8px;">🔒 Requiere Nivel ' + mc.reqLevel + '</div>';
     } else if (isActive) {
       const timeLeft = Math.ceil((state.activeUntil - Date.now()) / 1000);
-      timerHTML = '<div style="text-align:center;margin-bottom:8px;"><span class="marketing-badge running">ACTIVA — ' + fmtTime(timeLeft) + '</span></div>';
+      const totalDuration = mc.duration;
+      const progressPct = Math.round(((totalDuration - timeLeft) / totalDuration) * 100);
+      timerHTML = '<div style="text-align:center;margin-bottom:8px;">' +
+        '<span class="marketing-badge running">ACTIVA — ' + fmtTime(timeLeft) + '</span>' +
+        '<div class="marketing-progress-bar" style="margin-top:6px;"><div class="marketing-progress-fill" style="width:' + progressPct + '%"></div></div>' +
+      '</div>';
       btnHTML = '<button class="btn btn-green" disabled>✅ EN CURSO</button>';
     } else {
       btnHTML = '<button class="btn btn-cyan" ' + (canAfford ? '' : 'disabled') + ' onclick="launchCampaign(\'' + mc.id + '\')">📢 LANZAR — ' + fmtMoney(cost) + '</button>';
@@ -466,7 +498,6 @@ function renderMarketing() {
       '<div class="marketing-card ' + (locked ? 'locked' : '') + ' ' + (isActive ? 'active' : '') + '">' +
         '<div class="marketing-header">' +
           '<span class="marketing-icon">' + mc.icon + '</span>' +
-          (isActive ? '' : '') +
         '</div>' +
         '<div class="marketing-name">' + mc.name + '</div>' +
         '<div class="marketing-desc">' + mc.desc + '</div>' +
@@ -474,12 +505,15 @@ function renderMarketing() {
           '<div class="marketing-stat">👥 <span class="val">+' + mc.membersBoost + '</span></div>' +
           '<div class="marketing-stat">⭐ <span class="val">+' + mc.repBoost + '</span></div>' +
           '<div class="marketing-stat">⏱️ <span class="val">' + fmtTime(mc.duration) + '</span></div>' +
+          '<div class="marketing-stat">💰 <span class="val">' + fmtMoney(cost) + '</span></div>' +
         '</div>' +
         timerHTML +
         btnHTML +
       '</div>'
     );
   }).join('');
+
+  grid.innerHTML = summaryHTML + cardsHTML;
 }
 
 // ===== TUTORIAL =====

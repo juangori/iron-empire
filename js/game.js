@@ -181,6 +181,28 @@ function getIncomePerSecond() {
   return (base + zoneIncome) * mult * memberBonus * prestigeMult;
 }
 
+// ===== STAFF SALARY CALCULATION =====
+function getStaffSalaryPerSecond() {
+  let total = 0;
+  STAFF.forEach(s => {
+    if (game.staff[s.id]?.hired && s.salary) {
+      total += s.salary;
+    }
+  });
+  // salary is per in-game "day" (600 ticks = 10 min real time)
+  return total / 600;
+}
+
+function getTotalStaffSalaryPerDay() {
+  let total = 0;
+  STAFF.forEach(s => {
+    if (game.staff[s.id]?.hired && s.salary) {
+      total += s.salary;
+    }
+  });
+  return total;
+}
+
 function getMaxMembers() {
   let cap = 0;
   // Zone capacity
@@ -543,9 +565,11 @@ function gameTick() {
   if (!game.started) return;
 
   const income = getIncomePerSecond();
-  game.money += income;
-  game.totalMoneyEarned += income;
-  game.dailyTracking.moneyEarned += income;
+  const salaries = getStaffSalaryPerSecond();
+  const netIncome = income - salaries;
+  game.money += netIncome;
+  if (netIncome > 0) game.totalMoneyEarned += netIncome;
+  game.dailyTracking.moneyEarned += Math.max(0, netIncome);
 
   game.tickCount++;
   game.stats.totalPlayTime++;

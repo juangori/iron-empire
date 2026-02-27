@@ -16,14 +16,14 @@ const EQUIPMENT = [
 ];
 
 const STAFF = [
-  { id: 'trainer', name: 'Entrenador', icon: '💪', role: 'Personal Trainer', effect: '+50% ingresos de equipamiento', costBase: 500, costMult: 2.5, incomeMult: 0.5, reqLevel: 2 },
-  { id: 'receptionist', name: 'Recepcionista', icon: '👩‍💼', role: 'Atención al Cliente', effect: '+1 miembro cada 10s automático', costBase: 1000, costMult: 2.5, autoMembers: 1, reqLevel: 3 },
-  { id: 'cleaner', name: 'Personal de Limpieza', icon: '🧹', role: 'Mantenimiento', effect: '+20% reputación por tick', costBase: 800, costMult: 2.0, repMult: 0.2, reqLevel: 4 },
-  { id: 'nutritionist', name: 'Nutricionista', icon: '🥗', role: 'Asesor Nutricional', effect: '+30% ingresos, +5 capacidad', costBase: 3000, costMult: 2.5, incomeMult: 0.3, capacityBonus: 5, reqLevel: 6 },
-  { id: 'physio', name: 'Kinesiólogo', icon: '🩺', role: 'Rehabilitación', effect: '+40% reputación, reduce lesiones', costBase: 5000, costMult: 2.5, repMult: 0.4, reqLevel: 8 },
-  { id: 'influencer', name: 'Influencer Fitness', icon: '📱', role: 'Marketing', effect: '+2 miembros cada 10s, +reputación', costBase: 8000, costMult: 3.0, autoMembers: 2, repMult: 0.3, reqLevel: 10 },
-  { id: 'manager', name: 'Gerente', icon: '👔', role: 'Administración', effect: '-20% costos de todo', costBase: 15000, costMult: 3.0, costReduction: 0.2, reqLevel: 12 },
-  { id: 'champion', name: 'Campeón Retirado', icon: '🏅', role: 'Embajador', effect: 'x2 premios de competencias', costBase: 50000, costMult: 3.5, compMult: 2, reqLevel: 15 },
+  { id: 'trainer', name: 'Entrenador', icon: '💪', role: 'Personal Trainer', effect: '+50% ingresos de equipamiento', costBase: 500, costMult: 2.5, salary: 5, incomeMult: 0.5, reqLevel: 2 },
+  { id: 'receptionist', name: 'Recepcionista', icon: '👩‍💼', role: 'Atención al Cliente', effect: '+1 miembro cada 10s automático', costBase: 1000, costMult: 2.5, salary: 8, autoMembers: 1, reqLevel: 3 },
+  { id: 'cleaner', name: 'Personal de Limpieza', icon: '🧹', role: 'Mantenimiento', effect: '+20% reputación por tick', costBase: 800, costMult: 2.0, salary: 4, repMult: 0.2, reqLevel: 4 },
+  { id: 'nutritionist', name: 'Nutricionista', icon: '🥗', role: 'Asesor Nutricional', effect: '+30% ingresos, +5 capacidad', costBase: 3000, costMult: 2.5, salary: 15, incomeMult: 0.3, capacityBonus: 5, reqLevel: 6 },
+  { id: 'physio', name: 'Kinesiólogo', icon: '🩺', role: 'Rehabilitación', effect: '+40% reputación, reduce lesiones', costBase: 5000, costMult: 2.5, salary: 20, repMult: 0.4, reqLevel: 8 },
+  { id: 'influencer', name: 'Influencer Fitness', icon: '📱', role: 'Marketing', effect: '+2 miembros cada 10s, +reputación', costBase: 8000, costMult: 3.0, salary: 30, autoMembers: 2, repMult: 0.3, reqLevel: 10 },
+  { id: 'manager', name: 'Gerente', icon: '👔', role: 'Administración', effect: '-20% costos de todo', costBase: 15000, costMult: 3.0, salary: 50, costReduction: 0.2, reqLevel: 12 },
+  { id: 'champion', name: 'Campeón Retirado', icon: '🏅', role: 'Embajador', effect: 'x2 premios de competencias', costBase: 50000, costMult: 3.5, salary: 100, compMult: 2, reqLevel: 15 },
 ];
 
 const COMPETITIONS = [
@@ -96,11 +96,11 @@ const RANDOM_EVENTS = [
     id: 'inspection',
     icon: '🏛️',
     title: 'Inspección Municipal',
-    desc: 'Un inspector del municipio vino a revisar las instalaciones. Podés sobornar, pagar la multa, o mejorar las instalaciones.',
+    desc: 'Un inspector del municipio vino a revisar las instalaciones. Tus decisiones afectan tu reputación directamente.',
     choices: [
-      { text: 'Mejorar instalaciones', cost: 'money:500', result: '+15 reputación y +30 XP', effect: (g) => { g.reputation += 15; g.xp += 30; } },
-      { text: 'Pagar la multa', cost: '-$200', result: 'Te sacás el problema de encima', effect: (g) => { g.money -= 200; } },
-      { text: 'Ignorar al inspector', cost: 'Gratis', result: '-10 reputación', effect: (g) => { g.reputation = Math.max(0, g.reputation - 10); } },
+      { text: 'Mejorar instalaciones', cost: '-$500', hint: 'Inversión segura. Mejora tu imagen y da experiencia.', result: '+15 reputación y +30 XP', effect: (g) => { g.money -= 500; g.reputation += 15; g.xp += 30; } },
+      { text: 'Pagar la multa', cost: '-$200', hint: 'Solución rápida, sin beneficio extra.', result: 'Te sacás el problema de encima', effect: (g) => { g.money -= 200; } },
+      { text: 'Ignorar al inspector', cost: 'Gratis', hint: '⚠️ Riesgoso. Puede dañar tu reputación.', result: '-10 reputación', effect: (g) => { g.reputation = Math.max(0, g.reputation - 10); } },
     ],
     minLevel: 1
   },
@@ -108,10 +108,10 @@ const RANDOM_EVENTS = [
     id: 'celebrity_visit',
     icon: '🌟',
     title: 'Visita de un Famoso',
-    desc: 'Un influencer fitness quiere entrenar en tu gym hoy. Si lo dejás gratis, sube tu reputación. Si le cobrás premium, ganás plata.',
+    desc: 'Un influencer fitness quiere entrenar en tu gym hoy. ¿Cómo lo manejás?',
     choices: [
-      { text: 'Dejarlo entrenar gratis', cost: 'Gratis', result: '+30 reputación y +50 XP', effect: (g) => { g.reputation += 30; g.xp += 50; } },
-      { text: 'Cobrarle membresía VIP', cost: 'Gratis', result: '+$2000 pero +5 rep', effect: (g) => { g.money += 2000; g.totalMoneyEarned += 2000; g.reputation += 5; } },
+      { text: 'Dejarlo entrenar gratis', cost: 'Gratis', hint: 'Gran boost de reputación. Su audiencia va a conocer tu gym.', result: '+30 reputación y +50 XP', effect: (g) => { g.reputation += 30; g.xp += 50; } },
+      { text: 'Cobrarle membresía VIP', cost: 'Gratis', hint: 'Ganancia inmediata, pero pierde impacto en redes.', result: '+$2,000 y +5 rep', effect: (g) => { g.money += 2000; g.totalMoneyEarned += 2000; g.reputation += 5; } },
     ],
     minLevel: 3
   },
@@ -119,11 +119,11 @@ const RANDOM_EVENTS = [
     id: 'broken_equipment',
     icon: '🔧',
     title: 'Equipo Roto',
-    desc: 'Se rompió una máquina y los miembros están molestos. ¿Qué hacés?',
+    desc: 'Se rompió una máquina y los miembros están molestos. Cada minuto sin resolver baja la moral.',
     choices: [
-      { text: 'Reparar inmediatamente', cost: '-$800', result: '+10 reputación por actuar rápido', effect: (g) => { g.money -= 800; g.reputation += 10; } },
-      { text: 'Poner un cartel de "fuera de servicio"', cost: 'Gratis', result: '-5 reputación', effect: (g) => { g.reputation = Math.max(0, g.reputation - 5); } },
-      { text: 'Upgrade a equipo nuevo', cost: '-$2000', result: '+25 reputación y +50 XP', effect: (g) => { g.money -= 2000; g.reputation += 25; g.xp += 50; } },
+      { text: 'Reparar inmediatamente', cost: '-$800', hint: 'Solución práctica. Demuestra que te importa.', result: '+10 reputación', effect: (g) => { g.money -= 800; g.reputation += 10; } },
+      { text: 'Poner cartel "fuera de servicio"', cost: 'Gratis', hint: '⚠️ Barato pero los miembros lo notan.', result: '-5 reputación', effect: (g) => { g.reputation = Math.max(0, g.reputation - 5); } },
+      { text: 'Upgrade a equipo nuevo', cost: '-$2,000', hint: 'Inversión fuerte. Gran impacto positivo.', result: '+25 reputación y +50 XP', effect: (g) => { g.money -= 2000; g.reputation += 25; g.xp += 50; } },
     ],
     minLevel: 2
   },
@@ -133,9 +133,9 @@ const RANDOM_EVENTS = [
     title: 'Oferta de Sponsor',
     desc: 'Una marca de suplementos quiere patrocinar tu gym. Te ofrecen plata a cambio de exclusividad.',
     choices: [
-      { text: 'Aceptar el sponsoreo', cost: 'Gratis', result: '+$3000 y +20 XP', effect: (g) => { g.money += 3000; g.totalMoneyEarned += 3000; g.xp += 20; } },
-      { text: 'Negociar mejor deal', cost: 'Gratis', result: '50% chance de +$6000 o nada', effect: (g) => { if (Math.random() > 0.5) { g.money += 6000; g.totalMoneyEarned += 6000; } } },
-      { text: 'Rechazar (mantener libertad)', cost: 'Gratis', result: '+15 reputación (independencia)', effect: (g) => { g.reputation += 15; } },
+      { text: 'Aceptar el sponsoreo', cost: 'Gratis', hint: 'Ganancia segura. Plata + experiencia garantizada.', result: '+$3,000 y +20 XP', effect: (g) => { g.money += 3000; g.totalMoneyEarned += 3000; g.xp += 20; } },
+      { text: 'Negociar mejor deal', cost: 'Gratis', hint: '🎲 Riesgo/recompensa. 50% de chance de duplicar la oferta, pero podés irte con las manos vacías.', result: '50% chance: +$6,000 o nada', effect: (g) => { if (Math.random() > 0.5) { g.money += 6000; g.totalMoneyEarned += 6000; } } },
+      { text: 'Rechazar (mantener libertad)', cost: 'Gratis', hint: 'Sin plata pero tu gym mantiene su identidad. Bonus de reputación.', result: '+15 reputación', effect: (g) => { g.reputation += 15; } },
     ],
     minLevel: 4
   },
@@ -143,10 +143,10 @@ const RANDOM_EVENTS = [
     id: 'group_discount',
     icon: '👥',
     title: 'Grupo Corporativo',
-    desc: 'Una empresa quiere membresías grupales con descuento para sus empleados.',
+    desc: 'Una empresa quiere membresías grupales con descuento para 8 empleados.',
     choices: [
-      { text: 'Aceptar con descuento', cost: 'Gratis', result: '+8 miembros y +$1500', effect: (g) => { g.members = Math.min(g.members + 8, g.maxMembers); g.money += 1500; g.totalMoneyEarned += 1500; } },
-      { text: 'Precio completo o nada', cost: 'Gratis', result: '30% chance: +4 miembros a precio full', effect: (g) => { if (Math.random() < 0.3) { g.members = Math.min(g.members + 4, g.maxMembers); g.money += 2000; g.totalMoneyEarned += 2000; } } },
+      { text: 'Aceptar con descuento', cost: 'Gratis', hint: 'Seguro. Muchos miembros nuevos de golpe + algo de plata.', result: '+8 miembros y +$1,500', effect: (g) => { g.members = Math.min(g.members + 8, g.maxMembers); g.money += 1500; g.totalMoneyEarned += 1500; } },
+      { text: 'Precio completo o nada', cost: 'Gratis', hint: '🎲 Solo 30% de chance de que acepten, pero pagás más por miembro.', result: '30% chance: +4 miembros y +$2,000', effect: (g) => { if (Math.random() < 0.3) { g.members = Math.min(g.members + 4, g.maxMembers); g.money += 2000; g.totalMoneyEarned += 2000; } } },
     ],
     minLevel: 3
   },
@@ -154,10 +154,10 @@ const RANDOM_EVENTS = [
     id: 'competition_invite',
     icon: '🏆',
     title: 'Invitación a Exhibición',
-    desc: 'Te invitan a una exhibición de fuerza en un evento local. Podés participar o enviar a un miembro.',
+    desc: 'Te invitan a una exhibición de fuerza en un evento local. Gran oportunidad de marketing.',
     choices: [
-      { text: 'Participar personalmente', cost: 'Gratis', result: '+40 reputación y +80 XP', effect: (g) => { g.reputation += 40; g.xp += 80; } },
-      { text: 'Enviar al mejor miembro', cost: 'Gratis', result: '+20 reputación y +40 XP', effect: (g) => { g.reputation += 20; g.xp += 40; } },
+      { text: 'Participar personalmente', cost: 'Gratis', hint: 'Máximo impacto. Tu cara representa el gym.', result: '+40 reputación y +80 XP', effect: (g) => { g.reputation += 40; g.xp += 80; } },
+      { text: 'Enviar al mejor miembro', cost: 'Gratis', hint: 'Buen resultado pero con menor impacto personal.', result: '+20 reputación y +40 XP', effect: (g) => { g.reputation += 20; g.xp += 40; } },
     ],
     minLevel: 5
   },
@@ -165,10 +165,10 @@ const RANDOM_EVENTS = [
     id: 'water_leak',
     icon: '💧',
     title: 'Filtración de Agua',
-    desc: 'Hay una filtración en el techo. Si no la arreglás se va a poner peor.',
+    desc: 'Hay una filtración en el techo. El agua gotea sobre las máquinas.',
     choices: [
-      { text: 'Arreglar ya', cost: '-$500', result: 'Problema resuelto, +5 rep', effect: (g) => { g.money -= 500; g.reputation += 5; } },
-      { text: 'Dejarlo para después', cost: 'Gratis', result: '-15 reputación', effect: (g) => { g.reputation = Math.max(0, g.reputation - 15); } },
+      { text: 'Arreglar ya', cost: '-$500', hint: 'Resolvelo antes de que empeore. Pequeño bonus de rep.', result: 'Problema resuelto, +5 rep', effect: (g) => { g.money -= 500; g.reputation += 5; } },
+      { text: 'Dejarlo para después', cost: 'Gratis', hint: '⚠️ Muy riesgoso. Los miembros van a hablar mal del gym.', result: '-15 reputación', effect: (g) => { g.reputation = Math.max(0, g.reputation - 15); } },
     ],
     minLevel: 1
   },
@@ -176,11 +176,11 @@ const RANDOM_EVENTS = [
     id: 'fitness_challenge',
     icon: '🎯',
     title: 'Desafío Fitness Viral',
-    desc: 'Un desafío se hizo viral en redes. ¿Querés sumarte con tu gym?',
+    desc: 'Un desafío de fitness se hizo viral en TikTok. Tu gym podría sumarse.',
     choices: [
-      { text: 'Organizar el desafío en el gym', cost: '-$300', result: '+5 miembros, +25 rep, +60 XP', effect: (g) => { g.members = Math.min(g.members + 5, g.maxMembers); g.reputation += 25; g.xp += 60; g.money -= 300; } },
-      { text: 'Filmar y subir a redes', cost: 'Gratis', result: '+15 reputación y +30 XP', effect: (g) => { g.reputation += 15; g.xp += 30; } },
-      { text: 'Ignorarlo', cost: 'Gratis', result: 'Nada pasa', effect: () => {} },
+      { text: 'Organizar el desafío en el gym', cost: '-$300', hint: 'Mejor opción. Atrae miembros nuevos y sube reputación.', result: '+5 miembros, +25 rep, +60 XP', effect: (g) => { g.members = Math.min(g.members + 5, g.maxMembers); g.reputation += 25; g.xp += 60; g.money -= 300; } },
+      { text: 'Filmar y subir a redes', cost: 'Gratis', hint: 'Sin costo. Buen marketing gratis.', result: '+15 reputación y +30 XP', effect: (g) => { g.reputation += 15; g.xp += 30; } },
+      { text: 'Ignorarlo', cost: 'Gratis', hint: 'Oportunidad perdida, pero no te afecta negativamente.', result: 'Nada pasa', effect: () => {} },
     ],
     minLevel: 2
   },
@@ -188,11 +188,11 @@ const RANDOM_EVENTS = [
     id: 'power_outage',
     icon: '⚡',
     title: 'Corte de Luz',
-    desc: 'Se cortó la luz en el barrio. Tu gym está a oscuras y los miembros se quejan.',
+    desc: 'Se cortó la luz en todo el barrio. Tu gym está a oscuras y los miembros no pueden entrenar bien.',
     choices: [
-      { text: 'Comprar generador de emergencia', cost: '-$3000', result: '+30 rep, gym nunca más cierra por luz', effect: (g) => { g.money -= 3000; g.reputation += 30; g.xp += 40; } },
-      { text: 'Entrenar a la luz de velas', cost: 'Gratis', result: '+10 rep (ambiente único)', effect: (g) => { g.reputation += 10; g.xp += 20; } },
-      { text: 'Cerrar por hoy', cost: 'Gratis', result: '-20 reputación', effect: (g) => { g.reputation = Math.max(0, g.reputation - 20); } },
+      { text: 'Comprar generador', cost: '-$3,000', hint: 'Inversión grande pero a largo plazo te protege de futuros cortes. Gran reputación.', result: '+30 rep y +40 XP', effect: (g) => { g.money -= 3000; g.reputation += 30; g.xp += 40; } },
+      { text: 'Entrenar a la luz de velas', cost: 'Gratis', hint: '🎲 Creativo. Puede salir bien o mal. Los miembros podrían encontrarlo divertido... o peligroso.', result: '70% chance: +10 rep. 30% chance: -5 rep y -1 miembro', effect: (g) => { if (Math.random() < 0.7) { g.reputation += 10; g.xp += 20; } else { g.reputation = Math.max(0, g.reputation - 5); g.members = Math.max(0, g.members - 1); } } },
+      { text: 'Cerrar por hoy', cost: 'Gratis', hint: '⚠️ Fácil, pero los miembros se van a otro gym.', result: '-20 reputación', effect: (g) => { g.reputation = Math.max(0, g.reputation - 20); } },
     ],
     minLevel: 3
   },
@@ -200,11 +200,11 @@ const RANDOM_EVENTS = [
     id: 'member_complaint',
     icon: '😤',
     title: 'Queja de Miembro VIP',
-    desc: 'Un miembro importante está por irse. Dice que el gym necesita mejoras.',
+    desc: 'Un miembro con mucha antigüedad amenaza con irse. Dice que la competencia tiene mejores instalaciones.',
     choices: [
-      { text: 'Ofrecerle un mes gratis', cost: '-$500', result: 'Se queda, +10 rep', effect: (g) => { g.money -= 500; g.reputation += 10; } },
-      { text: 'Escuchar y prometer mejoras', cost: 'Gratis', result: '+5 rep, se queda por ahora', effect: (g) => { g.reputation += 5; } },
-      { text: 'Dejarlo ir', cost: 'Gratis', result: '-2 miembros, -10 rep', effect: (g) => { g.members = Math.max(0, g.members - 2); g.reputation = Math.max(0, g.reputation - 10); } },
+      { text: 'Ofrecerle un mes gratis', cost: '-$500', hint: 'Gasto moderado. Lo retiene y mejora la percepción.', result: 'Se queda, +10 rep', effect: (g) => { g.money -= 500; g.reputation += 10; } },
+      { text: 'Escuchar y prometer mejoras', cost: 'Gratis', hint: 'Sin costo. Lo calma por ahora pero el efecto es menor.', result: '+5 rep, se queda por ahora', effect: (g) => { g.reputation += 5; } },
+      { text: 'Dejarlo ir', cost: 'Gratis', hint: '⚠️ Peligroso. Puede llevar a otros miembros con él.', result: '-2 miembros, -10 rep', effect: (g) => { g.members = Math.max(0, g.members - 2); g.reputation = Math.max(0, g.reputation - 10); } },
     ],
     minLevel: 2
   },

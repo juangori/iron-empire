@@ -51,7 +51,16 @@ function renderStaff() {
   const grid = document.getElementById('staffGrid');
   if (!grid) return;
 
-  grid.innerHTML = STAFF.map(function(s) {
+  // Staff summary at top
+  var hiredCount = STAFF.filter(function(s) { return game.staff[s.id]?.hired; }).length;
+  var totalSalary = getTotalStaffSalaryPerDay();
+  var summaryHTML = '<div class="staff-summary">' +
+    '<div class="staff-summary-stat"><span class="staff-summary-label">Personal contratado</span><span class="staff-summary-value">' + hiredCount + ' / ' + STAFF.length + '</span></div>' +
+    '<div class="staff-summary-stat"><span class="staff-summary-label">Sueldos (por día)</span><span class="staff-summary-value" style="color:var(--red);">-' + fmtMoney(totalSalary) + '</span></div>' +
+    '<div class="staff-summary-stat"><span class="staff-summary-label">Sueldos (por seg)</span><span class="staff-summary-value" style="color:var(--red);">-' + fmtMoney(totalSalary / 600) + '/s</span></div>' +
+  '</div>';
+
+  var cardsHTML = STAFF.map(function(s) {
     var state = game.staff[s.id] || { hired: false };
     var cost = getStaffCost(s);
     var canAfford = game.money >= cost;
@@ -59,23 +68,29 @@ function renderStaff() {
 
     var btnHTML = '';
     if (locked) {
-      btnHTML = '';
+      btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;margin-top:8px;">🔒 Requiere Nivel ' + s.reqLevel + '</div>';
     } else if (state.hired) {
       btnHTML = '<button class="btn btn-green" disabled>✅ CONTRATADO</button>';
     } else {
       btnHTML = '<button class="btn btn-purple" ' + (canAfford ? '' : 'disabled') + ' onclick="hireStaff(\'' + s.id + '\')">CONTRATAR — ' + fmtMoney(cost) + '</button>';
     }
 
+    var salaryHTML = s.salary ? '<div class="staff-salary">💵 Sueldo: ' + fmtMoney(s.salary) + '/día</div>' : '';
+
     return (
-      '<div class="staff-card ' + (locked ? 'locked' : '') + '" ' + (locked ? 'data-req="' + s.reqLevel + '"' : '') + '>' +
+      '<div class="staff-card ' + (locked ? 'locked' : '') + ' ' + (state.hired ? 'hired' : '') + '">' +
         '<div class="staff-avatar">' + s.icon + '</div>' +
         '<div class="staff-name">' + s.name + '</div>' +
         '<div class="staff-role">' + s.role + '</div>' +
         '<div class="staff-effect">' + s.effect + '</div>' +
+        salaryHTML +
+        (state.hired ? '<div class="staff-status">✅ Activo</div>' : '') +
         btnHTML +
       '</div>'
     );
   }).join('');
+
+  grid.innerHTML = summaryHTML + cardsHTML;
 }
 
 // ===== RENDER COMPETITIONS =====
@@ -153,17 +168,19 @@ function checkAchievements() {
 // ===== UPDATE UI =====
 function updateUI() {
   const income = getIncomePerSecond();
+  const salaries = getStaffSalaryPerSecond();
+  const netIncome = income - salaries;
 
   // Header stats
   document.getElementById('moneyDisplay').textContent = fmtMoney(game.money);
   document.getElementById('membersDisplay').textContent = fmt(game.members);
   document.getElementById('repDisplay').textContent = fmt(game.reputation);
-  document.getElementById('incomeDisplay').textContent = fmtMoney(income) + '/s';
+  document.getElementById('incomeDisplay').textContent = fmtMoney(netIncome) + '/s';
 
   // Stat boxes
   var el;
   el = document.getElementById('incomeBig');
-  if (el) el.textContent = fmtMoney(income);
+  if (el) el.textContent = fmtMoney(netIncome);
   el = document.getElementById('membersBig');
   if (el) el.textContent = fmt(game.members);
   el = document.getElementById('capacityBig');
@@ -171,9 +188,30 @@ function updateUI() {
   el = document.getElementById('repBig');
   if (el) el.textContent = fmt(game.reputation);
 
+  // Extra stat boxes
+  el = document.getElementById('salaryBig');
+  if (el) el.textContent = '-' + fmtMoney(getTotalStaffSalaryPerDay()) + '/día';
+  el = document.getElementById('grossIncomeBig');
+  if (el) el.textContent = fmtMoney(income);
+  el = document.getElementById('totalEarnedBig');
+  if (el) el.textContent = fmtMoney(game.totalMoneyEarned);
+  el = document.getElementById('staffCountBig');
+  if (el) el.textContent = STAFF.filter(function(s) { return game.staff[s.id]?.hired; }).length + ' / ' + STAFF.length;
+  el = document.getElementById('equipCountBig');
+  if (el) {
+    var totalEqLvl = 0;
+    EQUIPMENT.forEach(function(eq) { totalEqLvl += (game.equipment[eq.id]?.level || 0); });
+    el.textContent = totalEqLvl + ' niveles';
+  }
+  el = document.getElementById('tierBig');
+  if (el) el.textContent = getGymTier();
+
   // Level
   document.getElementById('levelBadge').textContent = 'NIVEL ' + game.level;
-  document.getElementById('xpBar').style.width = ((game.xp / game.xpToNext) * 100) + '%';
+  var xpPct = Math.floor((game.xp / game.xpToNext) * 100);
+  document.getElementById('xpBar').style.width = xpPct + '%';
+  var xpText = document.getElementById('xpBarText');
+  if (xpText) xpText.textContent = xpPct + '%';
 
   // Gym visual
   el = document.getElementById('gymNameBanner');

@@ -98,10 +98,9 @@
       </div>
     </div>
 
-    <!-- GUEST BUTTON -->
+    <!-- Footer -->
     <div class="auth-guest">
-      <button class="auth-btn auth-btn-guest" onclick="playAsGuest()">Jugar sin cuenta (modo invitado)</button>
-      <p class="auth-guest-note">Tu progreso solo se guardará en este navegador</p>
+      <p class="auth-guest-note">Tu progreso se guarda en la nube automáticamente</p>
     </div>
   </div>
 </div>
@@ -210,6 +209,7 @@
         <div class="level-badge" id="levelBadge">NIVEL 1</div>
         <div class="xp-bar-container">
           <div class="xp-bar-fill" id="xpBar" style="width:0%"></div>
+          <span class="xp-bar-text" id="xpBarText">0%</span>
         </div>
         <div class="stat-tooltip level-tooltip">Nivel y experiencia. Ganás XP comprando equipos, haciendo clases, misiones y más. Cada nivel desbloquea nuevo contenido.</div>
       </div>
@@ -250,8 +250,16 @@
 
     <div class="stats-grid">
       <div class="stat-box">
-        <div class="stat-box-label">Ingresos / seg</div>
+        <div class="stat-box-label">Ingreso Neto / seg</div>
         <div class="stat-box-value" style="color:var(--green);" id="incomeBig">$0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-box-label">Ingreso Bruto / seg</div>
+        <div class="stat-box-value" style="color:var(--cyan);" id="grossIncomeBig">$0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-box-label">Sueldos Staff</div>
+        <div class="stat-box-value" style="color:var(--red);" id="salaryBig">$0/día</div>
       </div>
       <div class="stat-box">
         <div class="stat-box-label">Miembros Activos</div>
@@ -264,6 +272,22 @@
       <div class="stat-box">
         <div class="stat-box-label">Reputación</div>
         <div class="stat-box-value" style="color:var(--purple);" id="repBig">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-box-label">Total Ganado</div>
+        <div class="stat-box-value" style="color:var(--green);" id="totalEarnedBig">$0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-box-label">Staff</div>
+        <div class="stat-box-value" style="color:var(--orange);" id="staffCountBig">0 / 8</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-box-label">Equipamiento</div>
+        <div class="stat-box-value" style="color:var(--pink);" id="equipCountBig">0 niveles</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-box-label">Categoría</div>
+        <div class="stat-box-value" style="color:var(--accent);font-size:14px;" id="tierBig">🏠 Garage Gym</div>
       </div>
     </div>
 

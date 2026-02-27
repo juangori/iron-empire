@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iron Empire - Admin Panel</title>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --card: #12121a;
+    --border: #2a2a3a;
+    --accent: #f59e0b;
+    --green: #22c55e;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --text: #e8e8f0;
+    --dim: #8888a0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; padding: 24px; }
+  h1 { color: var(--accent); margin-bottom: 8px; }
+  .subtitle { color: var(--dim); margin-bottom: 24px; }
+  .stats-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+  .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 16px 24px; min-width: 150px; }
+  .stat-card .label { font-size: 12px; color: var(--dim); text-transform: uppercase; letter-spacing: 1px; }
+  .stat-card .value { font-size: 28px; font-weight: 700; margin-top: 4px; }
+  .table-container { background: var(--card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { background: #1a1a28; padding: 12px 16px; text-align: left; font-weight: 600; color: var(--dim); text-transform: uppercase; font-size: 11px; letter-spacing: 1px; }
+  td { padding: 10px 16px; border-top: 1px solid var(--border); }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  .online { color: var(--green); }
+  .offline { color: var(--dim); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .badge-new { background: var(--blue); color: #fff; }
+  .badge-veteran { background: var(--accent); color: #000; }
+  .badge-whale { background: var(--green); color: #000; }
+  .refresh-btn { background: var(--accent); color: #000; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; margin-bottom: 24px; }
+  .refresh-btn:hover { opacity: 0.8; }
+  .loading { text-align: center; padding: 40px; color: var(--dim); }
+  .denied { text-align: center; padding: 80px 20px; }
+  .denied h2 { color: var(--red); margin-bottom: 12px; }
+  #adminContent { display: none; }
+</style>
+</head>
+<body>
+
+<div class="denied" id="deniedMsg">
+  <h2>Acceso Denegado</h2>
+  <p style="color:var(--dim);">Solo el administrador puede acceder a este panel.</p>
+  <p style="color:var(--dim);margin-top:8px;"><a href="/" style="color:var(--accent);">Volver al juego</a></p>
+</div>
+
+<div id="adminContent">
+  <h1>Iron Empire Admin</h1>
+  <p class="subtitle">Panel de administración - Datos en tiempo real de Firestore</p>
+
+  <button class="refresh-btn" onclick="loadAdminData()">🔄 Actualizar datos</button>
+
+  <div class="stats-row" id="statsRow">
+    <div class="stat-card"><div class="label">Total Usuarios</div><div class="value" id="totalUsers">-</div></div>
+    <div class="stat-card"><div class="label">Con Partida</div><div class="value" id="totalSaves">-</div></div>
+    <div class="stat-card"><div class="label">Registros hoy</div><div class="value" id="todayUsers">-</div></div>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Usuario</th>
+          <th>Email</th>
+          <th>Gym</th>
+          <th>Nivel</th>
+          <th>Estrellas</th>
+          <th>Registrado</th>
+          <th>Último login</th>
+        </tr>
+      </thead>
+      <tbody id="usersTable">
+        <tr><td colspan="7" class="loading">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCghDMch1X1U989kzLXN1POnYWtph15R4o",
+  authDomain: "iron-empire-fac57.firebaseapp.com",
+  projectId: "iron-empire-fac57",
+  storageBucket: "iron-empire-fac57.firebasestorage.app",
+  messagingSenderId: "1039622184703",
+  appId: "1:1039622184703:web:ff914b0ccc8f2b526576ca"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+// Admin UIDs - add your Firebase UID here after first login
+const ADMIN_UIDS = [];
+
+auth.onAuthStateChanged(async (user) => {
+  if (!user) {
+    document.getElementById('deniedMsg').innerHTML =
+      '<h2>Iniciar Sesión</h2>' +
+      '<p style="color:var(--dim);">Tenés que estar logueado como admin.</p>' +
+      '<p style="color:var(--dim);margin-top:8px;"><a href="/" style="color:var(--accent);">Ir al juego para loguearte</a></p>';
+    return;
+  }
+
+  // If no admin UIDs configured yet, allow the first user (you)
+  if (ADMIN_UIDS.length === 0 || ADMIN_UIDS.includes(user.uid)) {
+    document.getElementById('deniedMsg').style.display = 'none';
+    document.getElementById('adminContent').style.display = 'block';
+    console.log('Admin UID:', user.uid, '- Agregá este UID al array ADMIN_UIDS para restringir acceso.');
+    loadAdminData();
+  } else {
+    // Not admin
+    document.getElementById('deniedMsg').style.display = 'block';
+  }
+});
+
+async function loadAdminData() {
+  try {
+    // Load users
+    const usersSnap = await db.collection('users').get();
+    const savesSnap = await db.collection('saves').get();
+
+    const saves = {};
+    savesSnap.forEach(doc => {
+      saves[doc.id] = doc.data();
+    });
+
+    const users = [];
+    const today = new Date().toDateString();
+    let todayCount = 0;
+
+    usersSnap.forEach(doc => {
+      const data = doc.data();
+      const save = saves[doc.id];
+      const createdAt = data.createdAt?.toDate?.();
+      if (createdAt && createdAt.toDateString() === today) todayCount++;
+
+      users.push({
+        uid: doc.id,
+        username: data.username || '-',
+        email: data.email || '-',
+        gymName: save?.gymName || '-',
+        level: save?.level || 0,
+        stars: save?.prestigeStars || 0,
+        createdAt: createdAt,
+        lastLogin: data.lastLogin?.toDate?.(),
+      });
+    });
+
+    // Sort by last login desc
+    users.sort((a, b) => (b.lastLogin || 0) - (a.lastLogin || 0));
+
+    document.getElementById('totalUsers').textContent = users.length;
+    document.getElementById('totalSaves').textContent = Object.keys(saves).length;
+    document.getElementById('todayUsers').textContent = todayCount;
+
+    const tbody = document.getElementById('usersTable');
+    if (users.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--dim);padding:20px;">No hay usuarios registrados aún.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = users.map(u => {
+      const fmtDate = (d) => d ? d.toLocaleDateString('es-AR') + ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '-';
+      const isRecent = u.lastLogin && (Date.now() - u.lastLogin.getTime()) < 300000; // 5 min
+      let badge = '';
+      if (u.stars >= 3) badge = '<span class="badge badge-whale">VIP</span> ';
+      else if (u.level >= 10) badge = '<span class="badge badge-veteran">Veterano</span> ';
+      else if (u.level <= 2) badge = '<span class="badge badge-new">Nuevo</span> ';
+
+      return '<tr>' +
+        '<td>' + badge + u.username + '</td>' +
+        '<td style="color:var(--dim);font-size:12px;">' + u.email + '</td>' +
+        '<td>' + u.gymName + '</td>' +
+        '<td style="color:var(--accent);font-weight:700;">' + u.level + '</td>' +
+        '<td>' + (u.stars > 0 ? '⭐'.repeat(Math.min(u.stars, 10)) + ' ' + u.stars : '-') + '</td>' +
+        '<td style="font-size:12px;color:var(--dim);">' + fmtDate(u.createdAt) + '</td>' +
+        '<td><span class="' + (isRecent ? 'online' : 'offline') + '">' + (isRecent ? '🟢 ' : '') + fmtDate(u.lastLogin) + '</span></td>' +
+      '</tr>';
+    }).join('');
+
+  } catch (err) {
+    console.error('Error loading admin data:', err);
+    document.getElementById('usersTable').innerHTML =
+      '<tr><td colspan="7" style="color:var(--red);text-align:center;padding:20px;">Error: ' + err.message + '</td></tr>';
+  }
+}
+</script>
+</body>
+</html>
