@@ -59,31 +59,70 @@ function renderStaff() {
   const grid = document.getElementById('staffGrid');
   if (!grid) return;
 
-  // Staff summary at top
-  var hiredCount = STAFF.filter(function(s) { return game.staff[s.id]?.hired; }).length;
+  // Count total staff including extras
+  var totalHired = 0;
+  var totalSlots = STAFF.length;
+  STAFF.forEach(function(s) {
+    if (game.staff[s.id]?.hired) {
+      totalHired++;
+      if (game.staff[s.id].extras) totalHired += game.staff[s.id].extras.length;
+    }
+  });
+
   var totalSalary = getTotalStaffSalaryPerDay();
   var summaryHTML = '<div class="staff-summary">' +
-    '<div class="staff-summary-stat"><span class="staff-summary-label">Personal contratado</span><span class="staff-summary-value">' + hiredCount + ' / ' + STAFF.length + '</span></div>' +
+    '<div class="staff-summary-stat"><span class="staff-summary-label">Personal activo</span><span class="staff-summary-value">' + totalHired + '</span></div>' +
     '<div class="staff-summary-stat"><span class="staff-summary-label">Sueldos (por día)</span><span class="staff-summary-value" style="color:var(--red);">-' + fmtMoney(totalSalary) + '</span></div>' +
     '<div class="staff-summary-stat"><span class="staff-summary-label">Sueldos (por seg)</span><span class="staff-summary-value" style="color:var(--red);">-' + fmtMoney(totalSalary / 600) + '/s</span></div>' +
   '</div>';
 
   var cardsHTML = STAFF.map(function(s) {
     var state = game.staff[s.id] || { hired: false };
-    var cost = getStaffCost(s);
+    var cost = getStaffCost(s, 0);
     var canAfford = game.money >= cost;
     var locked = game.level < s.reqLevel;
 
+    // Build hire or status section
     var btnHTML = '';
     if (locked) {
       btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;margin-top:8px;">🔒 Requiere Nivel ' + s.reqLevel + '</div>';
-    } else if (state.hired) {
-      btnHTML = '<button class="btn btn-green" disabled>✅ CONTRATADO</button>';
-    } else {
+    } else if (!state.hired) {
       btnHTML = '<button class="btn btn-purple" ' + (canAfford ? '' : 'disabled') + ' onclick="hireStaff(\'' + s.id + '\')">CONTRATAR — ' + fmtMoney(cost) + '</button>';
     }
 
-    var salaryHTML = s.salary ? '<div class="staff-salary">💵 Sueldo: ' + fmtMoney(s.salary) + '/día</div>' : '';
+    // If hired, show main copy + extras
+    var copiesHTML = '';
+    if (state.hired) {
+      copiesHTML = _renderStaffCopy(s, state, 0);
+      // Extra copies
+      if (state.extras) {
+        state.extras.forEach(function(ex, i) {
+          copiesHTML += _renderStaffCopy(s, ex, i + 1);
+        });
+      }
+      // Hire extra button
+      var extraCount = (state.extras ? state.extras.length : 0) + 1;
+      var nextCopyNum = extraCount + 1;
+      var reqLvl = STAFF_EXTRA_UNLOCK[nextCopyNum];
+      if (reqLvl) {
+        if (game.level >= reqLvl) {
+          var extraCost = getStaffCost(s, extraCount);
+          var canAffordExtra = game.money >= extraCost;
+          copiesHTML += '<button class="btn btn-cyan btn-small" style="margin-top:6px;width:100%;" ' + (canAffordExtra ? '' : 'disabled') +
+            ' onclick="hireExtraStaff(\'' + s.id + '\')">➕ CONTRATAR #' + nextCopyNum + ' — ' + fmtMoney(extraCost) + '</button>';
+        } else {
+          copiesHTML += '<div style="color:var(--text-muted);font-size:11px;margin-top:6px;text-align:center;">🔒 #' + nextCopyNum + ' en Nivel ' + reqLvl + '</div>';
+        }
+      }
+    }
+
+    var salaryText = '';
+    if (state.hired && s.salary) {
+      var lvl = state.level || 1;
+      salaryText = fmtMoney(getStaffSalaryAtLevel(s.salary, lvl)) + '/día';
+    } else if (s.salary) {
+      salaryText = fmtMoney(s.salary) + '/día';
+    }
 
     return (
       '<div class="staff-card ' + (locked ? 'locked' : '') + ' ' + (state.hired ? 'hired' : '') + '">' +
@@ -91,14 +130,57 @@ function renderStaff() {
         '<div class="staff-name">' + s.name + '</div>' +
         '<div class="staff-role">' + s.role + '</div>' +
         '<div class="staff-effect">' + s.effect + '</div>' +
-        salaryHTML +
-        (state.hired ? '<div class="staff-status">✅ Activo</div>' : '') +
+        (salaryText ? '<div class="staff-salary">💵 ' + salaryText + '</div>' : '') +
         btnHTML +
+        copiesHTML +
       '</div>'
     );
   }).join('');
 
   grid.innerHTML = summaryHTML + cardsHTML;
+}
+
+function _renderStaffCopy(staffDef, copyState, copyIdx) {
+  var level = copyState.level || 1;
+  var isTraining = copyState.trainingUntil && Date.now() < copyState.trainingUntil;
+  var label = copyIdx === 0 ? '' : ' #' + (copyIdx + 1);
+
+  var html = '<div class="staff-copy' + (isTraining ? ' training' : '') + '">';
+
+  // Level badge
+  html += '<div class="staff-copy-header">';
+  html += '<span class="staff-level-badge">LVL ' + level + '</span>';
+  html += '<span class="staff-copy-label">' + (copyIdx === 0 ? (isTraining ? '⏳ Entrenando' : '✅ Activo') : (isTraining ? '⏳ Entrenando' : '✅ #' + (copyIdx + 1))) + '</span>';
+  if (!isTraining) {
+    html += '<span class="staff-copy-salary">💵 ' + fmtMoney(getStaffSalaryAtLevel(staffDef.salary, level)) + '/día</span>';
+  }
+  html += '</div>';
+
+  // Training progress bar
+  if (isTraining) {
+    var duration = getTrainingDuration(level + 1) * 1000;
+    var startTime = copyState.trainingUntil - duration;
+    var elapsed = Date.now() - startTime;
+    var pct = Math.min(100, (elapsed / duration) * 100);
+    var remaining = Math.max(0, Math.ceil((copyState.trainingUntil - Date.now()) / 1000));
+    var mins = Math.floor(remaining / 60);
+    var secs = remaining % 60;
+    html += '<div class="staff-training-bar"><div class="staff-training-fill" style="width:' + pct + '%"></div></div>';
+    html += '<div class="staff-training-time">→ LVL ' + (level + 1) + ' en ' + mins + ':' + (secs < 10 ? '0' : '') + secs + '</div>';
+  }
+
+  // Train button (if not training and not max level)
+  if (!isTraining && level < STAFF_MAX_LEVEL) {
+    var trainCost = getTrainingCost(staffDef, level);
+    var canAfford = game.money >= trainCost;
+    html += '<button class="btn btn-buy btn-small staff-train-btn" ' + (canAfford ? '' : 'disabled') +
+      ' onclick="trainStaff(\'' + staffDef.id + '\',' + copyIdx + ')">📚 ENTRENAR → LVL ' + (level + 1) + ' — ' + fmtMoney(trainCost) + '</button>';
+  } else if (!isTraining && level >= STAFF_MAX_LEVEL) {
+    html += '<div class="staff-max-level">⭐ NIVEL MÁXIMO</div>';
+  }
+
+  html += '</div>';
+  return html;
 }
 
 // ===== RENDER COMPETITIONS =====
@@ -215,7 +297,16 @@ function updateUI() {
   el = document.getElementById('totalEarnedBig');
   if (el) el.textContent = fmtMoney(game.totalMoneyEarned);
   el = document.getElementById('staffCountBig');
-  if (el) el.textContent = STAFF.filter(function(s) { return game.staff[s.id]?.hired; }).length + ' / ' + STAFF.length;
+  if (el) {
+    var totalStaff = 0;
+    STAFF.forEach(function(s) {
+      if (game.staff[s.id]?.hired) {
+        totalStaff++;
+        if (game.staff[s.id].extras) totalStaff += game.staff[s.id].extras.length;
+      }
+    });
+    el.textContent = totalStaff;
+  }
   el = document.getElementById('equipCountBig');
   if (el) {
     var totalEqLvl = 0;

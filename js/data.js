@@ -1,5 +1,8 @@
 // ===== IRON EMPIRE - GAME DATA =====
 
+const STAFF_MAX_LEVEL = 5;
+const STAFF_EXTRA_UNLOCK = { 2: 12, 3: 20 }; // 2nd copy at player level 12, 3rd at 20
+
 const EQUIPMENT = [
   { id: 'dumbbells', name: 'Mancuernas', icon: '🏋️', desc: 'El básico de todo gym. Atraen principiantes.', baseCost: 50, costMult: 1.6, incomePerLevel: 0.6, membersPerLevel: 2, capacityPerLevel: 0, reqLevel: 1 },
   { id: 'bench', name: 'Banco Plano', icon: '🪑', desc: 'Press de banca, el rey de los ejercicios.', baseCost: 150, costMult: 1.65, incomePerLevel: 1.5, membersPerLevel: 3, capacityPerLevel: 2, reqLevel: 1 },

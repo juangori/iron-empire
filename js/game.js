@@ -142,16 +142,211 @@ function getSkillEffect(effectName, defaultVal) {
 // ===== COST CALCULATIONS =====
 function getEquipCost(equip, level) {
   let cost = equip.baseCost * Math.pow(equip.costMult, level);
-  if (game.staff.manager?.hired) cost *= (1 - STAFF.find(s => s.id === 'manager').costReduction);
+  if (game.staff.manager?.hired && !isStaffTraining('manager', 0)) {
+    var mgrDef = STAFF.find(s => s.id === 'manager');
+    cost *= (1 - mgrDef.costReduction * getStaffLevelMult(game.staff.manager.level || 1));
+  }
   cost *= getSkillEffect('equipCostMult');
   return Math.ceil(cost);
 }
 
-function getStaffCost(staff) {
+function getStaffCost(staff, copyIndex) {
   let cost = staff.costBase;
+  if (copyIndex && copyIndex > 0) cost *= Math.pow(3, copyIndex); // 2nd=x3, 3rd=x9
   if (game.staff.manager?.hired && staff.id !== 'manager') cost *= 0.8;
   cost *= getSkillEffect('staffCostMult');
   return Math.ceil(cost);
+}
+
+// ===== STAFF TRAINING SYSTEM =====
+function normalizeStaffData() {
+  STAFF.forEach(function(s) {
+    var state = game.staff[s.id];
+    if (state && state.hired) {
+      if (!state.level) state.level = 1;
+      if (!state.trainingUntil) state.trainingUntil = 0;
+      if (!state.extras) state.extras = [];
+      state.extras.forEach(function(ex) {
+        if (!ex.level) ex.level = 1;
+        if (!ex.trainingUntil) ex.trainingUntil = 0;
+      });
+    }
+  });
+}
+
+function getStaffLevelMult(level) {
+  // Effect multiplier: level 1=1.0, 2=1.2, 3=1.4, 4=1.6, 5=1.8
+  return 1 + ((level || 1) - 1) * 0.2;
+}
+
+function getStaffSalaryAtLevel(baseSalary, level) {
+  // Salary scaling: level 1=1.0, 2=1.3, 3=1.6, 4=1.9, 5=2.2
+  return baseSalary * (1 + ((level || 1) - 1) * 0.3);
+}
+
+function isStaffTraining(staffId, copyIdx) {
+  var state = game.staff[staffId];
+  if (!state || !state.hired) return false;
+  if (copyIdx === undefined || copyIdx === 0) {
+    return state.trainingUntil && Date.now() < state.trainingUntil;
+  }
+  var extra = state.extras && state.extras[copyIdx - 1];
+  return extra && extra.trainingUntil && Date.now() < extra.trainingUntil;
+}
+
+function getStaffCopyLevel(staffId, copyIdx) {
+  var state = game.staff[staffId];
+  if (!state || !state.hired) return 0;
+  if (copyIdx === 0 || copyIdx === undefined) return state.level || 1;
+  var extra = state.extras && state.extras[copyIdx - 1];
+  return extra ? (extra.level || 1) : 0;
+}
+
+function getTrainingCost(staffDef, currentLevel) {
+  return Math.ceil(staffDef.salary * 10 * (currentLevel + 1));
+}
+
+function getTrainingDuration(nextLevel) {
+  // level^2 * 60 seconds: lvl2=4min, lvl3=9min, lvl4=16min, lvl5=25min
+  return nextLevel * nextLevel * 60;
+}
+
+function trainStaff(id, copyIdx) {
+  var s = STAFF.find(function(st) { return st.id === id; });
+  if (!s) return;
+  var state = game.staff[id];
+  if (!state || !state.hired) return;
+
+  // Check if any staff is already training
+  var anyTraining = false;
+  STAFF.forEach(function(st) {
+    var st2 = game.staff[st.id];
+    if (st2 && st2.hired) {
+      if (st2.trainingUntil && Date.now() < st2.trainingUntil) anyTraining = true;
+      if (st2.extras) {
+        st2.extras.forEach(function(ex) {
+          if (ex.trainingUntil && Date.now() < ex.trainingUntil) anyTraining = true;
+        });
+      }
+    }
+  });
+  if (anyTraining) {
+    showToast('❌', '¡Ya hay alguien entrenando!');
+    return;
+  }
+
+  var level, target;
+  if (copyIdx === 0 || copyIdx === undefined) {
+    level = state.level || 1;
+    target = state;
+  } else {
+    target = state.extras[copyIdx - 1];
+    if (!target) return;
+    level = target.level || 1;
+  }
+
+  if (level >= STAFF_MAX_LEVEL) {
+    showToast('❌', '¡Nivel máximo alcanzado!');
+    return;
+  }
+
+  var cost = getTrainingCost(s, level);
+  if (game.money < cost) {
+    showToast('❌', '¡No tenés suficiente plata!');
+    return;
+  }
+
+  game.money -= cost;
+  var duration = getTrainingDuration(level + 1);
+  target.trainingUntil = Date.now() + duration * 1000;
+
+  addLog('📚 <span class="highlight">' + s.name + '</span> empezó entrenamiento a LVL ' + (level + 1) + ' (' + Math.floor(duration / 60) + ' min)');
+  showToast('📚', s.name + ' entrenando → LVL ' + (level + 1));
+  renderStaff();
+  saveGame();
+}
+
+function hireExtraStaff(id) {
+  var s = STAFF.find(function(st) { return st.id === id; });
+  if (!s) return;
+  var state = game.staff[id];
+  if (!state || !state.hired) return;
+  if (!state.extras) state.extras = [];
+
+  var copyIdx = state.extras.length + 1; // 2nd or 3rd
+  var reqLevel = STAFF_EXTRA_UNLOCK[copyIdx + 1]; // copyIdx+1 because extras[0] is the 2nd
+  if (!reqLevel || game.level < reqLevel) return;
+
+  var cost = getStaffCost(s, copyIdx);
+  if (game.money < cost) {
+    showToast('❌', '¡No tenés suficiente plata!');
+    return;
+  }
+
+  game.money -= cost;
+  state.extras.push({ level: 1, trainingUntil: 0 });
+  addLog('🤝 Contrataste otro <span class="highlight">' + s.name + '</span> (#' + (copyIdx + 1) + ')');
+  showToast(s.icon, '¡Nuevo ' + s.name + ' #' + (copyIdx + 1) + '!');
+  renderStaff();
+  renderGymScene();
+  updateUI();
+  saveGame();
+}
+
+function checkTrainingCompletion() {
+  STAFF.forEach(function(s) {
+    var state = game.staff[s.id];
+    if (!state || !state.hired) return;
+    // Main copy
+    if (state.trainingUntil && Date.now() >= state.trainingUntil && state.trainingUntil > 0) {
+      state.level = (state.level || 1) + 1;
+      state.trainingUntil = 0;
+      var xpGain = 25 * state.level;
+      game.xp += xpGain;
+      game.dailyTracking.xpEarned += xpGain;
+      addLog('🎓 <span class="highlight">' + s.name + '</span> subió a LVL ' + state.level + '!');
+      showToast('🎓', s.name + ' → LVL ' + state.level + '!');
+      renderStaff();
+    }
+    // Extras
+    if (state.extras) {
+      state.extras.forEach(function(ex, i) {
+        if (ex.trainingUntil && Date.now() >= ex.trainingUntil && ex.trainingUntil > 0) {
+          ex.level = (ex.level || 1) + 1;
+          ex.trainingUntil = 0;
+          var xpGain = 25 * ex.level;
+          game.xp += xpGain;
+          game.dailyTracking.xpEarned += xpGain;
+          addLog('🎓 <span class="highlight">' + s.name + ' #' + (i + 2) + '</span> subió a LVL ' + ex.level + '!');
+          showToast('🎓', s.name + ' #' + (i + 2) + ' → LVL ' + ex.level + '!');
+          renderStaff();
+        }
+      });
+    }
+  });
+}
+
+// Get total effect for a staff type (sum of all copies, scaled by level, 0 if training)
+function getStaffTotalEffect(staffDef, effectKey) {
+  var state = game.staff[staffDef.id];
+  if (!state || !state.hired) return 0;
+  var baseVal = staffDef[effectKey];
+  if (!baseVal) return 0;
+
+  var total = 0;
+  // Main copy (skip if training)
+  if (!isStaffTraining(staffDef.id, 0)) {
+    total += baseVal * getStaffLevelMult(state.level || 1);
+  }
+  // Extra copies
+  if (state.extras) {
+    state.extras.forEach(function(ex, i) {
+      if (!isStaffTraining(staffDef.id, i + 1)) {
+        total += baseVal * getStaffLevelMult(ex.level || 1);
+      }
+    });
+  }
+  return total;
 }
 
 // ===== INCOME CALCULATION =====
@@ -168,13 +363,19 @@ function getIncomePerSecond() {
   let mult = 1;
   STAFF.forEach(s => {
     if (game.staff[s.id]?.hired && s.incomeMult) {
-      mult += s.incomeMult * getSkillEffect('staffEffectMult');
+      mult += getStaffTotalEffect(s, 'incomeMult') * getSkillEffect('staffEffectMult');
     }
   });
 
   // Skill: staff synergy bonus (each hired staff gives % income)
   if (hasSkill('st_synergy')) {
-    const hiredCount = STAFF.filter(s => game.staff[s.id]?.hired).length;
+    var hiredCount = 0;
+    STAFF.forEach(function(s) {
+      if (game.staff[s.id]?.hired) {
+        hiredCount++;
+        if (game.staff[s.id].extras) hiredCount += game.staff[s.id].extras.length;
+      }
+    });
     mult += hiredCount * SKILL_TREE.staff.skills.find(s => s.id === 'st_synergy').effect.staffSynergyBonus;
   }
 
@@ -387,21 +588,20 @@ function defeatRival(id) {
 
 // ===== STAFF SALARY CALCULATION =====
 function getStaffSalaryPerSecond() {
-  let total = 0;
-  STAFF.forEach(s => {
-    if (game.staff[s.id]?.hired && s.salary) {
-      total += s.salary;
-    }
-  });
-  // salary is per in-game "day" (600 ticks = 10 min real time)
-  return total / 600;
+  return getTotalStaffSalaryPerDay() / 600;
 }
 
 function getTotalStaffSalaryPerDay() {
   let total = 0;
   STAFF.forEach(s => {
-    if (game.staff[s.id]?.hired && s.salary) {
-      total += s.salary;
+    var state = game.staff[s.id];
+    if (state?.hired && s.salary) {
+      total += getStaffSalaryAtLevel(s.salary, state.level || 1);
+      if (state.extras) {
+        state.extras.forEach(function(ex) {
+          total += getStaffSalaryAtLevel(s.salary, ex.level || 1);
+        });
+      }
     }
   });
   return total;
@@ -474,7 +674,7 @@ function getMaxMembers() {
   });
   STAFF.forEach(s => {
     if (game.staff[s.id]?.hired && s.capacityBonus) {
-      cap += s.capacityBonus;
+      cap += getStaffTotalEffect(s, 'capacityBonus');
     }
   });
   // Marketing active campaigns
@@ -613,11 +813,11 @@ function buyEquipment(id) {
 
 function hireStaff(id) {
   const s = STAFF.find(st => st.id === id);
-  const cost = getStaffCost(s);
+  const cost = getStaffCost(s, 0);
   if (game.money < cost || game.staff[id]?.hired) return;
 
   game.money -= cost;
-  game.staff[id] = { hired: true };
+  game.staff[id] = { hired: true, level: 1, trainingUntil: 0, extras: [] };
   const xpGain = 50;
   game.xp += xpGain;
   game.dailyTracking.xpEarned += xpGain;
@@ -642,7 +842,11 @@ function enterCompetition(id) {
   if (Date.now() < state.cooldownUntil) return;
 
   let rewardMult = 1;
-  if (game.staff.champion?.hired) rewardMult = STAFF.find(s => s.id === 'champion').compMult;
+  if (game.staff.champion?.hired) {
+    var champDef = STAFF.find(s => s.id === 'champion');
+    var champEffect = getStaffTotalEffect(champDef, 'compMult');
+    if (champEffect > 0) rewardMult = champEffect; // level-scaled: 2.0 at lvl1, 2.4 at lvl2, etc.
+  }
 
   let chance = c.winChance + (game.reputation * 0.0001);
   chance = Math.min(chance, 0.95);
@@ -779,7 +983,7 @@ function autoMemberTick() {
     let autoAdd = 0;
     STAFF.forEach(s => {
       if (game.staff[s.id]?.hired && s.autoMembers) {
-        autoAdd += s.autoMembers;
+        autoAdd += getStaffTotalEffect(s, 'autoMembers');
       }
     });
     if (autoAdd > 0 && game.members < game.maxMembers) {
@@ -797,7 +1001,7 @@ function repTick() {
   let repGain = game.members * 0.02;
   STAFF.forEach(s => {
     if (game.staff[s.id]?.hired && s.repMult) {
-      repGain *= (1 + s.repMult);
+      repGain *= (1 + getStaffTotalEffect(s, 'repMult'));
     }
   });
   if (repGain > 0) {
@@ -866,6 +1070,7 @@ function gameTick() {
   game.tickCount++;
   game.stats.totalPlayTime++;
   updateSessionTimer();
+  checkTrainingCompletion();
   autoMemberTick();
   repTick();
   classTick();
@@ -894,12 +1099,13 @@ function gameTick() {
   updateUI();
   renderCompetitions();
 
-  // Refresh timers every 2 seconds (classes, marketing, supplements, rivals)
+  // Refresh timers every 2 seconds (classes, marketing, supplements, rivals, staff training)
   if (game.tickCount % 2 === 0) {
     renderClasses();
     renderMarketing();
     renderSupplements();
     renderRivals();
+    renderStaff();
   }
 
   // Refresh gym scene every 10 ticks (people count may change)
@@ -1001,6 +1207,7 @@ function resetGame() {
 
 // ===== RENDER ALL =====
 function renderAll() {
+  normalizeStaffData();
   renderEquipment();
   renderStaff();
   renderCompetitions();
