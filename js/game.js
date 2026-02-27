@@ -734,6 +734,28 @@ function getActiveSupplementEffects() {
   return effects;
 }
 
+function getSupplementCost(sup) {
+  // Base cost scales with player level: +15% per level above reqLevel
+  var levelScale = 1 + Math.max(0, game.level - sup.reqLevel) * 0.15;
+  var cost = Math.ceil(sup.cost * levelScale);
+  if (game.staff.manager && game.staff.manager.hired) cost = Math.ceil(cost * 0.8);
+  return cost;
+}
+
+function getRivalPromoCost(rival) {
+  var levelScale = 1 + Math.max(0, game.level - rival.reqLevel) * 0.2;
+  var cost = Math.ceil(rival.promoCost * levelScale);
+  if (game.staff.manager && game.staff.manager.hired) cost = Math.ceil(cost * 0.8);
+  return cost;
+}
+
+function getRivalDefeatCost(rival) {
+  var levelScale = 1 + Math.max(0, game.level - rival.reqLevel) * 0.2;
+  var cost = Math.ceil(rival.defeatCost * levelScale);
+  if (game.staff.manager && game.staff.manager.hired) cost = Math.ceil(cost * 0.8);
+  return cost;
+}
+
 function buySupplement(id) {
   var sup = SUPPLEMENTS.find(function(s) { return s.id === id; });
   if (!sup) return;
@@ -746,8 +768,7 @@ function buySupplement(id) {
     return;
   }
 
-  var cost = sup.cost;
-  if (game.staff.manager && game.staff.manager.hired) cost = Math.ceil(cost * 0.8);
+  var cost = getSupplementCost(sup);
 
   if (game.money < cost) {
     showToast('❌', '¡No tenés suficiente plata!');
@@ -829,8 +850,7 @@ function launchRivalPromo(id) {
     return;
   }
 
-  var cost = rival.promoCost;
-  if (game.staff.manager && game.staff.manager.hired) cost = Math.ceil(cost * 0.8);
+  var cost = getRivalPromoCost(rival);
 
   if (game.money < cost) {
     showToast('❌', '¡No tenés suficiente plata!');
@@ -864,8 +884,7 @@ function defeatRival(id) {
   var state = game.rivals[id];
   if (state && state.defeated) return;
 
-  var cost = rival.defeatCost;
-  if (game.staff.manager && game.staff.manager.hired) cost = Math.ceil(cost * 0.8);
+  var cost = getRivalDefeatCost(rival);
 
   if (game.money < cost) {
     showToast('❌', '¡No tenés suficiente plata!');

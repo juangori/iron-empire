@@ -684,8 +684,7 @@ function renderSupplements() {
     var locked = game.level < sup.reqLevel;
     var isActive = state.activeUntil && Date.now() < state.activeUntil;
 
-    var cost = sup.cost;
-    if (game.staff.manager && game.staff.manager.hired) cost = Math.ceil(cost * 0.8);
+    var cost = getSupplementCost(sup);
     var canAfford = game.money >= cost;
 
     var timerHTML = '';
@@ -780,12 +779,8 @@ function renderRivals() {
     var defeated = state.defeated;
     var promoActive = state.promoUntil && Date.now() < state.promoUntil;
 
-    var promoCost = r.promoCost;
-    var defeatCost = r.defeatCost;
-    if (game.staff.manager && game.staff.manager.hired) {
-      promoCost = Math.ceil(promoCost * 0.8);
-      defeatCost = Math.ceil(defeatCost * 0.8);
-    }
+    var promoCost = getRivalPromoCost(r);
+    var defeatCost = getRivalDefeatCost(r);
 
     var statusHTML = '';
     var actionsHTML = '';

@@ -320,6 +320,131 @@ const RANDOM_EVENTS = [
     ],
     minLevel: 5
   },
+  {
+    id: 'staff_burnout',
+    icon: '😩',
+    title: 'Burnout del Staff',
+    desc: 'Tu equipo está agotado. Varios empleados se quejan de las horas y el ritmo. Podés invertir en bienestar o ignorarlo.',
+    choices: [
+      { text: 'Día de spa para el staff', cost: '-$2,000', hint: 'Inversión en tu equipo. Mejora el ánimo y previene enfermedades.', result: 'Staff curado + 20 rep + 50 XP', effect: (g) => { STAFF.forEach(s => { var st = g.staff[s.id]; if (st && st.hired) { st.sickUntil = 0; if (st.extras) st.extras.forEach(e => { e.sickUntil = 0; }); } }); g.reputation += 20; g.xp += 50; } },
+      { text: 'Pizza party', cost: '-$300', hint: 'Barato pero apreciado. Algo es algo.', result: '+10 rep', effect: (g) => { g.money -= 300; g.reputation += 10; } },
+      { text: 'Les decís que aguanten', cost: 'Gratis', hint: '⚠️ Riesgo de que se enfermen más seguido.', result: '-10 rep', effect: (g) => { g.reputation = Math.max(0, g.reputation - 10); } },
+    ],
+    minLevel: 5
+  },
+  {
+    id: 'supplement_deal',
+    icon: '🧪',
+    title: 'Mayorista de Suplementos',
+    desc: 'Un distribuidor te ofrece suplementos a precio de costo. Podés stockearte o revender.',
+    choices: [
+      { text: 'Comprar stock completo', cost: '-$5,000', hint: 'Inversión grande. Activa un suplemento gratis al azar.', result: 'Suplemento random activado + 30 XP', effect: (g) => { g.money -= 5000; var available = SUPPLEMENTS.filter(s => g.level >= s.reqLevel && !(g.supplements[s.id] && g.supplements[s.id].activeUntil && Date.now() < g.supplements[s.id].activeUntil)); if (available.length > 0) { var pick = available[Math.floor(Math.random() * available.length)]; g.supplements[pick.id] = { activeUntil: Date.now() + pick.duration * 1000 }; } g.xp += 30; } },
+      { text: 'Revender con ganancia', cost: 'Gratis', hint: 'Negocio rápido. Plata segura.', result: '+$3,000', effect: (g) => { g.money += 3000; g.totalMoneyEarned += 3000; } },
+    ],
+    minLevel: 6
+  },
+  {
+    id: 'construction_delay',
+    icon: '🚧',
+    title: 'Problemas con la Obra',
+    desc: 'El proveedor de materiales se atrasó. Las construcciones en curso van más lento.',
+    choices: [
+      { text: 'Buscar otro proveedor', cost: '-$3,000', hint: 'Más caro pero no perdés tiempo. Las obras siguen normales.', result: '+20 rep, +40 XP', effect: (g) => { g.money -= 3000; g.reputation += 20; g.xp += 40; } },
+      { text: 'Esperar pacientemente', cost: 'Gratis', hint: '⚠️ Sin costo pero las mejoras en curso tardan más.', result: '-10 rep', effect: (g) => { g.reputation = Math.max(0, g.reputation - 10); } },
+    ],
+    minLevel: 4
+  },
+  {
+    id: 'rival_sabotage',
+    icon: '🕵️',
+    title: 'Sabotaje del Rival',
+    desc: 'Un rival dejó reseñas falsas y volantes difamando tu gym por el barrio.',
+    choices: [
+      { text: 'Campaña de contraataque', cost: '-$4,000', hint: 'Marketing agresivo. Neutraliza al rival y gana miembros.', result: '+30 rep, +8 miembros, +60 XP', effect: (g) => { g.money -= 4000; g.reputation += 30; g.members = Math.min(g.members + 8, g.maxMembers); g.xp += 60; } },
+      { text: 'Demandar por difamación', cost: '-$1,500', hint: 'Proceso largo pero sentás precedente. Bonus de XP.', result: '+15 rep, +80 XP', effect: (g) => { g.money -= 1500; g.reputation += 15; g.xp += 80; } },
+      { text: 'Ignorar y seguir laburando', cost: 'Gratis', hint: '⚠️ Sin costo pero perdés miembros.', result: '-5 miembros, -15 rep', effect: (g) => { g.members = Math.max(0, g.members - 5); g.reputation = Math.max(0, g.reputation - 15); } },
+    ],
+    minLevel: 7
+  },
+  {
+    id: 'training_seminar',
+    icon: '🎓',
+    title: 'Seminario de Capacitación',
+    desc: 'Una academia fitness ofrece un seminario intensivo para tu staff. Podría mejorar sus habilidades.',
+    choices: [
+      { text: 'Mandar a todo el staff', cost: '-$5,000', hint: 'Inversión importante. Acelera el entrenamiento de tu equipo.', result: '+50 XP, +25 rep', effect: (g) => { g.money -= 5000; g.xp += 50; g.reputation += 25; } },
+      { text: 'Mandar solo al entrenador', cost: '-$1,500', hint: 'Más económico. Menor impacto pero razonable.', result: '+25 XP, +10 rep', effect: (g) => { g.money -= 1500; g.xp += 25; g.reputation += 10; } },
+      { text: 'No vale la pena', cost: 'Gratis', hint: 'Ahorrás plata, perdés la oportunidad.', result: 'Nada pasa', effect: () => {} },
+    ],
+    minLevel: 6
+  },
+  {
+    id: 'equipment_recall',
+    icon: '⚠️',
+    title: 'Recall de Equipamiento',
+    desc: 'El fabricante detectó un defecto en ciertos equipos. Ofrecen reemplazo gratis o compensación.',
+    choices: [
+      { text: 'Pedir reemplazo mejorado', cost: 'Gratis', hint: 'Equipos nuevos y mejores. Gran reputación.', result: '+25 rep, +40 XP', effect: (g) => { g.reputation += 25; g.xp += 40; } },
+      { text: 'Aceptar compensación económica', cost: 'Gratis', hint: 'Plata en mano. Menos impacto en el gym.', result: '+$4,000', effect: (g) => { g.money += 4000; g.totalMoneyEarned += 4000; } },
+    ],
+    minLevel: 8
+  },
+  {
+    id: 'social_media_collab',
+    icon: '📸',
+    title: 'Collab con Instagrammer',
+    desc: 'Un influencer fitness con 500K seguidores quiere hacer una collab en tu gym.',
+    choices: [
+      { text: 'Collab full (le prestás el gym)', cost: '-$2,000', hint: 'Mucha exposición. Boom de miembros y reputación.', result: '+12 miembros, +50 rep, +80 XP', effect: (g) => { g.money -= 2000; g.members = Math.min(g.members + 12, g.maxMembers); g.reputation += 50; g.xp += 80; } },
+      { text: 'Que pague por usar el gym', cost: 'Gratis', hint: 'Plata segura pero menor impacto mediático.', result: '+$3,000, +10 rep', effect: (g) => { g.money += 3000; g.totalMoneyEarned += 3000; g.reputation += 10; } },
+      { text: 'No me interesa', cost: 'Gratis', hint: 'Sin impacto.', result: 'Nada pasa', effect: () => {} },
+    ],
+    minLevel: 8
+  },
+  {
+    id: 'health_inspection',
+    icon: '🩺',
+    title: 'Inspección Sanitaria',
+    desc: 'Bromatología vino a inspeccionar los vestuarios y la zona de jugos. Todo tiene que estar en orden.',
+    choices: [
+      { text: 'Limpieza profunda express', cost: '-$1,500', hint: 'Pasás la inspección con nota 10. Los miembros notan la diferencia.', result: '+20 rep, +30 XP', effect: (g) => { g.money -= 1500; g.reputation += 20; g.xp += 30; } },
+      { text: 'Confiar en tu limpieza habitual', cost: 'Gratis', hint: '🎲 50/50. Si tenés personal de limpieza, mejor chance.', result: '50% OK (+10 rep), 50% multa (-$500, -10 rep)', effect: (g) => { var hasClean = g.staff.cleaner && g.staff.cleaner.hired; var chance = hasClean ? 0.8 : 0.5; if (Math.random() < chance) { g.reputation += 10; } else { g.money -= 500; g.reputation = Math.max(0, g.reputation - 10); } } },
+    ],
+    minLevel: 3
+  },
+  {
+    id: 'lucky_day',
+    icon: '🍀',
+    title: 'Día de Suerte',
+    desc: '¡Todo sale bien hoy! Un ex-miembro volvió con amigos y un sponsor dejó productos gratis.',
+    choices: [
+      { text: '¡A disfrutar!', cost: 'Gratis', hint: 'Sin trampas, solo buenas noticias.', result: '+$2,000, +5 miembros, +20 rep', effect: (g) => { g.money += 2000; g.totalMoneyEarned += 2000; g.members = Math.min(g.members + 5, g.maxMembers); g.reputation += 20; } },
+    ],
+    minLevel: 1
+  },
+  {
+    id: 'neighborhood_event',
+    icon: '🎪',
+    title: 'Feria del Barrio',
+    desc: 'Hay una feria vecinal este fin de semana. Podés poner un stand para promocionar tu gym.',
+    choices: [
+      { text: 'Stand con demos gratis', cost: '-$2,500', hint: 'Muestra de clases + sorteo. Atrae muchos curiosos.', result: '+10 miembros, +30 rep, +60 XP', effect: (g) => { g.money -= 2500; g.members = Math.min(g.members + 10, g.maxMembers); g.reputation += 30; g.xp += 60; } },
+      { text: 'Repartir volantes', cost: '-$300', hint: 'Bajo costo, bajo impacto. Algo es algo.', result: '+3 miembros, +10 rep', effect: (g) => { g.money -= 300; g.members = Math.min(g.members + 3, g.maxMembers); g.reputation += 10; } },
+      { text: 'Pasar de largo', cost: 'Gratis', hint: 'Sin interés. Oportunidad perdida.', result: 'Nada pasa', effect: () => {} },
+    ],
+    minLevel: 2
+  },
+  {
+    id: 'tax_audit',
+    icon: '🧾',
+    title: 'Auditoría de AFIP',
+    desc: 'AFIP quiere revisar tus números. Mejor tener todo en regla...',
+    choices: [
+      { text: 'Contratar contador express', cost: '-$3,000', hint: 'Profesional que ordena todo rápido. Tranquilidad total.', result: 'Sin problemas, +15 rep', effect: (g) => { g.money -= 3000; g.reputation += 15; } },
+      { text: 'Presentar los libros como están', cost: 'Gratis', hint: '🎲 Depende de cómo vengas. 60% bien, 40% multa.', result: '60%: OK (+10 rep), 40%: multa -$5,000', effect: (g) => { if (Math.random() < 0.6) { g.reputation += 10; } else { g.money -= 5000; } } },
+    ],
+    minLevel: 10
+  },
 ];
 
 const DAILY_MISSIONS_POOL = [
