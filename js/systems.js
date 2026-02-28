@@ -949,12 +949,7 @@ function showTutorialStep() {
 
   // Switch tab if needed
   if (step.tab) {
-    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    const tabBtn = document.querySelector('[data-tab="' + step.tab + '"]');
-    if (tabBtn) tabBtn.classList.add('active');
-    const tabContent = document.getElementById('tab-' + step.tab);
-    if (tabContent) tabContent.classList.add('active');
+    switchTab(step.tab);
   }
 
   const target = document.querySelector(step.target);
@@ -1003,10 +998,7 @@ function endTutorial() {
   document.getElementById('tutorialTooltip').style.display = 'none';
 
   // Return to gym tab
-  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelector('[data-tab="gym"]').classList.add('active');
-  document.getElementById('tab-gym').classList.add('active');
+  switchTab('gym');
 
   showToast('🎓', '¡Tutorial completado! ¡A construir tu imperio!');
   saveGame();
@@ -1521,6 +1513,194 @@ function updateTabNotifications() {
     } else {
       suppDot.classList.add('hidden');
       suppDot.textContent = '';
+    }
+  }
+
+  // Update category badges with notification counts
+  if (typeof updateCategoryBadges === 'function') updateCategoryBadges();
+}
+
+// ===== TAB REMINDER SYSTEM =====
+var TAB_REMINDER_CONFIG = {
+  equipment: {
+    minAbsence: 300,
+    check: function() {
+      return EQUIPMENT.some(function(eq) {
+        var state = game.equipment[eq.id];
+        if (!state || !state.level) return game.money >= eq.baseCost && game.level >= eq.reqLevel;
+        if (state.level < game.level) return game.money >= getEquipCost(eq, state.level + 1);
+        return false;
+      });
+    }
+  },
+  staff: {
+    minAbsence: 300,
+    check: function() {
+      return STAFF.some(function(s) {
+        var state = game.staff[s.id];
+        if (!state || !state.hired) return game.money >= getStaffCost(s, 0) && game.level >= s.reqLevel;
+        return state.level < 5 && !isStaffTraining(s.id, 0) && game.money >= getTrainingCost(s, state.level + 1);
+      });
+    }
+  },
+  classes: {
+    minAbsence: 120,
+    check: function() {
+      return GYM_CLASSES.some(function(gc) {
+        if (game.level < gc.reqLevel) return false;
+        var state = game.classes[gc.id];
+        if (state && state.runningUntil && Date.now() >= state.runningUntil && !state.collected) return true;
+        if (!state) return true;
+        if (state.runningUntil && Date.now() < state.runningUntil) return false;
+        if (state.cooldownUntil && Date.now() < state.cooldownUntil) return false;
+        return true;
+      });
+    }
+  },
+  supplements: {
+    minAbsence: 300,
+    check: function() {
+      return SUPPLEMENTS.some(function(sup) {
+        if (game.level < sup.reqLevel) return false;
+        var state = game.supplements[sup.id];
+        if (state && state.activeUntil && Date.now() < state.activeUntil) return false;
+        return game.money >= getSupplementCost(sup);
+      });
+    }
+  },
+  marketing: {
+    minAbsence: 300,
+    check: function() {
+      return MARKETING.some(function(m) {
+        if (game.level < m.reqLevel) return false;
+        var state = game.marketing[m.id];
+        if (state && state.activeUntil && Date.now() < state.activeUntil) return false;
+        var cost = Math.ceil(m.cost * getSkillEffect('campaignCostMult'));
+        return game.money >= cost;
+      });
+    }
+  },
+  missions: {
+    minAbsence: 180,
+    check: function() {
+      return (game.dailyMissions.missions || []).some(function(m) { return m.completed && !m.claimed; });
+    }
+  },
+  vip: {
+    minAbsence: 120,
+    check: function() {
+      return (game.vipMembers || []).some(function(v) { return !v.accepted; });
+    }
+  },
+  rivals: {
+    minAbsence: 300,
+    check: function() {
+      return RIVAL_GYMS.some(function(r) {
+        if (game.level < r.reqLevel) return false;
+        var state = game.rivals[r.id];
+        if (state && state.defeated) return false;
+        if (state && state.promoUntil && Date.now() < state.promoUntil) return false;
+        return true;
+      });
+    }
+  },
+  champion: {
+    minAbsence: 300,
+    check: function() {
+      if (!game.champion.recruited) return game.level >= 5 && game.money >= 5000;
+      return game.champion.energy >= 50 && (!game.champion.trainingUntil || Date.now() >= game.champion.trainingUntil);
+    }
+  },
+  expansion: {
+    minAbsence: 600,
+    check: function() {
+      return GYM_ZONES.some(function(z) {
+        if (game.zones[z.id]) return false;
+        if (game.zoneBuilding[z.id]) return Date.now() >= game.zoneBuilding[z.id];
+        var cost = Math.ceil(z.cost * getSkillEffect('zoneCostMult'));
+        return game.money >= cost && game.level >= z.reqLevel;
+      });
+    }
+  },
+  skills: {
+    minAbsence: 600,
+    check: function() {
+      var found = false;
+      Object.values(SKILL_TREE).forEach(function(branch) {
+        branch.skills.forEach(function(sk) {
+          if (!game.skills[sk.id] && game.level >= sk.reqLevel && game.money >= sk.cost) found = true;
+        });
+      });
+      return found;
+    }
+  },
+  achievements: {
+    minAbsence: 600,
+    check: function() {
+      var unlocked = ACHIEVEMENTS.filter(function(a) { return game.achievements[a.id]; }).length;
+      return unlocked > (game._lastSeenAchievementCount || 0);
+    }
+  }
+};
+
+function updateTabReminders() {
+  var now = Date.now();
+  if (!game.tabLastVisited) game.tabLastVisited = {};
+
+  for (var tabId in TAB_REMINDER_CONFIG) {
+    var config = TAB_REMINDER_CONFIG[tabId];
+    var reminderEl = document.getElementById('reminder-' + tabId);
+    if (!reminderEl) continue;
+
+    var lastVisit = game.tabLastVisited[tabId] || 0;
+    var absentSeconds = (now - lastVisit) / 1000;
+
+    if (absentSeconds >= config.minAbsence && activeTab !== tabId && config.check()) {
+      reminderEl.classList.remove('hidden');
+    } else {
+      reminderEl.classList.add('hidden');
+    }
+  }
+
+  updateCategoryBadges();
+}
+
+function updateCategoryBadges() {
+  var categoryMap = {
+    general: ['missions', 'achievements'],
+    operations: ['equipment', 'staff', 'classes', 'supplements'],
+    growth: ['marketing', 'expansion', 'skills'],
+    competition: ['champion', 'rivals', 'vip']
+  };
+
+  for (var catId in categoryMap) {
+    var badge = document.getElementById('cat-badge-' + catId);
+    if (!badge) continue;
+
+    var tabIds = categoryMap[catId];
+    var totalNotif = 0;
+    var hasReminder = false;
+
+    tabIds.forEach(function(tabId) {
+      var notifEl = document.getElementById('dot-' + tabId);
+      if (notifEl && !notifEl.classList.contains('hidden')) {
+        totalNotif += parseInt(notifEl.textContent) || 1;
+      }
+      var reminderEl = document.getElementById('reminder-' + tabId);
+      if (reminderEl && !reminderEl.classList.contains('hidden')) {
+        hasReminder = true;
+      }
+    });
+
+    if (totalNotif > 0) {
+      badge.classList.remove('hidden', 'reminder-only');
+      badge.textContent = totalNotif;
+    } else if (hasReminder) {
+      badge.classList.remove('hidden');
+      badge.classList.add('reminder-only');
+      badge.textContent = '!';
+    } else {
+      badge.classList.add('hidden');
     }
   }
 }

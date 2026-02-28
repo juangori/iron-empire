@@ -104,6 +104,9 @@ let game = {
     items: {}
   },
 
+  // Tab visit tracking (for reminders)
+  tabLastVisited: {},
+
   // Lifetime stats
   stats: {
     classesCompleted: 0,
@@ -441,6 +444,7 @@ function normalizeProfileData() {
   if (!game.stats.maxMembers) game.stats.maxMembers = 0;
   if (!game.stats.maxStreak) game.stats.maxStreak = 0;
   if (!game.stats.prestigeCount) game.stats.prestigeCount = 0;
+  if (!game.tabLastVisited) game.tabLastVisited = {};
 }
 
 // ===== PROFILE & TITLES =====
@@ -1915,6 +1919,7 @@ function gameTick() {
 
   if (game.tickCount % 30 === 0) {
     saveGame();
+    if (typeof updateTabReminders === 'function') updateTabReminders();
     // Cloud save every 60 seconds
     if (game.tickCount % 60 === 0 && typeof saveCloudSave === 'function' && typeof currentUser !== 'undefined' && currentUser) {
       saveCloudSave();
@@ -2086,22 +2091,110 @@ function startGame() {
   }
 }
 
+// ===== SIDEBAR NAVIGATION =====
+var activeTab = 'gym';
+
+function switchTab(tabId) {
+  document.querySelectorAll('.sidebar-item').forEach(function(i) { i.classList.remove('active'); });
+  document.querySelectorAll('.tab-content').forEach(function(t) { t.classList.remove('active'); });
+
+  var item = document.querySelector('.sidebar-item[data-tab="' + tabId + '"]');
+  if (item) item.classList.add('active');
+  var tabEl = document.getElementById('tab-' + tabId);
+  if (tabEl) tabEl.classList.add('active');
+
+  activeTab = tabId;
+
+  // Track last visited time for reminders
+  if (!game.tabLastVisited) game.tabLastVisited = {};
+  game.tabLastVisited[tabId] = Date.now();
+
+  // Ensure parent category is expanded
+  if (item) {
+    var category = item.closest('.sidebar-category');
+    if (category) category.classList.remove('collapsed-cat');
+  }
+
+  // Tab-specific actions
+  if (tabId === 'prestige') renderLeaderboard();
+  if (tabId === 'achievements') {
+    game._lastSeenAchievementCount = ACHIEVEMENTS.filter(function(a) { return game.achievements[a.id]; }).length;
+  }
+
+  // Mobile: close sidebar after selection
+  closeMobileSidebar();
+}
+
+function closeMobileSidebar() {
+  var sidebar = document.getElementById('sidebar');
+  var overlay = document.getElementById('sidebarOverlay');
+  if (sidebar) sidebar.classList.remove('open');
+  if (overlay) overlay.classList.remove('active');
+}
+
+function saveSidebarState() {
+  try {
+    var sidebar = document.getElementById('sidebar');
+    var state = { collapsed: sidebar.classList.contains('collapsed'), categories: {} };
+    document.querySelectorAll('.sidebar-category').forEach(function(cat) {
+      state.categories[cat.dataset.category] = !cat.classList.contains('collapsed-cat');
+    });
+    localStorage.setItem('ironEmpireSidebar', JSON.stringify(state));
+  } catch(e) {}
+}
+
+function restoreSidebarState() {
+  try {
+    var raw = localStorage.getItem('ironEmpireSidebar');
+    if (!raw) return;
+    var state = JSON.parse(raw);
+    if (state.collapsed) document.getElementById('sidebar').classList.add('collapsed');
+    var cats = state.categories || {};
+    for (var catId in cats) {
+      if (!cats[catId]) {
+        var cat = document.querySelector('[data-category="' + catId + '"]');
+        if (cat) cat.classList.add('collapsed-cat');
+      }
+    }
+  } catch(e) {}
+}
+
 // ===== INIT =====
 window.addEventListener('DOMContentLoaded', () => {
   // Hide name modal by default (auth screen shows first)
   document.getElementById('nameModal').classList.add('hidden');
 
-  // Tab switching
-  document.querySelectorAll('.nav-tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-      // Load leaderboard when prestige tab is opened
-      if (tab.dataset.tab === 'prestige') renderLeaderboard();
+  // Sidebar item clicks
+  document.querySelectorAll('.sidebar-item').forEach(function(item) {
+    item.addEventListener('click', function() { switchTab(item.dataset.tab); });
+  });
+
+  // Category toggle (collapse/expand)
+  document.querySelectorAll('.sidebar-category-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var cat = btn.closest('.sidebar-category');
+      cat.classList.toggle('collapsed-cat');
+      saveSidebarState();
     });
   });
+
+  // Sidebar collapse toggle (desktop)
+  document.getElementById('sidebarToggle').addEventListener('click', function() {
+    document.getElementById('sidebar').classList.toggle('collapsed');
+    saveSidebarState();
+  });
+
+  // Mobile hamburger
+  document.getElementById('hamburgerBtn').addEventListener('click', function() {
+    document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebarOverlay').classList.toggle('active');
+  });
+
+  // Overlay click closes sidebar
+  document.getElementById('sidebarOverlay').addEventListener('click', closeMobileSidebar);
+
+  // Restore sidebar state
+  restoreSidebarState();
 
   // Enter key for name modal
   document.getElementById('gymNameInput').addEventListener('keydown', (e) => {

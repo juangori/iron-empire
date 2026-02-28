@@ -221,28 +221,90 @@
 <!-- DAILY BONUS BANNER -->
 <div class="daily-bonus-banner" id="dailyBonusContainer"></div>
 
-<!-- NAV -->
-<nav class="nav-tabs">
-  <button class="nav-tab active" data-tab="gym"><span class="tab-icon">🏠</span>Gimnasio</button>
-  <button class="nav-tab" data-tab="equipment"><span class="tab-icon">🏋️</span>Máquinas</button>
-  <button class="nav-tab" data-tab="staff"><span class="tab-icon">👤</span>Staff</button>
-  <button class="nav-tab" data-tab="marketing"><span class="tab-icon">📢</span>Marketing</button>
-  <button class="nav-tab" data-tab="supplements"><span class="tab-icon">🧃</span>Suplementos<span class="notification-dot hidden" id="dot-supplements"></span></button>
-  <button class="nav-tab" data-tab="classes"><span class="tab-icon">🧘</span>Clases<span class="notification-dot hidden" id="dot-classes"></span></button>
-  <button class="nav-tab" data-tab="missions"><span class="tab-icon">📋</span>Misiones<span class="notification-dot hidden" id="dot-missions"></span></button>
-  <button class="nav-tab" data-tab="vip"><span class="tab-icon">⭐</span>VIP<span class="notification-dot hidden" id="dot-vip"></span></button>
-  <button class="nav-tab" data-tab="champion"><span class="tab-icon">🏆</span>Competencias</button>
-  <button class="nav-tab" data-tab="rivals"><span class="tab-icon">🏪</span>Rivales<span class="notification-dot hidden" id="dot-rivals"></span></button>
-  <button class="nav-tab" data-tab="skills"><span class="tab-icon">🔬</span>Mejoras</button>
-  <button class="nav-tab" data-tab="expansion"><span class="tab-icon">🏗️</span>Instalaciones</button>
-  <button class="nav-tab" data-tab="achievements"><span class="tab-icon">🎖️</span>Logros</button>
-  <button class="nav-tab" data-tab="profile"><span class="tab-icon">👤</span>Perfil</button>
-  <button class="nav-tab" data-tab="prestige"><span class="tab-icon">🌟</span>Prestigio</button>
-  <button class="nav-tab" data-tab="settings"><span class="tab-icon">⚙️</span>Opciones</button>
-</nav>
-
-<!-- MAIN -->
-<main class="main">
+<!-- SIDEBAR + MAIN LAYOUT -->
+<div class="app-layout">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <button class="sidebar-toggle" id="sidebarToggle" title="Colapsar menú">
+        <span class="sidebar-toggle-icon">◀</span>
+      </button>
+    </div>
+    <nav class="sidebar-nav">
+      <!-- General -->
+      <div class="sidebar-category" data-category="general">
+        <button class="sidebar-category-btn" data-category-toggle="general">
+          <span class="cat-icon">🏠</span>
+          <span class="cat-label">General</span>
+          <span class="cat-arrow">▾</span>
+          <span class="cat-badge hidden" id="cat-badge-general"></span>
+        </button>
+        <div class="sidebar-category-items">
+          <button class="sidebar-item active" data-tab="gym"><span class="item-icon">🏠</span><span class="item-label">Gimnasio</span></button>
+          <button class="sidebar-item" data-tab="missions"><span class="item-icon">📋</span><span class="item-label">Misiones</span><span class="notification-dot hidden" id="dot-missions"></span><span class="reminder-dot hidden" id="reminder-missions"></span></button>
+          <button class="sidebar-item" data-tab="achievements"><span class="item-icon">🎖️</span><span class="item-label">Logros</span><span class="reminder-dot hidden" id="reminder-achievements"></span></button>
+          <button class="sidebar-item" data-tab="profile"><span class="item-icon">👤</span><span class="item-label">Perfil</span></button>
+        </div>
+      </div>
+      <!-- Operaciones -->
+      <div class="sidebar-category" data-category="operations">
+        <button class="sidebar-category-btn" data-category-toggle="operations">
+          <span class="cat-icon">🏋️</span>
+          <span class="cat-label">Operaciones</span>
+          <span class="cat-arrow">▾</span>
+          <span class="cat-badge hidden" id="cat-badge-operations"></span>
+        </button>
+        <div class="sidebar-category-items">
+          <button class="sidebar-item" data-tab="equipment"><span class="item-icon">🏋️</span><span class="item-label">Máquinas</span><span class="reminder-dot hidden" id="reminder-equipment"></span></button>
+          <button class="sidebar-item" data-tab="staff"><span class="item-icon">👥</span><span class="item-label">Staff</span><span class="reminder-dot hidden" id="reminder-staff"></span></button>
+          <button class="sidebar-item" data-tab="classes"><span class="item-icon">🧘</span><span class="item-label">Clases</span><span class="notification-dot hidden" id="dot-classes"></span><span class="reminder-dot hidden" id="reminder-classes"></span></button>
+          <button class="sidebar-item" data-tab="supplements"><span class="item-icon">🧃</span><span class="item-label">Suplementos</span><span class="notification-dot hidden" id="dot-supplements"></span><span class="reminder-dot hidden" id="reminder-supplements"></span></button>
+        </div>
+      </div>
+      <!-- Crecimiento -->
+      <div class="sidebar-category" data-category="growth">
+        <button class="sidebar-category-btn" data-category-toggle="growth">
+          <span class="cat-icon">📈</span>
+          <span class="cat-label">Crecimiento</span>
+          <span class="cat-arrow">▾</span>
+          <span class="cat-badge hidden" id="cat-badge-growth"></span>
+        </button>
+        <div class="sidebar-category-items">
+          <button class="sidebar-item" data-tab="marketing"><span class="item-icon">📢</span><span class="item-label">Marketing</span><span class="reminder-dot hidden" id="reminder-marketing"></span></button>
+          <button class="sidebar-item" data-tab="expansion"><span class="item-icon">🏗️</span><span class="item-label">Instalaciones</span><span class="reminder-dot hidden" id="reminder-expansion"></span></button>
+          <button class="sidebar-item" data-tab="skills"><span class="item-icon">🔬</span><span class="item-label">Mejoras</span><span class="reminder-dot hidden" id="reminder-skills"></span></button>
+        </div>
+      </div>
+      <!-- Competencia -->
+      <div class="sidebar-category" data-category="competition">
+        <button class="sidebar-category-btn" data-category-toggle="competition">
+          <span class="cat-icon">🏆</span>
+          <span class="cat-label">Competencia</span>
+          <span class="cat-arrow">▾</span>
+          <span class="cat-badge hidden" id="cat-badge-competition"></span>
+        </button>
+        <div class="sidebar-category-items">
+          <button class="sidebar-item" data-tab="champion"><span class="item-icon">🏆</span><span class="item-label">Competencias</span><span class="reminder-dot hidden" id="reminder-champion"></span></button>
+          <button class="sidebar-item" data-tab="rivals"><span class="item-icon">🏪</span><span class="item-label">Rivales</span><span class="notification-dot hidden" id="dot-rivals"></span><span class="reminder-dot hidden" id="reminder-rivals"></span></button>
+          <button class="sidebar-item" data-tab="vip"><span class="item-icon">⭐</span><span class="item-label">VIP</span><span class="notification-dot hidden" id="dot-vip"></span><span class="reminder-dot hidden" id="reminder-vip"></span></button>
+        </div>
+      </div>
+      <!-- Sistema -->
+      <div class="sidebar-category" data-category="system">
+        <button class="sidebar-category-btn" data-category-toggle="system">
+          <span class="cat-icon">⚙️</span>
+          <span class="cat-label">Sistema</span>
+          <span class="cat-arrow">▾</span>
+        </button>
+        <div class="sidebar-category-items">
+          <button class="sidebar-item" data-tab="prestige"><span class="item-icon">🌟</span><span class="item-label">Prestigio</span></button>
+          <button class="sidebar-item" data-tab="settings"><span class="item-icon">⚙️</span><span class="item-label">Opciones</span></button>
+        </div>
+      </div>
+    </nav>
+  </aside>
+  <button class="hamburger-btn" id="hamburgerBtn" title="Menú">☰</button>
+  <div class="sidebar-overlay hidden" id="sidebarOverlay"></div>
+  <main class="main">
 
   <!-- GYM TAB -->
   <div class="tab-content active" id="tab-gym">
@@ -476,7 +538,8 @@
     </div>
   </div>
 
-</main>
+  </main>
+</div><!-- /app-layout -->
 
 <!-- TOAST -->
 <div class="toast" id="toast">
