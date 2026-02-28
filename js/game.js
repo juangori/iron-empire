@@ -63,6 +63,22 @@ let game = {
   zones: { ground_floor: true },
   zoneBuilding: {},
 
+  // Champion
+  champion: {
+    recruited: false,
+    name: 'Campeón',
+    appearance: { gender: 'male', skin: 0, hair: 0 },
+    stats: { fuerza: 1, resistencia: 1, velocidad: 1, tecnica: 1 },
+    level: 1,
+    xp: 0,
+    energy: 100,
+    equipment: { hands: null, waist: null, feet: null, head: null },
+    trainingUntil: 0,
+    trainingStat: null,
+    wins: 0,
+    losses: 0
+  },
+
   // VIP members
   vipMembers: [],
   lastVipTime: 0,
@@ -93,6 +109,9 @@ let game = {
     equipBreakdowns: 0,
     staffIllnesses: 0,
     competitionsWon: 0,
+    championWins: 0,
+    championCompetitions: 0,
+    championTrainings: 0,
   }
 };
 
@@ -368,6 +387,28 @@ function normalizeEquipmentData() {
   });
   // Normalize zone building state
   if (!game.zoneBuilding) game.zoneBuilding = {};
+}
+
+function normalizeChampionData() {
+  if (!game.champion) {
+    game.champion = {
+      recruited: false, name: 'Campeón',
+      appearance: { gender: 'male', skin: 0, hair: 0 },
+      stats: { fuerza: 1, resistencia: 1, velocidad: 1, tecnica: 1 },
+      level: 1, xp: 0, energy: 100,
+      equipment: { hands: null, waist: null, feet: null, head: null },
+      trainingUntil: 0, trainingStat: null, wins: 0, losses: 0
+    };
+  }
+  if (!game.champion.equipment) game.champion.equipment = { hands: null, waist: null, feet: null, head: null };
+  if (!game.champion.appearance) game.champion.appearance = { gender: 'male', skin: 0, hair: 0 };
+  if (!game.champion.stats) game.champion.stats = { fuerza: 1, resistencia: 1, velocidad: 1, tecnica: 1 };
+  if (game.champion.energy === undefined) game.champion.energy = CHAMPION_MAX_ENERGY;
+  if (!game.champion.wins) game.champion.wins = 0;
+  if (!game.champion.losses) game.champion.losses = 0;
+  if (!game.stats.championWins) game.stats.championWins = 0;
+  if (!game.stats.championCompetitions) game.stats.championCompetitions = 0;
+  if (!game.stats.championTrainings) game.stats.championTrainings = 0;
 }
 
 function isEquipmentBroken(id) {
@@ -1276,6 +1317,271 @@ function checkLevelUp() {
   }
 }
 
+// ===== CHAMPION SYSTEM =====
+
+function getChampionTotalStats() {
+  if (!game.champion || !game.champion.recruited) return 0;
+  var s = game.champion.stats;
+  return (s.fuerza || 0) + (s.resistencia || 0) + (s.velocidad || 0) + (s.tecnica || 0);
+}
+
+function getChampionEffectiveStat(stat) {
+  var base = game.champion.stats[stat] || 0;
+  var slots = game.champion.equipment;
+  ['hands', 'waist', 'feet', 'head'].forEach(function(slot) {
+    var eqId = slots[slot];
+    if (!eqId) return;
+    var eq = CHAMPION_EQUIPMENT.find(function(e) { return e.id === eqId; });
+    if (eq && eq.stats[stat]) base += eq.stats[stat];
+  });
+  return base;
+}
+
+function getChampionVisualStage() {
+  var total = getChampionTotalStats();
+  var stage = CHAMPION_VISUAL_STAGES[0];
+  for (var i = CHAMPION_VISUAL_STAGES.length - 1; i >= 0; i--) {
+    if (total >= CHAMPION_VISUAL_STAGES[i].minStats) {
+      stage = CHAMPION_VISUAL_STAGES[i];
+      break;
+    }
+  }
+  return stage;
+}
+
+function getChampionTrainingCost(stat) {
+  var currentVal = game.champion.stats[stat] || 1;
+  return Math.ceil(500 * Math.pow(1.4, currentVal - 1));
+}
+
+function getChampionTrainingDuration(stat) {
+  var currentVal = game.champion.stats[stat] || 1;
+  return 30 + currentVal * 15;
+}
+
+function getChampionXpToNext() {
+  return Math.ceil(CHAMPION_XP_PER_LEVEL * Math.pow(1.3, game.champion.level - 1));
+}
+
+function recruitChampion() {
+  if (game.champion.recruited) return;
+  if (game.level < CHAMPION_UNLOCK_LEVEL) return;
+  if (game.money < CHAMPION_RECRUIT_COST) {
+    showToast('❌', '¡No tenés suficiente plata!');
+    return;
+  }
+
+  game.money -= CHAMPION_RECRUIT_COST;
+  game.champion.recruited = true;
+
+  addLog('🏅 ¡Reclutaste a tu <span class="highlight">Campeón</span>! Entrenalo y llevalo a la gloria.');
+  showToast('🏅', '¡Campeón reclutado!');
+  renderChampion();
+  updateUI();
+  checkAchievements();
+  saveGame();
+}
+
+function trainChampion(stat) {
+  if (!game.champion.recruited) return;
+  if (game.champion.trainingUntil && Date.now() < game.champion.trainingUntil) {
+    showToast('❌', '¡Tu campeón ya está entrenando!');
+    return;
+  }
+  if (game.champion.energy < CHAMPION_TRAINING_ENERGY) {
+    showToast('😴', '¡Tu campeón no tiene energía! Dejalo descansar.');
+    return;
+  }
+
+  var cost = getChampionTrainingCost(stat);
+  if (game.money < cost) {
+    showToast('❌', '¡No tenés suficiente plata!');
+    return;
+  }
+
+  game.money -= cost;
+  game.champion.energy -= CHAMPION_TRAINING_ENERGY;
+  var duration = getChampionTrainingDuration(stat);
+  game.champion.trainingUntil = Date.now() + duration * 1000;
+  game.champion.trainingStat = stat;
+  game.stats.championTrainings++;
+
+  addLog('🏅 Campeón entrenando <span class="highlight">' + CHAMPION_STAT_NAMES[stat] + '</span>...');
+  showToast('🏋️', 'Entrenando ' + CHAMPION_STAT_NAMES[stat] + '...');
+  renderChampion();
+  updateUI();
+  saveGame();
+}
+
+function checkChampionTraining() {
+  if (!game.champion || !game.champion.recruited) return;
+  if (game.champion.trainingUntil && Date.now() >= game.champion.trainingUntil) {
+    var stat = game.champion.trainingStat;
+    if (stat) {
+      game.champion.stats[stat]++;
+      addLog('🏅 ¡Campeón mejoró <span class="highlight">' + CHAMPION_STAT_NAMES[stat] + '</span> a ' + game.champion.stats[stat] + '!');
+      showToast('💪', CHAMPION_STAT_NAMES[stat] + ' → ' + game.champion.stats[stat]);
+    }
+    game.champion.trainingUntil = 0;
+    game.champion.trainingStat = null;
+    renderChampion();
+    checkAchievements();
+    saveGame();
+  }
+}
+
+function championCompete(compId) {
+  if (!game.champion || !game.champion.recruited) return;
+  if (game.champion.energy < CHAMPION_COMPETE_ENERGY) {
+    showToast('😴', '¡Tu campeón no tiene energía para competir!');
+    return;
+  }
+  if (game.champion.trainingUntil && Date.now() < game.champion.trainingUntil) {
+    showToast('⏳', '¡Tu campeón está entrenando!');
+    return;
+  }
+
+  var c = COMPETITIONS.find(function(co) { return co.id === compId; });
+  if (!c) return;
+  if (game.reputation < c.minRep) return;
+
+  if (!game.competitions[compId]) game.competitions[compId] = { wins: 0, losses: 0, cooldownUntil: 0 };
+  var state = game.competitions[compId];
+  if (Date.now() < state.cooldownUntil) return;
+
+  game.champion.energy -= CHAMPION_COMPETE_ENERGY;
+
+  // Win chance based on champion stats
+  var fuerza = getChampionEffectiveStat('fuerza');
+  var velocidad = getChampionEffectiveStat('velocidad');
+  var statBonus = (fuerza * 0.01) + (velocidad * 0.015);
+  var chance = c.winChance + statBonus + getSkillEffect('compWinChanceBonus', 0);
+  chance = Math.min(chance, 0.95);
+
+  var won = Math.random() < chance;
+
+  // Set cooldown (75% of normal)
+  var cooldownMult = getSkillEffect('compCooldownMult');
+  state.cooldownUntil = Date.now() + c.cooldown * cooldownMult * 0.75 * 1000;
+
+  // Champion XP
+  var champXp = Math.ceil(c.xpReward * 0.5);
+  game.champion.xp += champXp;
+  game.stats.championCompetitions++;
+  game.dailyTracking.competitionsWon = (game.dailyTracking.competitionsWon || 0);
+
+  if (won) {
+    var tecnica = getChampionEffectiveStat('tecnica');
+    var rewardMult = CHAMPION_REWARD_MULT * getSkillEffect('compRewardMult') * (1 + tecnica * 0.02);
+    var reward = Math.ceil(c.reward * rewardMult);
+    var compRepMult = getSkillEffect('compRepMult');
+    var repGain = Math.ceil(c.repReward * compRepMult);
+    var compXpMult = getSkillEffect('compXpMult');
+    var xpGain = Math.ceil(c.xpReward * compXpMult);
+
+    game.money += reward;
+    game.totalMoneyEarned += reward;
+    game.reputation += repGain;
+    game.xp += xpGain;
+    state.wins++;
+    game.champion.wins++;
+    game.stats.championWins++;
+    game.stats.competitionsWon++;
+    game.dailyTracking.competitionsWon++;
+    game.dailyTracking.moneyEarned += reward;
+    game.dailyTracking.reputationGained += repGain;
+    game.dailyTracking.xpEarned += xpGain;
+
+    addLog('🏅 ¡VICTORIA del Campeón en <span class="highlight">' + c.name + '</span>! +<span class="money-log">' + fmtMoney(reward) + '</span>');
+    showToast('🏅', '¡Victoria en ' + c.name + '!');
+    floatNumber('+' + fmtMoney(reward));
+  } else {
+    var consolationXp = Math.ceil(c.xpReward * 0.2);
+    game.xp += consolationXp;
+    game.dailyTracking.xpEarned += consolationXp;
+    state.losses++;
+    game.champion.losses++;
+
+    addLog('🏅 Tu campeón perdió en <span class="highlight">' + c.name + '</span>. ¡A seguir entrenando!');
+    showToast('😤', 'Derrota en ' + c.name);
+  }
+
+  checkChampionLevelUp();
+  checkLevelUp();
+  renderChampion();
+  renderCompetitions();
+  updateUI();
+  checkAchievements();
+  checkMissionProgress();
+  saveGame();
+}
+
+function checkChampionLevelUp() {
+  if (!game.champion || !game.champion.recruited) return;
+  var xpNeeded = getChampionXpToNext();
+  while (game.champion.xp >= xpNeeded) {
+    game.champion.xp -= xpNeeded;
+    game.champion.level++;
+    addLog('🏅 ¡Tu campeón subió a <span class="highlight">Nivel ' + game.champion.level + '</span>!');
+    showToast('🏅', '¡Campeón Nivel ' + game.champion.level + '!');
+    xpNeeded = getChampionXpToNext();
+  }
+}
+
+function championEnergyTick() {
+  if (!game.champion || !game.champion.recruited) return;
+  if (game.tickCount % 60 === 0 && game.champion.energy < CHAMPION_MAX_ENERGY) {
+    game.champion.energy = Math.min(CHAMPION_MAX_ENERGY, game.champion.energy + CHAMPION_ENERGY_REGEN);
+  }
+}
+
+function championRest() {
+  if (!game.champion || !game.champion.recruited) return;
+  if (game.champion.energy >= CHAMPION_MAX_ENERGY) {
+    showToast('✅', '¡Tu campeón ya tiene energía al máximo!');
+    return;
+  }
+  if (game.money < CHAMPION_REST_COST) {
+    showToast('❌', '¡No tenés suficiente plata!');
+    return;
+  }
+
+  game.money -= CHAMPION_REST_COST;
+  game.champion.energy = Math.min(CHAMPION_MAX_ENERGY, game.champion.energy + CHAMPION_REST_ENERGY);
+  addLog('🏅 Campeón descansó. Energía: ' + game.champion.energy + '%');
+  showToast('😴', 'Energía +' + CHAMPION_REST_ENERGY);
+  renderChampion();
+  updateUI();
+  saveGame();
+}
+
+function equipChampion(eqId) {
+  if (!game.champion || !game.champion.recruited) return;
+  var eq = CHAMPION_EQUIPMENT.find(function(e) { return e.id === eqId; });
+  if (!eq) return;
+  if (game.champion.level < eq.reqChampLevel) return;
+  if (game.money < eq.cost) {
+    showToast('❌', '¡No tenés suficiente plata!');
+    return;
+  }
+
+  game.money -= eq.cost;
+  game.champion.equipment[eq.slot] = eq.id;
+  addLog('🏅 Campeón equipó <span class="highlight">' + eq.icon + ' ' + eq.name + '</span>');
+  showToast(eq.icon, '¡' + eq.name + ' equipado!');
+  renderChampion();
+  updateUI();
+  checkAchievements();
+  saveGame();
+}
+
+function setChampionAppearance(key, value) {
+  if (!game.champion) return;
+  game.champion.appearance[key] = value;
+  renderChampion();
+  saveGame();
+}
+
 // ===== PRESTIGE =====
 function getPrestigeStars() {
   if (game.totalMoneyEarned < 100000) return 0;
@@ -1310,6 +1616,12 @@ function doPrestige() {
   game.ownProperty = false;
   game.vipMembers = [];
   // Skills persist through prestige!
+  // Champion persists through prestige! Reset energy to full.
+  if (game.champion && game.champion.recruited) {
+    game.champion.energy = CHAMPION_MAX_ENERGY;
+    game.champion.trainingUntil = 0;
+    game.champion.trainingStat = null;
+  }
   game.log = [];
 
   addLog('🌟 ¡Abriste una nueva franquicia! +' + stars + ' estrellas');
@@ -1440,6 +1752,8 @@ function gameTick() {
   checkConstructionCompletion();
   checkEquipmentBreakdown();
   checkStaffIllness();
+  checkChampionTraining();
+  championEnergyTick();
   autoMemberTick();
   repTick();
   classTick();
@@ -1477,6 +1791,7 @@ function gameTick() {
     renderStaff();
     renderEquipment();
     renderExpansion();
+    renderChampion();
   }
 
   // Refresh gym scene every 10 ticks (people count may change)
@@ -1580,6 +1895,7 @@ function resetGame() {
 function renderAll() {
   normalizeStaffData();
   normalizeEquipmentData();
+  normalizeChampionData();
   renderEquipment();
   renderStaff();
   renderCompetitions();
@@ -1593,6 +1909,7 @@ function renderAll() {
   renderSkillTree();
   renderExpansion();
   renderVipMembers();
+  renderChampion();
   renderLog();
   renderGymScene();
   updateUI();

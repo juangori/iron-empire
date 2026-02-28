@@ -1521,3 +1521,270 @@ function updateTabNotifications() {
     }
   }
 }
+
+// ===== CHAMPION SYSTEM =====
+
+function renderChampion() {
+  var container = document.getElementById('championContainer');
+  if (!container) return;
+
+  // Not unlocked yet
+  if (game.level < CHAMPION_UNLOCK_LEVEL) {
+    container.innerHTML = '<div class="champion-locked-panel">' +
+      '<div style="font-size:64px;margin-bottom:16px;">🏅</div>' +
+      '<h3 style="margin:0 0 8px;">Campeón</h3>' +
+      '<p style="color:var(--text-dim);margin:0 0 8px;">Desbloqueá tu campeón en <strong>Nivel ' + CHAMPION_UNLOCK_LEVEL + '</strong></p>' +
+      '<p style="color:var(--text-muted);font-size:13px;margin:0;">Estás en Nivel ' + game.level + '</p>' +
+    '</div>';
+    return;
+  }
+
+  // Not recruited yet
+  if (!game.champion.recruited) {
+    var canAfford = game.money >= CHAMPION_RECRUIT_COST;
+    container.innerHTML = '<div class="champion-locked-panel">' +
+      '<div style="font-size:64px;margin-bottom:16px;">🏅</div>' +
+      '<h3 style="margin:0 0 8px;">Reclutá tu Campeón</h3>' +
+      '<p style="color:var(--text-dim);margin:0 0 16px;">Un peleador busca gym. Entrenalo, equipalo y llevalo a competir por premios increíbles.</p>' +
+      '<button class="btn btn-buy" style="font-size:16px;padding:14px 28px;" ' +
+        (canAfford ? '' : 'disabled') +
+        ' onclick="recruitChampion()">🏅 RECLUTAR — ' + fmtMoney(CHAMPION_RECRUIT_COST) + '</button>' +
+    '</div>';
+    return;
+  }
+
+  // Full champion UI
+  var stage = getChampionVisualStage();
+  var isTraining = game.champion.trainingUntil && Date.now() < game.champion.trainingUntil;
+  var html = '';
+
+  // --- Champion Visual Display ---
+  html += '<div class="champion-display">';
+  html += '<div class="champion-stage-label">' + stage.name.toUpperCase() + '</div>';
+  html += renderChampionBody(stage);
+  html += '<div class="champion-name">' + game.champion.name + '</div>';
+  html += '<div class="champion-record">🏆 ' + game.champion.wins + 'V - ' + game.champion.losses + 'D</div>';
+  html += '<button class="btn btn-small btn-cyan" onclick="showChampionCustomize()" style="margin-top:8px;font-size:12px;">✏️ Personalizar</button>';
+  html += '</div>';
+
+  // --- Customization panel (hidden by default) ---
+  html += '<div class="champion-customize hidden" id="championCustomize">';
+  html += renderChampionCustomizePanel();
+  html += '</div>';
+
+  // --- Level + XP bar ---
+  var xpNeeded = getChampionXpToNext();
+  var xpPct = Math.min(100, Math.floor((game.champion.xp / xpNeeded) * 100));
+  html += '<div class="champion-info-bar">';
+  html += '<div class="champion-level-badge">🏅 NIVEL ' + game.champion.level + '</div>';
+  html += '<div class="champion-xp-bar"><div class="champion-xp-fill" style="width:' + xpPct + '%"></div><span class="champion-xp-text">' + game.champion.xp + ' / ' + xpNeeded + ' XP</span></div>';
+  html += '</div>';
+
+  // --- Energy bar ---
+  var energyPct = Math.floor((game.champion.energy / CHAMPION_MAX_ENERGY) * 100);
+  var energyColor = energyPct > 50 ? 'var(--green)' : energyPct > 20 ? 'var(--accent)' : 'var(--red)';
+  html += '<div class="champion-info-bar">';
+  html += '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">⚡ Energía: ' + game.champion.energy + '/' + CHAMPION_MAX_ENERGY + '</div>';
+  html += '<div class="champion-energy-bar"><div class="champion-energy-fill" style="width:' + energyPct + '%;background:' + energyColor + ';"></div></div>';
+  var canRest = game.champion.energy < CHAMPION_MAX_ENERGY && game.money >= CHAMPION_REST_COST;
+  html += '<button class="btn btn-small btn-purple" ' + (canRest ? '' : 'disabled') + ' onclick="championRest()" style="margin-top:8px;">😴 DESCANSAR — ' + fmtMoney(CHAMPION_REST_COST) + ' (+' + CHAMPION_REST_ENERGY + '⚡)</button>';
+  html += '</div>';
+
+  // --- Stats section ---
+  html += '<div class="section-title" style="margin-top:16px;">📊 Estadísticas</div>';
+  html += '<div class="champion-stats-grid">';
+  CHAMPION_STATS.forEach(function(stat) {
+    var base = game.champion.stats[stat];
+    var effective = getChampionEffectiveStat(stat);
+    var bonus = effective - base;
+    var cost = getChampionTrainingCost(stat);
+    var canAfford = game.money >= cost;
+    var canTrain = !isTraining && game.champion.energy >= CHAMPION_TRAINING_ENERGY && canAfford;
+
+    html += '<div class="champion-stat-card">';
+    html += '<div class="champion-stat-header">' + CHAMPION_STAT_ICONS[stat] + ' ' + CHAMPION_STAT_NAMES[stat] + '</div>';
+    html += '<div class="champion-stat-value">' + base + (bonus > 0 ? ' <span style="color:var(--cyan);font-size:16px;">(+' + bonus + ')</span>' : '') + '</div>';
+
+    if (isTraining && game.champion.trainingStat === stat) {
+      var duration = getChampionTrainingDuration(stat) * 1000;
+      var startTime = game.champion.trainingUntil - duration;
+      var elapsed = Date.now() - startTime;
+      var pct = Math.min(100, Math.round((elapsed / duration) * 100));
+      var remaining = Math.max(0, Math.ceil((game.champion.trainingUntil - Date.now()) / 1000));
+      html += '<div class="staff-training-bar"><div class="staff-training-fill" style="width:' + pct + '%"></div></div>';
+      html += '<div class="staff-training-time">Entrenando... ' + fmtTime(remaining) + '</div>';
+    } else {
+      html += '<button class="btn btn-buy btn-small" style="width:100%;margin-top:8px;" ' + (canTrain ? '' : 'disabled') +
+        ' onclick="trainChampion(\'' + stat + '\')">📚 ENTRENAR — ' + fmtMoney(cost) + ' (⚡' + CHAMPION_TRAINING_ENERGY + ')</button>';
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // --- Equipment section ---
+  html += '<div class="section-title" style="margin-top:16px;">⚔️ Equipamiento</div>';
+  html += '<div class="champion-equip-grid">';
+  var slots = ['head', 'hands', 'waist', 'feet'];
+  var slotNames = { head: 'Cabeza', hands: 'Manos', waist: 'Cintura', feet: 'Pies' };
+  var slotIcons = { head: '🧢', hands: '🧤', waist: '🥋', feet: '👟' };
+
+  slots.forEach(function(slot) {
+    var equippedId = game.champion.equipment[slot];
+    var equipped = equippedId ? CHAMPION_EQUIPMENT.find(function(e) { return e.id === equippedId; }) : null;
+
+    html += '<div class="champion-equip-slot">';
+    html += '<div class="champion-slot-label">' + slotIcons[slot] + ' ' + slotNames[slot] + '</div>';
+
+    if (equipped) {
+      var eqStats = Object.keys(equipped.stats).map(function(k) {
+        return CHAMPION_STAT_ICONS[k] + '+' + equipped.stats[k];
+      }).join(' ');
+      html += '<div class="champion-equipped-item">' + equipped.icon + ' ' + equipped.name + '</div>';
+      html += '<div class="champion-equip-stats">' + eqStats + '</div>';
+    } else {
+      html += '<div class="champion-empty-slot">— Vacío —</div>';
+    }
+
+    // Available upgrades for this slot
+    var available = CHAMPION_EQUIPMENT.filter(function(e) {
+      return e.slot === slot && e.id !== equippedId && game.champion.level >= e.reqChampLevel;
+    });
+    available.forEach(function(eq) {
+      var canBuy = game.money >= eq.cost;
+      var statText = Object.keys(eq.stats).map(function(k) {
+        return CHAMPION_STAT_ICONS[k] + '+' + eq.stats[k];
+      }).join(' ');
+      html += '<button class="btn btn-small btn-buy" style="width:100%;margin-top:6px;font-size:12px;" ' + (canBuy ? '' : 'disabled') +
+        ' onclick="equipChampion(\'' + eq.id + '\')">' + eq.icon + ' ' + eq.name + ' — ' + fmtMoney(eq.cost) +
+        ' <span style="opacity:0.8;">(' + statText + ')</span></button>';
+    });
+
+    // Locked upgrades hint
+    var locked = CHAMPION_EQUIPMENT.filter(function(e) {
+      return e.slot === slot && e.id !== equippedId && game.champion.level < e.reqChampLevel;
+    });
+    if (locked.length > 0) {
+      html += '<div style="color:var(--text-muted);font-size:11px;margin-top:4px;">🔒 Más items en nivel ' + locked[0].reqChampLevel + '</div>';
+    }
+
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // --- Compete section ---
+  html += '<div class="section-title" style="margin-top:16px;">⚔️ Competir</div>';
+  html += '<p class="section-subtitle" style="margin-bottom:12px;">Tu campeón gana el doble de premios. Necesita ⚡' + CHAMPION_COMPETE_ENERGY + ' energía.</p>';
+  html += '<div class="champion-comp-list">';
+  COMPETITIONS.forEach(function(c) {
+    var state = game.competitions[c.id] || { wins: 0, losses: 0, cooldownUntil: 0 };
+    var locked = game.reputation < c.minRep;
+    var onCooldown = Date.now() < state.cooldownUntil;
+    var canCompete = !locked && !onCooldown && !isTraining && game.champion.energy >= CHAMPION_COMPETE_ENERGY;
+
+    var tecnica = getChampionEffectiveStat('tecnica');
+    var rewardMult = CHAMPION_REWARD_MULT * getSkillEffect('compRewardMult') * (1 + tecnica * 0.02);
+    var fuerza = getChampionEffectiveStat('fuerza');
+    var velocidad = getChampionEffectiveStat('velocidad');
+    var statBonus = (fuerza * 0.01) + (velocidad * 0.015);
+    var chance = Math.min(0.95, c.winChance + statBonus + getSkillEffect('compWinChanceBonus', 0));
+
+    var actionHTML = '';
+    if (locked) {
+      actionHTML = '<span style="color:var(--text-muted);font-size:12px;">🔒 ' + c.minRep + ' rep</span>';
+    } else if (onCooldown) {
+      var timeLeft = Math.ceil((state.cooldownUntil - Date.now()) / 1000);
+      actionHTML = '<span style="color:var(--text-dim);font-size:12px;">⏱️ ' + fmtTime(timeLeft) + '</span>';
+    } else {
+      actionHTML = '<button class="btn btn-buy btn-small" ' + (canCompete ? '' : 'disabled') +
+        ' onclick="championCompete(\'' + c.id + '\')">🏅 COMPETIR</button>';
+    }
+
+    html += '<div class="champion-comp-row' + (locked ? ' locked' : '') + '">' +
+      '<div class="champion-comp-info">' +
+        '<span class="champion-comp-icon">' + c.icon + '</span>' +
+        '<span class="champion-comp-name">' + c.name + '</span>' +
+      '</div>' +
+      '<div class="champion-comp-details">' +
+        '<span>💰 ' + fmtMoney(Math.ceil(c.reward * rewardMult)) + '</span>' +
+        '<span>🎯 ' + Math.round(chance * 100) + '%</span>' +
+      '</div>' +
+      '<div class="champion-comp-action">' + actionHTML + '</div>' +
+    '</div>';
+  });
+  html += '</div>';
+
+  container.innerHTML = html;
+}
+
+function renderChampionBody(stage) {
+  var app = game.champion.appearance;
+  var skinTones = CHAMPION_SKINS[app.gender || 'male'].tones;
+  var skinEmoji = skinTones[app.skin || 0] || skinTones[0];
+  var hairStyle = CHAMPION_HAIR[app.hair || 0];
+
+  var headEq = game.champion.equipment.head ? CHAMPION_EQUIPMENT.find(function(e) { return e.id === game.champion.equipment.head; }) : null;
+  var handsEq = game.champion.equipment.hands ? CHAMPION_EQUIPMENT.find(function(e) { return e.id === game.champion.equipment.hands; }) : null;
+  var waistEq = game.champion.equipment.waist ? CHAMPION_EQUIPMENT.find(function(e) { return e.id === game.champion.equipment.waist; }) : null;
+  var feetEq = game.champion.equipment.feet ? CHAMPION_EQUIPMENT.find(function(e) { return e.id === game.champion.equipment.feet; }) : null;
+
+  return '<div class="champion-body" style="' +
+    '--body-w:' + stage.bodyWidth + 'px;' +
+    '--torso-h:' + stage.torsoHeight + 'px;' +
+    '--arm-w:' + stage.armWidth + 'px;' +
+    '--leg-w:' + stage.legWidth + 'px;' +
+    '--head-size:' + stage.headSize + 'px;">' +
+    (headEq ? '<div class="champ-equip-head">' + headEq.icon + '</div>' : '') +
+    '<div class="champ-head">' + skinEmoji + '</div>' +
+    '<div class="champ-torso-row">' +
+      '<div class="champ-arm">' +
+        (handsEq ? '<div class="champ-equip-hand">' + handsEq.icon + '</div>' : '') +
+      '</div>' +
+      '<div class="champ-torso">' +
+        (waistEq ? '<div class="champ-equip-waist">' + waistEq.icon + '</div>' : '') +
+      '</div>' +
+      '<div class="champ-arm">' +
+        (handsEq ? '<div class="champ-equip-hand">' + handsEq.icon + '</div>' : '') +
+      '</div>' +
+    '</div>' +
+    '<div class="champ-legs-row">' +
+      '<div class="champ-leg"></div>' +
+      '<div class="champ-leg"></div>' +
+    '</div>' +
+    (feetEq ? '<div class="champ-equip-feet">' + feetEq.icon + '</div>' : '') +
+    '<div class="champ-hair-label" style="font-size:11px;color:var(--text-muted);margin-top:4px;">' + hairStyle + '</div>' +
+  '</div>';
+}
+
+function renderChampionCustomizePanel() {
+  var app = game.champion.appearance;
+  var html = '<div class="champion-customize-inner">';
+
+  // Gender
+  html += '<div class="customize-row"><span class="customize-label">Género:</span>';
+  html += '<button class="btn btn-small ' + (app.gender === 'male' ? 'btn-cyan' : '') + '" onclick="setChampionAppearance(\'gender\',\'male\')">🧑 Masculino</button> ';
+  html += '<button class="btn btn-small ' + (app.gender === 'female' ? 'btn-cyan' : '') + '" onclick="setChampionAppearance(\'gender\',\'female\')">👩 Femenino</button>';
+  html += '</div>';
+
+  // Skin tone
+  var tones = CHAMPION_SKINS[app.gender || 'male'].tones;
+  html += '<div class="customize-row"><span class="customize-label">Piel:</span>';
+  tones.forEach(function(tone, i) {
+    html += '<button class="btn btn-small champion-skin-btn ' + (app.skin === i ? 'btn-cyan' : '') + '" onclick="setChampionAppearance(\'skin\',' + i + ')" style="font-size:20px;padding:4px 8px;">' + tone + '</button> ';
+  });
+  html += '</div>';
+
+  // Hair
+  html += '<div class="customize-row"><span class="customize-label">Pelo:</span>';
+  CHAMPION_HAIR.forEach(function(h, i) {
+    html += '<button class="btn btn-small ' + (app.hair === i ? 'btn-cyan' : '') + '" onclick="setChampionAppearance(\'hair\',' + i + ')">' + h + '</button> ';
+  });
+  html += '</div>';
+
+  html += '</div>';
+  return html;
+}
+
+function showChampionCustomize() {
+  var panel = document.getElementById('championCustomize');
+  if (panel) panel.classList.toggle('hidden');
+}

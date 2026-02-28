@@ -110,6 +110,13 @@ const ACHIEVEMENTS = [
   { id: 'fifty_classes', name: 'Profesor Titular', icon: '🎓', desc: 'Completá 50 clases', check: () => game.stats.classesCompleted >= 50 },
   // Members
   { id: 'thousand_members', name: 'Mil Miembros', icon: '🏟️', desc: 'Llegá a 1000 miembros', check: () => game.members >= 1000 },
+  // Champion
+  { id: 'champion_recruit', name: 'El Elegido', icon: '🏅', desc: 'Reclutá a tu primer campeón', check: () => game.champion && game.champion.recruited },
+  { id: 'champion_lvl5', name: 'Contendiente', icon: '🥊', desc: 'Subí tu campeón a nivel 5', check: () => game.champion && game.champion.level >= 5 },
+  { id: 'champion_lvl10', name: 'Profesional', icon: '🏆', desc: 'Subí tu campeón a nivel 10', check: () => game.champion && game.champion.level >= 10 },
+  { id: 'champion_bestia', name: 'La Bestia', icon: '💪', desc: 'Tu campeón llegó a etapa Bestia', check: () => game.champion && game.champion.recruited && (game.champion.stats.fuerza + game.champion.stats.resistencia + game.champion.stats.velocidad + game.champion.stats.tecnica) >= 200 },
+  { id: 'champion_wins3', name: 'Racha Ganadora', icon: '🔥', desc: 'Ganá 3 competencias con tu campeón', check: () => game.stats.championWins >= 3 },
+  { id: 'champion_equipped', name: 'Full Equipo', icon: '⚔️', desc: 'Equipá las 4 ranuras del campeón', check: () => game.champion && game.champion.equipment && game.champion.equipment.hands && game.champion.equipment.waist && game.champion.equipment.feet && game.champion.equipment.head },
 ];
 
 const GYM_CLASSES = [
@@ -581,8 +588,8 @@ const TUTORIAL_STEPS = [
   { target: '.stats-bar', title: 'Barra de Recursos', text: 'Arriba siempre ves tu plata 💰, miembros 👥, reputación ⭐, ingresos 💵 y nivel. Pasá el mouse por encima para ver qué es cada cosa.' },
 
   // Primera acción: comprar equipo
-  { target: '[data-tab="equipment"]', title: '¡Comprá tu Primer Equipo!', text: 'Lo primero que necesitás es equipamiento. Andá a la pestaña Equipamiento y comprá unas Mancuernas. Con eso empezás a generar ingresos y atraer miembros.', tab: 'equipment' },
-  { target: '.equipment-grid', title: 'Equipamiento Disponible', text: 'Cada equipo muestra cuánta plata genera por segundo 💰, cuántos miembros atrae 👥 y cuánta capacidad agrega 📦. Empezá por las Mancuernas, que son baratas.', tab: 'equipment' },
+  { target: '[data-tab="equipment"]', title: '¡Comprá tu Primera Máquina!', text: 'Lo primero que necesitás son máquinas. Andá a la pestaña Máquinas y comprá unas Mancuernas. Con eso empezás a generar ingresos y atraer miembros.', tab: 'equipment' },
+  { target: '.equipment-grid', title: 'Máquinas Disponibles', text: 'Cada máquina muestra cuánta plata genera por segundo 💰, cuántos miembros atrae 👥 y cuánta capacidad agrega 📦. Empezá por las Mancuernas, que son baratas.', tab: 'equipment' },
 
   // Explicar ingresos
   { target: '#incomeBig', title: 'Ingresos por Segundo', text: '¡Bien! Ahora tu gym genera plata automáticamente cada segundo. Cuanto más equipamiento y miembros, más ganás. La plata se acumula sola.', tab: 'gym' },
@@ -612,7 +619,7 @@ const TUTORIAL_STEPS = [
   { target: '[data-tab="skills"]', title: 'Árbol de Mejoras', text: 'Investigá mejoras permanentes en 4 ramas. ¡Las mejoras se mantienen incluso si hacés prestige! Son la clave del progreso a largo plazo.', tab: 'skills' },
 
   // Expansión
-  { target: '[data-tab="expansion"]', title: 'Expansión', text: 'A medida que subas de nivel, podés construir nuevas zonas: primer piso, sótano, terraza y más. Cada zona agrega capacidad e ingresos.', tab: 'expansion' },
+  { target: '[data-tab="expansion"]', title: 'Instalaciones', text: 'A medida que subas de nivel, podés construir nuevas zonas: primer piso, sótano, terraza y más. Cada zona agrega capacidad e ingresos.', tab: 'expansion' },
 
   // Prestige
   { target: '[data-tab="prestige"]', title: 'Franquicia (Prestige)', text: 'Cuando acumules $100K en total, podés abrir una franquicia. Se reinicia tu gym pero ganás estrellas que multiplican TODOS tus ingresos para siempre.', tab: 'prestige' },
@@ -651,3 +658,45 @@ const RIVAL_GYMS = [
   { id: 'megafit', name: 'MegaFit Premium', icon: '💎', desc: 'Gym premium con spa, pileta y todo. Difícil de competir.', memberSteal: 18, promoCost: 25000, promoDuration: 300, defeatCost: 250000, defeatBonus: { income: 25, capacity: 0 }, reqLevel: 15 },
   { id: 'empire', name: 'Empire Fitness', icon: '🏛️', desc: 'Tu mayor rival. Una cadena enorme con recursos ilimitados. El jefe final.', memberSteal: 30, promoCost: 60000, promoDuration: 300, defeatCost: 600000, defeatBonus: { income: 50, capacity: 20 }, reqLevel: 18 },
 ];
+
+// ===== CHAMPION SYSTEM =====
+const CHAMPION_STATS = ['fuerza', 'resistencia', 'velocidad', 'tecnica'];
+const CHAMPION_STAT_ICONS = { fuerza: '💪', resistencia: '🫀', velocidad: '⚡', tecnica: '🎯' };
+const CHAMPION_STAT_NAMES = { fuerza: 'Fuerza', resistencia: 'Resistencia', velocidad: 'Velocidad', tecnica: 'Técnica' };
+
+const CHAMPION_VISUAL_STAGES = [
+  { name: 'Flaco', minStats: 0, bodyWidth: 30, torsoHeight: 50, armWidth: 7, legWidth: 10, headSize: 28 },
+  { name: 'Normal', minStats: 20, bodyWidth: 38, torsoHeight: 54, armWidth: 10, legWidth: 13, headSize: 30 },
+  { name: 'Fitness', minStats: 50, bodyWidth: 48, torsoHeight: 58, armWidth: 14, legWidth: 16, headSize: 32 },
+  { name: 'Musculoso', minStats: 100, bodyWidth: 58, torsoHeight: 64, armWidth: 18, legWidth: 20, headSize: 34 },
+  { name: 'Bestia', minStats: 200, bodyWidth: 70, torsoHeight: 72, armWidth: 24, legWidth: 24, headSize: 36 },
+];
+
+const CHAMPION_EQUIPMENT = [
+  { id: 'gloves', name: 'Guantes de Box', icon: '🥊', slot: 'hands', stats: { fuerza: 3 }, cost: 5000, reqChampLevel: 1 },
+  { id: 'headband', name: 'Vincha Pro', icon: '🎽', slot: 'head', stats: { velocidad: 2, tecnica: 1 }, cost: 8000, reqChampLevel: 2 },
+  { id: 'shoes', name: 'Zapatillas de Competición', icon: '👟', slot: 'feet', stats: { velocidad: 3, resistencia: 1 }, cost: 12000, reqChampLevel: 3 },
+  { id: 'belt', name: 'Cinturón de Fuerza', icon: '🥋', slot: 'waist', stats: { fuerza: 4, resistencia: 2 }, cost: 20000, reqChampLevel: 4 },
+  { id: 'gloves_pro', name: 'Guantes Profesionales', icon: '🧤', slot: 'hands', stats: { fuerza: 6, tecnica: 2 }, cost: 40000, reqChampLevel: 6 },
+  { id: 'shoes_elite', name: 'Zapatillas Elite', icon: '👠', slot: 'feet', stats: { velocidad: 6, resistencia: 3 }, cost: 60000, reqChampLevel: 8 },
+  { id: 'belt_titan', name: 'Cinturón Titán', icon: '⚔️', slot: 'waist', stats: { fuerza: 8, resistencia: 4 }, cost: 100000, reqChampLevel: 10 },
+  { id: 'crown', name: 'Corona del Campeón', icon: '👑', slot: 'head', stats: { fuerza: 5, resistencia: 5, velocidad: 5, tecnica: 5 }, cost: 250000, reqChampLevel: 15 },
+];
+
+const CHAMPION_SKINS = {
+  male: { tones: ['🧑', '🧑🏻', '🧑🏽', '🧑🏾', '🧑🏿'] },
+  female: { tones: ['👩', '👩🏻', '👩🏽', '👩🏾', '👩🏿'] },
+};
+
+const CHAMPION_HAIR = ['Corto', 'Largo', 'Rapado', 'Mohawk', 'Coleta'];
+
+const CHAMPION_RECRUIT_COST = 50000;
+const CHAMPION_UNLOCK_LEVEL = 8;
+const CHAMPION_MAX_ENERGY = 100;
+const CHAMPION_ENERGY_REGEN = 1;
+const CHAMPION_TRAINING_ENERGY = 15;
+const CHAMPION_COMPETE_ENERGY = 30;
+const CHAMPION_REST_ENERGY = 25;
+const CHAMPION_REST_COST = 2000;
+const CHAMPION_XP_PER_LEVEL = 100;
+const CHAMPION_REWARD_MULT = 2.0;

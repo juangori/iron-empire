@@ -224,7 +224,7 @@
 <!-- NAV -->
 <nav class="nav-tabs">
   <button class="nav-tab active" data-tab="gym"><span class="tab-icon">🏠</span>Gimnasio</button>
-  <button class="nav-tab" data-tab="equipment"><span class="tab-icon">🏋️</span>Equipamiento</button>
+  <button class="nav-tab" data-tab="equipment"><span class="tab-icon">🏋️</span>Máquinas</button>
   <button class="nav-tab" data-tab="staff"><span class="tab-icon">👤</span>Staff</button>
   <button class="nav-tab" data-tab="marketing"><span class="tab-icon">📢</span>Marketing</button>
   <button class="nav-tab" data-tab="supplements"><span class="tab-icon">🧃</span>Suplementos<span class="notification-dot hidden" id="dot-supplements"></span></button>
@@ -232,9 +232,10 @@
   <button class="nav-tab" data-tab="missions"><span class="tab-icon">📋</span>Misiones<span class="notification-dot hidden" id="dot-missions"></span></button>
   <button class="nav-tab" data-tab="vip"><span class="tab-icon">⭐</span>VIP<span class="notification-dot hidden" id="dot-vip"></span></button>
   <button class="nav-tab" data-tab="competitions"><span class="tab-icon">🏆</span>Competencias</button>
+  <button class="nav-tab" data-tab="champion"><span class="tab-icon">🏅</span>Campeón</button>
   <button class="nav-tab" data-tab="rivals"><span class="tab-icon">🏪</span>Rivales<span class="notification-dot hidden" id="dot-rivals"></span></button>
   <button class="nav-tab" data-tab="skills"><span class="tab-icon">🔬</span>Mejoras</button>
-  <button class="nav-tab" data-tab="expansion"><span class="tab-icon">🏗️</span>Expansión</button>
+  <button class="nav-tab" data-tab="expansion"><span class="tab-icon">🏗️</span>Instalaciones</button>
   <button class="nav-tab" data-tab="achievements"><span class="tab-icon">🎖️</span>Logros</button>
   <button class="nav-tab" data-tab="prestige"><span class="tab-icon">🌟</span>Prestigio</button>
   <button class="nav-tab" data-tab="settings"><span class="tab-icon">⚙️</span>Opciones</button>
@@ -317,8 +318,8 @@
 
   <!-- EQUIPMENT TAB -->
   <div class="tab-content" id="tab-equipment">
-    <div class="section-title">🏋️ Equipamiento</div>
-    <p class="section-subtitle">Comprá y mejorá equipamiento para atraer más miembros y generar más ingresos.</p>
+    <div class="section-title">🏋️ Máquinas</div>
+    <p class="section-subtitle">Comprá y mejorá máquinas para atraer más miembros y generar más ingresos.</p>
     <div class="equipment-grid" id="equipmentGrid"></div>
   </div>
 
@@ -371,6 +372,13 @@
     <div class="comp-list" id="compList"></div>
   </div>
 
+  <!-- CHAMPION TAB -->
+  <div class="tab-content" id="tab-champion">
+    <div class="section-title">🏅 Tu Campeón</div>
+    <p class="section-subtitle">Reclutá, entrenté y llevá a tu campeón a la gloria en las competencias.</p>
+    <div id="championContainer"></div>
+  </div>
+
   <!-- RIVALS TAB -->
   <div class="tab-content" id="tab-rivals">
     <div class="section-title">🏪 Gimnasios Rivales</div>
@@ -387,7 +395,7 @@
 
   <!-- EXPANSION TAB -->
   <div class="tab-content" id="tab-expansion">
-    <div class="section-title">🏗️ Expansión del Gym</div>
+    <div class="section-title">🏗️ Instalaciones</div>
     <p class="section-subtitle">Construí nuevas zonas para aumentar capacidad, ingresos y desbloquear nuevas posibilidades.</p>
     <div id="expansionContainer"></div>
   </div>

@@ -264,6 +264,21 @@ function playAsGuest() {
           updateUI();
           saveGame();
         }
+        // Champion offline recovery
+        if (game.champion && game.champion.recruited) {
+          var offlineMin = Math.floor(cappedTime / 60);
+          game.champion.energy = Math.min(CHAMPION_MAX_ENERGY, game.champion.energy + offlineMin * CHAMPION_ENERGY_REGEN);
+          // Complete training if it finished while offline
+          if (game.champion.trainingUntil && Date.now() >= game.champion.trainingUntil) {
+            var stat = game.champion.trainingStat;
+            if (stat) {
+              game.champion.stats[stat]++;
+              addLog('🏅 Campeón completó entrenamiento de <span class="highlight">' + (typeof CHAMPION_STAT_NAMES !== 'undefined' ? CHAMPION_STAT_NAMES[stat] : stat) + '</span> offline');
+            }
+            game.champion.trainingUntil = 0;
+            game.champion.trainingStat = null;
+          }
+        }
       }
     }
 
@@ -303,6 +318,20 @@ async function onAuthSuccess(user, isNewUser) {
             addLog('💤 Ganaste <span class="money-log">' + fmtMoney(offlineIncome) + '</span> mientras estabas offline (' + fmtTime(cappedTime) + ')');
             showToast('💤', 'Offline: +' + fmtMoney(offlineIncome));
             updateUI();
+          }
+          // Champion offline recovery
+          if (game.champion && game.champion.recruited) {
+            var offlineMin = Math.floor(cappedTime / 60);
+            game.champion.energy = Math.min(CHAMPION_MAX_ENERGY, game.champion.energy + offlineMin * CHAMPION_ENERGY_REGEN);
+            if (game.champion.trainingUntil && Date.now() >= game.champion.trainingUntil) {
+              var stat = game.champion.trainingStat;
+              if (stat) {
+                game.champion.stats[stat]++;
+                addLog('🏅 Campeón completó entrenamiento de <span class="highlight">' + (typeof CHAMPION_STAT_NAMES !== 'undefined' ? CHAMPION_STAT_NAMES[stat] : stat) + '</span> offline');
+              }
+              game.champion.trainingUntil = 0;
+              game.champion.trainingStat = null;
+            }
           }
         }
       }
