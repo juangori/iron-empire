@@ -17,10 +17,10 @@ Live: https://ironempiregame.com (custom domain)
 ```
 index.html          - Main HTML structure, auth screen, account modal, loads all scripts + Firebase SDKs
 css/styles.css      - All styles (CSS variables, responsive, auth styles)
-js/data.js          - Game data: equipment, staff, competitions, achievements, classes, marketing, events, missions, tutorial, daily bonus, skill tree, zones, VIP members, supplements, rivals
-js/game.js          - Core engine: game state, save/load, tick loop, game actions, utility functions, skill/zone calculations, chaos mechanics, construction timers
+js/data.js          - Game data: equipment, staff, competitions, achievements, classes, marketing, events, missions, tutorial, daily bonus, skill tree, zones, VIP members, supplements, rivals, champion
+js/game.js          - Core engine: game state, save/load, tick loop, game actions, utility functions, skill/zone calculations, chaos mechanics, construction timers, champion logic
 js/ui.js            - UI rendering: equipment, staff, competitions, achievements, log, updateUI
-js/systems.js       - Engagement: daily bonus, daily missions, random events, tutorial, classes, marketing, skill tree, expansion, VIP members, supplements, rivals, tab notifications
+js/systems.js       - Engagement: daily bonus, daily missions, random events, tutorial, classes, marketing, skill tree, expansion, VIP members, supplements, rivals, champion, tab notifications
 js/auth.js          - Firebase auth: login/register (Google, Facebook, email/password), account settings, cloud save, auth state management
 CNAME               - Custom domain config
 ```
@@ -36,6 +36,7 @@ CNAME               - Custom domain config
 - Equipment state: `{ level, brokenUntil, upgradingUntil }` — tracks breakdown and construction
 - Staff state: `{ hired, level, trainingUntil, sickUntil, extras: [] }` — tracks training and illness
 - Zone building state: `game.zoneBuilding = { zoneId: timestamp }`
+- Champion state: `game.champion = { recruited, stats, level, xp, energy, equipment, trainingUntil, wins, losses }` — persists through prestige
 
 ## Auth Flow
 1. Page loads → Auth screen (login/register/guest)
@@ -51,11 +52,11 @@ CNAME               - Custom domain config
 - Required Firebase services: Authentication, Firestore
 - Firestore collections: `users` (profiles), `saves` (game data)
 
-## Key Game Systems (20 total)
-1. **Equipment** (12 items) - Buy/upgrade, each gives income/members/capacity. Level cap = player level. Can break down randomly.
+## Key Game Systems (21 total)
+1. **Máquinas/Equipment** (12 items) - Buy/upgrade, each gives income/members/capacity. Level cap = player level. Can break down randomly.
 2. **Staff** (8 types) - Hire + train levels. Passive bonuses. Can get sick randomly. Multiple copies via extras.
 3. **Competitions** (6 tiers) - Win chance + cooldown, rewards money/rep/XP. Skill-enhanced.
-4. **Achievements** (55) - Auto-checked conditions, grant XP. Covers all systems.
+4. **Achievements** (61) - Auto-checked conditions, grant XP. Covers all systems.
 5. **Prestige/Franchise** - Reset for permanent income multiplier stars
 6. **Daily Bonus** - 7-day streak cycle with escalating rewards
 7. **Daily Missions** (3/day) - Random from pool of 8 types, bonus for all 3
@@ -64,7 +65,7 @@ CNAME               - Custom domain config
 10. **Marketing Campaigns** (7 tiers) - Temporary member/rep boost, skill-enhanced costs/duration/effects
 11. **Tutorial** - 12-step interactive walkthrough
 12. **Skill Tree** (6 branches x 5 skills = 30) - Permanent upgrades, persist through prestige. Costs $2.5K-$15M, levels 3-25.
-13. **Gym Expansion** (6 zones) - Capacity + income per zone, construction timers (3min-2h), buy property option
+13. **Instalaciones/Expansion** (6 zones) - Capacity + income per zone, construction timers (3min-2h), buy property option
 14. **VIP Members** (16 types) - Spawn every 4-7 min, show detailed req status (met/unmet)
 15. **Supplements** (8 types) - Temporary buffs, costs scale with player level (+15%/level above req)
 16. **Rival Gyms** (6 NPCs) - Steal members passively, promo (temp) or defeat (permanent bonus), costs scale with level
@@ -72,6 +73,7 @@ CNAME               - Custom domain config
 18. **Staff Training** - Level up staff with money + time, each level boosts their effect
 19. **Equipment Breakdown** - Random breakdowns, repair costs money + time, cleaner reduces chance
 20. **Construction Timers** - Equipment upgrades (20s * level) and zone building take real time
+21. **Champion** - Recruit/train/equip a fighter. CSS art body, 4 stats, energy system, manual competition entry with 2x rewards. Persists through prestige.
 
 ## Balance & Economy
 - XP curve: `100 * 1.55^(level-1)` — slower progression
@@ -113,10 +115,6 @@ CNAME               - Custom domain config
 - PATH needs: `export PATH="$PATH:/c/Program Files/GitHub CLI"`
 
 ## Planned Improvements (by priority)
-### Balance & Depth (Bloques pendientes)
-- Equipment/Zones separation: split into "Máquinas" and "Instalaciones"
-- Champion system: hire/train champion, daily tokens, competition rework
-
 ### Phase 4 - Social & Meta
 - Training programs (assign routines to members)
 - Seasonal competition leagues
