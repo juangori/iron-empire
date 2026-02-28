@@ -888,38 +888,7 @@ body::before {
   color: var(--text);
 }
 
-/* ===== COMPETITIONS ===== */
-.comp-list { display: flex; flex-direction: column; gap: 12px; }
-
-.comp-card {
-  background: var(--bg-dark);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 20px;
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  transition: all 0.3s;
-  flex-wrap: wrap;
-}
-
-.comp-card:hover { border-color: var(--accent); }
-
-.comp-icon { font-size: 40px; }
-.comp-info { flex: 1; min-width: 200px; }
-
-.comp-name {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 700;
-  font-size: 17px;
-  margin-bottom: 4px;
-}
-
-.comp-desc { font-size: 13px; color: var(--text-dim); margin-bottom: 6px; }
-.comp-reward { font-size: 13px; color: var(--green); font-weight: 600; }
-
-.comp-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
-.comp-cooldown { font-size: 12px; color: var(--text-muted); }
+/* ===== COMPETITIONS (unified in champion tab) ===== */
 
 .progress-bar {
   width: 100%;
@@ -2661,95 +2630,81 @@ body::before {
   margin-bottom: 12px;
 }
 
-/* CSS Art Body */
-.champion-body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* SVG Character */
+.champion-body-wrapper {
+  position: relative;
+  width: 200px;
+  height: 320px;
   margin: 0 auto 12px;
-  position: relative;
 }
 
-.champ-head {
-  font-size: var(--head-size);
-  line-height: 1;
-  z-index: 2;
+.champion-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  transition: opacity 0.5s ease;
 }
 
-.champ-torso-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 2px;
-}
-
-.champ-torso {
-  width: var(--body-w);
-  height: var(--torso-h);
-  background: linear-gradient(180deg, #3a3a5a, #252540);
-  border-radius: 6px 6px 4px 4px;
-  border: 2px solid rgba(245, 158, 11, 0.25);
-  position: relative;
-  transition: all 0.5s ease;
-}
-
-.champ-arm {
-  width: var(--arm-w);
-  height: calc(var(--torso-h) * 0.8);
-  background: linear-gradient(180deg, #4a4a6a, #353550);
-  border-radius: 5px;
-  border: 1px solid rgba(255,255,255,0.08);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  position: relative;
-  transition: all 0.5s ease;
-}
-
-.champ-legs-row {
-  display: flex;
-  gap: 4px;
-  justify-content: center;
-}
-
-.champ-leg {
-  width: var(--leg-w);
-  height: calc(var(--torso-h) * 0.65);
-  background: linear-gradient(180deg, #2a2a3a, #1a1a2a);
-  border-radius: 4px 4px 6px 6px;
-  border: 1px solid rgba(255,255,255,0.06);
-  transition: all 0.5s ease;
-}
-
-/* Equipment overlays */
-.champ-equip-head {
-  font-size: 18px;
-  margin-bottom: -4px;
-  z-index: 3;
-}
-
-.champ-equip-hand {
-  font-size: 12px;
+.champion-canvas {
   position: absolute;
-  bottom: -2px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
 }
 
-.champ-equip-waist {
+.champion-transforming .champion-svg {
+  animation: championTransform 1.5s ease-in-out;
+}
+
+@keyframes championTransform {
+  0% { opacity: 1; transform: scale(1); }
+  30% { opacity: 0; transform: scale(0.9); filter: brightness(3); }
+  60% { opacity: 0; transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.champion-transform-text {
   position: absolute;
-  bottom: 4px;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
-  font-size: 14px;
+  transform: translate(-50%, -50%);
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  color: #ffd700;
+  text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4);
+  letter-spacing: 4px;
+  animation: transformTextAnim 2s ease-out forwards;
+  z-index: 10;
+  white-space: nowrap;
 }
 
-.champ-equip-feet {
-  font-size: 14px;
-  margin-top: -2px;
+@keyframes transformTextAnim {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  60% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -70%) scale(1); }
 }
 
-.champ-hair-label {
-  font-size: 11px;
-  color: var(--text-muted);
+/* Color swatch buttons for customization */
+.customize-color-btn {
+  padding: 3px !important;
+  min-width: 32px;
+  min-height: 32px;
+}
+
+.customize-color-btn.selected {
+  border-color: var(--cyan) !important;
+  box-shadow: 0 0 8px rgba(0, 188, 212, 0.5);
+}
+
+.color-swatch {
+  display: block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.15);
 }
 
 .champion-name {

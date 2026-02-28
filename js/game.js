@@ -67,7 +67,7 @@ let game = {
   champion: {
     recruited: false,
     name: 'Campeón',
-    appearance: { gender: 'male', skin: 0, hair: 0 },
+    appearance: { gender: 'male', skin: 0, hair: 0, hairColor: 0, eyeColor: 0 },
     stats: { fuerza: 1, resistencia: 1, velocidad: 1, tecnica: 1 },
     level: 1,
     xp: 0,
@@ -76,7 +76,8 @@ let game = {
     trainingUntil: 0,
     trainingStat: null,
     wins: 0,
-    losses: 0
+    losses: 0,
+    previousStage: null
   },
 
   // VIP members
@@ -393,19 +394,23 @@ function normalizeChampionData() {
   if (!game.champion) {
     game.champion = {
       recruited: false, name: 'Campeón',
-      appearance: { gender: 'male', skin: 0, hair: 0 },
+      appearance: { gender: 'male', skin: 0, hair: 0, hairColor: 0, eyeColor: 0 },
       stats: { fuerza: 1, resistencia: 1, velocidad: 1, tecnica: 1 },
       level: 1, xp: 0, energy: 100,
       equipment: { hands: null, waist: null, feet: null, head: null },
-      trainingUntil: 0, trainingStat: null, wins: 0, losses: 0
+      trainingUntil: 0, trainingStat: null, wins: 0, losses: 0,
+      previousStage: null
     };
   }
   if (!game.champion.equipment) game.champion.equipment = { hands: null, waist: null, feet: null, head: null };
-  if (!game.champion.appearance) game.champion.appearance = { gender: 'male', skin: 0, hair: 0 };
+  if (!game.champion.appearance) game.champion.appearance = { gender: 'male', skin: 0, hair: 0, hairColor: 0, eyeColor: 0 };
+  if (game.champion.appearance.hairColor === undefined) game.champion.appearance.hairColor = 0;
+  if (game.champion.appearance.eyeColor === undefined) game.champion.appearance.eyeColor = 0;
   if (!game.champion.stats) game.champion.stats = { fuerza: 1, resistencia: 1, velocidad: 1, tecnica: 1 };
   if (game.champion.energy === undefined) game.champion.energy = CHAMPION_MAX_ENERGY;
   if (!game.champion.wins) game.champion.wins = 0;
   if (!game.champion.losses) game.champion.losses = 0;
+  if (!game.champion.previousStage) game.champion.previousStage = null;
   if (!game.stats.championWins) game.stats.championWins = 0;
   if (!game.stats.championCompetitions) game.stats.championCompetitions = 0;
   if (!game.stats.championTrainings) game.stats.championTrainings = 0;
@@ -1285,7 +1290,7 @@ function enterCompetition(id) {
     showToast('😤', 'Derrota en ' + c.name + '...');
   }
 
-  renderCompetitions();
+  renderChampion();
   updateUI();
   checkAchievements();
   checkMissionProgress();
@@ -1509,7 +1514,6 @@ function championCompete(compId) {
   checkChampionLevelUp();
   checkLevelUp();
   renderChampion();
-  renderCompetitions();
   updateUI();
   checkAchievements();
   checkMissionProgress();
@@ -1524,8 +1528,24 @@ function checkChampionLevelUp() {
     game.champion.level++;
     addLog('🏅 ¡Tu campeón subió a <span class="highlight">Nivel ' + game.champion.level + '</span>!');
     showToast('🏅', '¡Campeón Nivel ' + game.champion.level + '!');
+    // Trigger level-up particle effect
+    if (typeof triggerLevelUpEffect === 'function') triggerLevelUpEffect();
     xpNeeded = getChampionXpToNext();
   }
+  // Check for muscle stage transition
+  checkChampionStageTransition();
+}
+
+function checkChampionStageTransition() {
+  if (!game.champion || !game.champion.recruited) return;
+  var currentStage = getChampionVisualStage();
+  var prevName = game.champion.previousStage;
+  if (prevName && prevName !== currentStage.name) {
+    addLog('💥 ¡Tu campeón alcanzó la etapa <span class="highlight">' + currentStage.name.toUpperCase() + '</span>!');
+    showToast('💥', '¡' + currentStage.name.toUpperCase() + '!');
+    if (typeof triggerStageTransition === 'function') triggerStageTransition();
+  }
+  game.champion.previousStage = currentStage.name;
 }
 
 function championEnergyTick() {
@@ -1780,7 +1800,6 @@ function gameTick() {
   }
 
   updateUI();
-  renderCompetitions();
 
   // Refresh timers every 2 seconds (classes, marketing, supplements, rivals, staff training, equipment repair)
   if (game.tickCount % 2 === 0) {
@@ -1898,7 +1917,6 @@ function renderAll() {
   normalizeChampionData();
   renderEquipment();
   renderStaff();
-  renderCompetitions();
   renderAchievements();
   renderClasses();
   renderMarketing();

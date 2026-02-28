@@ -55,7 +55,7 @@ CNAME               - Custom domain config
 ## Key Game Systems (21 total)
 1. **Máquinas/Equipment** (12 items) - Buy/upgrade, each gives income/members/capacity. Level cap = player level. Can break down randomly.
 2. **Staff** (8 types) - Hire + train levels. Passive bonuses. Can get sick randomly. Multiple copies via extras.
-3. **Competitions** (6 tiers) - Win chance + cooldown, rewards money/rep/XP. Skill-enhanced.
+3. **Competitions** (6 tiers) - Unified in champion tab. Normal competitions before recruiting, 2x rewards with champion. Shared cooldowns.
 4. **Achievements** (61) - Auto-checked conditions, grant XP. Covers all systems.
 5. **Prestige/Franchise** - Reset for permanent income multiplier stars
 6. **Daily Bonus** - 7-day streak cycle with escalating rewards
@@ -73,7 +73,7 @@ CNAME               - Custom domain config
 18. **Staff Training** - Level up staff with money + time, each level boosts their effect
 19. **Equipment Breakdown** - Random breakdowns, repair costs money + time, cleaner reduces chance
 20. **Construction Timers** - Equipment upgrades (20s * level) and zone building take real time
-21. **Champion** - Recruit/train/equip a fighter. CSS art body, 4 stats, energy system, manual competition entry with 2x rewards. Persists through prestige.
+21. **Champion** - Recruit/train/equip a fighter. SVG character with detailed body, customization (skin/hair/eyes), muscle morphing across 5 stages, Canvas particle level-up effects. 4 stats, energy system, 8 equipment items shown as SVG overlays. Persists through prestige.
 
 ## Balance & Economy
 - XP curve: `100 * 1.55^(level-1)` — slower progression

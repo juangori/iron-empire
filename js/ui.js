@@ -247,59 +247,7 @@ function _renderStaffCopy(staffDef, copyState, copyIdx) {
   return html;
 }
 
-// ===== RENDER COMPETITIONS =====
-function renderCompetitions() {
-  const list = document.getElementById('compList');
-  if (!list) return;
-
-  list.innerHTML = COMPETITIONS.map(function(c) {
-    var state = game.competitions[c.id] || { wins: 0, losses: 0, cooldownUntil: 0 };
-    var locked = game.reputation < c.minRep;
-    var onCooldown = Date.now() < state.cooldownUntil;
-    var timeLeft = onCooldown ? Math.ceil((state.cooldownUntil - Date.now()) / 1000) : 0;
-
-    var rewardMult = 1;
-    if (game.staff.champion?.hired) rewardMult = STAFF.find(function(s) { return s.id === 'champion'; }).compMult;
-    rewardMult *= getSkillEffect('compRewardMult');
-    var compRepMult = getSkillEffect('compRepMult');
-    var compXpMult = getSkillEffect('compXpMult');
-    var cooldownMult = getSkillEffect('compCooldownMult');
-    var displayCooldown = Math.ceil(c.cooldown * cooldownMult);
-    var winBonus = getSkillEffect('compWinChanceBonus', 0);
-    var displayChance = Math.min(0.95, c.winChance + winBonus);
-
-    var actionHTML = '';
-    if (locked) {
-      actionHTML = '<span style="color:var(--text-muted);font-size:12px;">Req. ' + c.minRep + ' rep</span>';
-    } else if (onCooldown) {
-      actionHTML = '<div class="comp-cooldown">⏱️ ' + fmtTime(timeLeft) + '</div>';
-    } else {
-      actionHTML = '<button class="btn btn-buy btn-small" onclick="enterCompetition(\'' + c.id + '\')">⚔️ COMPETIR</button>';
-    }
-
-    return (
-      '<div class="comp-card" style="' + (locked ? 'opacity:0.4;pointer-events:none;' : '') + '">' +
-        '<div class="comp-icon">' + c.icon + '</div>' +
-        '<div class="comp-info">' +
-          '<div class="comp-name">' + c.name + '</div>' +
-          '<div class="comp-desc">' + c.desc + '</div>' +
-          '<div class="comp-reward">' +
-            '<span style="color:var(--green);">💰 ' + fmtMoney(Math.ceil(c.reward * rewardMult)) + '</span> · ' +
-            '<span style="color:var(--purple);">⭐ +' + Math.ceil(c.repReward * compRepMult) + ' rep</span> · ' +
-            '<span style="color:var(--cyan);">✨ +' + Math.ceil(c.xpReward * compXpMult) + ' XP</span>' +
-          '</div>' +
-          '<div style="font-size:12px;color:var(--text-muted);margin-top:4px;">' +
-            'Record: ' + (state.wins || 0) + 'W - ' + (state.losses || 0) + 'L · ' +
-            '<span style="color:' + (displayChance >= 0.5 ? 'var(--green)' : displayChance >= 0.3 ? 'var(--orange)' : 'var(--red)') + ';">' +
-            '🎯 ' + Math.round(displayChance * 100) + '% chance</span>' +
-            ' · ⏱️ CD: ' + fmtTime(displayCooldown) +
-          '</div>' +
-        '</div>' +
-        '<div class="comp-actions">' + actionHTML + '</div>' +
-      '</div>'
-    );
-  }).join('');
-}
+// Competitions are now rendered in the champion tab (see systems.js renderChampion/renderNormalCompetitions)
 
 // ===== RENDER ACHIEVEMENTS =====
 function renderAchievements() {

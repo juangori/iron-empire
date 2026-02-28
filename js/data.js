@@ -607,7 +607,7 @@ const TUTORIAL_STEPS = [
   { target: '[data-tab="missions"]', title: 'Misiones Diarias', text: 'Cada día tenés 3 misiones con objetivos como "Ganá $X" o "Comprá X equipos". Completar las 3 te da un bonus extra. ¡Revisalas todos los días!', tab: 'missions' },
 
   // Competencias
-  { target: '[data-tab="competitions"]', title: 'Competencias', text: 'Mandá a tus miembros a competir por premios y reputación. Empezá por el Torneo de Barrio que tiene 80% de probabilidad de ganar.', tab: 'competitions' },
+  { target: '[data-tab="champion"]', title: 'Competencias', text: 'Competí por premios y reputación. Empezá por el Torneo de Barrio que tiene 80% de probabilidad de ganar. Más adelante, reclutá tu campeón para ganar el doble.', tab: 'champion' },
 
   // Daily bonus
   { target: '.daily-bonus-banner', title: 'Bonus Diario', text: '¡Importante! Entrá todos los días para reclamar tu bonus. Si mantenés el streak, los premios son cada vez mejores. 7 días seguidos = mega premio.' },
@@ -665,30 +665,63 @@ const CHAMPION_STAT_ICONS = { fuerza: '💪', resistencia: '🫀', velocidad: '�
 const CHAMPION_STAT_NAMES = { fuerza: 'Fuerza', resistencia: 'Resistencia', velocidad: 'Velocidad', tecnica: 'Técnica' };
 
 const CHAMPION_VISUAL_STAGES = [
-  { name: 'Flaco', minStats: 0, bodyWidth: 30, torsoHeight: 50, armWidth: 7, legWidth: 10, headSize: 28 },
-  { name: 'Normal', minStats: 20, bodyWidth: 38, torsoHeight: 54, armWidth: 10, legWidth: 13, headSize: 30 },
-  { name: 'Fitness', minStats: 50, bodyWidth: 48, torsoHeight: 58, armWidth: 14, legWidth: 16, headSize: 32 },
-  { name: 'Musculoso', minStats: 100, bodyWidth: 58, torsoHeight: 64, armWidth: 18, legWidth: 20, headSize: 34 },
-  { name: 'Bestia', minStats: 200, bodyWidth: 70, torsoHeight: 72, armWidth: 24, legWidth: 24, headSize: 36 },
+  { name: 'Flaco', minStats: 0, torsoW: 0.7, armW: 0.6, legW: 0.7, shoulderW: 0.75 },
+  { name: 'Normal', minStats: 20, torsoW: 0.85, armW: 0.8, legW: 0.85, shoulderW: 0.9 },
+  { name: 'Fitness', minStats: 50, torsoW: 1.0, armW: 1.0, legW: 1.0, shoulderW: 1.0 },
+  { name: 'Musculoso', minStats: 100, torsoW: 1.2, armW: 1.3, legW: 1.15, shoulderW: 1.3 },
+  { name: 'Bestia', minStats: 200, torsoW: 1.45, armW: 1.6, legW: 1.35, shoulderW: 1.55 },
 ];
 
 const CHAMPION_EQUIPMENT = [
-  { id: 'gloves', name: 'Guantes de Box', icon: '🥊', slot: 'hands', stats: { fuerza: 3 }, cost: 5000, reqChampLevel: 1 },
-  { id: 'headband', name: 'Vincha Pro', icon: '🎽', slot: 'head', stats: { velocidad: 2, tecnica: 1 }, cost: 8000, reqChampLevel: 2 },
-  { id: 'shoes', name: 'Zapatillas de Competición', icon: '👟', slot: 'feet', stats: { velocidad: 3, resistencia: 1 }, cost: 12000, reqChampLevel: 3 },
-  { id: 'belt', name: 'Cinturón de Fuerza', icon: '🥋', slot: 'waist', stats: { fuerza: 4, resistencia: 2 }, cost: 20000, reqChampLevel: 4 },
-  { id: 'gloves_pro', name: 'Guantes Profesionales', icon: '🧤', slot: 'hands', stats: { fuerza: 6, tecnica: 2 }, cost: 40000, reqChampLevel: 6 },
-  { id: 'shoes_elite', name: 'Zapatillas Elite', icon: '👠', slot: 'feet', stats: { velocidad: 6, resistencia: 3 }, cost: 60000, reqChampLevel: 8 },
-  { id: 'belt_titan', name: 'Cinturón Titán', icon: '⚔️', slot: 'waist', stats: { fuerza: 8, resistencia: 4 }, cost: 100000, reqChampLevel: 10 },
-  { id: 'crown', name: 'Corona del Campeón', icon: '👑', slot: 'head', stats: { fuerza: 5, resistencia: 5, velocidad: 5, tecnica: 5 }, cost: 250000, reqChampLevel: 15 },
+  { id: 'gloves', name: 'Guantes de Box', icon: '🥊', slot: 'hands', stats: { fuerza: 3 }, cost: 5000, reqChampLevel: 1, svgColor: '#cc3333' },
+  { id: 'headband', name: 'Vincha Pro', icon: '🎽', slot: 'head', stats: { velocidad: 2, tecnica: 1 }, cost: 8000, reqChampLevel: 2, svgColor: '#e84393' },
+  { id: 'shoes', name: 'Zapatillas de Competición', icon: '👟', slot: 'feet', stats: { velocidad: 3, resistencia: 1 }, cost: 12000, reqChampLevel: 3, svgColor: '#00b894' },
+  { id: 'belt', name: 'Cinturón de Fuerza', icon: '🥋', slot: 'waist', stats: { fuerza: 4, resistencia: 2 }, cost: 20000, reqChampLevel: 4, svgColor: '#6c5ce7' },
+  { id: 'gloves_pro', name: 'Guantes Profesionales', icon: '🧤', slot: 'hands', stats: { fuerza: 6, tecnica: 2 }, cost: 40000, reqChampLevel: 6, svgColor: '#d63031' },
+  { id: 'shoes_elite', name: 'Zapatillas Elite', icon: '👠', slot: 'feet', stats: { velocidad: 6, resistencia: 3 }, cost: 60000, reqChampLevel: 8, svgColor: '#fdcb6e' },
+  { id: 'belt_titan', name: 'Cinturón Titán', icon: '⚔️', slot: 'waist', stats: { fuerza: 8, resistencia: 4 }, cost: 100000, reqChampLevel: 10, svgColor: '#e17055' },
+  { id: 'crown', name: 'Corona del Campeón', icon: '👑', slot: 'head', stats: { fuerza: 5, resistencia: 5, velocidad: 5, tecnica: 5 }, cost: 250000, reqChampLevel: 15, svgColor: '#ffd700' },
 ];
 
-const CHAMPION_SKINS = {
-  male: { tones: ['🧑', '🧑🏻', '🧑🏽', '🧑🏾', '🧑🏿'] },
-  female: { tones: ['👩', '👩🏻', '👩🏽', '👩🏾', '👩🏿'] },
-};
+// SVG skin colors (realistic hex)
+const CHAMPION_SKIN_COLORS = [
+  { name: 'Claro', color: '#FFDBB4' },
+  { name: 'Beige', color: '#E8B88A' },
+  { name: 'Trigueño', color: '#D4956B' },
+  { name: 'Canela', color: '#C68642' },
+  { name: 'Moreno', color: '#8D5524' },
+  { name: 'Oscuro', color: '#6B3A1F' },
+  { name: 'Ébano', color: '#4A2511' },
+  { name: 'Profundo', color: '#3B1A0A' },
+];
 
-const CHAMPION_HAIR = ['Corto', 'Largo', 'Rapado', 'Mohawk', 'Coleta'];
+// Hair styles (name + SVG will be generated in systems.js)
+const CHAMPION_HAIR_STYLES = [
+  { id: 'short', name: 'Corto' },
+  { id: 'long', name: 'Largo' },
+  { id: 'buzzcut', name: 'Rapado' },
+  { id: 'mohawk', name: 'Mohawk' },
+  { id: 'ponytail', name: 'Coleta' },
+  { id: 'afro', name: 'Afro' },
+];
+
+// Hair colors
+const CHAMPION_HAIR_COLORS = [
+  { name: 'Negro', color: '#1a1a1a' },
+  { name: 'Castaño', color: '#8B4513' },
+  { name: 'Rubio', color: '#DAA520' },
+  { name: 'Pelirrojo', color: '#B22222' },
+  { name: 'Platino', color: '#C0C0C0' },
+  { name: 'Fantasía', color: '#4169E1' },
+];
+
+// Eye colors
+const CHAMPION_EYE_COLORS = [
+  { name: 'Marrones', color: '#3B2F2F' },
+  { name: 'Azules', color: '#4682B4' },
+  { name: 'Verdes', color: '#228B22' },
+  { name: 'Grises', color: '#808080' },
+];
 
 const CHAMPION_RECRUIT_COST = 50000;
 const CHAMPION_UNLOCK_LEVEL = 8;
