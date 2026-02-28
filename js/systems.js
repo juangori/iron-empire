@@ -59,6 +59,7 @@ function claimDailyBonus() {
   game.dailyTracking.xpEarned += reward.xp;
 
   game.dailyBonus.streak++;
+  if (game.dailyBonus.streak > (game.stats.maxStreak || 0)) game.stats.maxStreak = game.dailyBonus.streak;
   game.dailyBonus.lastClaim = getDateString();
   game.dailyBonus.claimedToday = true;
 
@@ -377,6 +378,8 @@ function getClassReward(gc) {
       qualityBonus += (staffState.level || 1) * 0.1; // +10% per staff level
     }
   }
+  // Decoration class quality bonus
+  qualityBonus += getDecorationBonus('classQuality');
   return {
     income: Math.ceil(gc.income * levelScale * prestigeMult * classMult * qualityBonus),
     xp: Math.ceil(gc.xp * levelScale * 0.5), // XP scales slower
@@ -2152,4 +2155,207 @@ function triggerStageTransition() {
     wrapper.classList.remove('champion-transforming');
     if (textEl.parentElement) textEl.parentElement.removeChild(textEl);
   }, 2000);
+}
+
+// ===== PLAYER PROFILE =====
+function renderProfile() {
+  var container = document.getElementById('profileContainer');
+  if (!container) return;
+
+  var title = getActiveTitle();
+  var tier = getGymTier();
+  var xpPct = Math.min(100, Math.floor((game.xp / game.xpToNext) * 100));
+  var unlockedAchievements = Object.values(game.achievements).filter(Boolean).length;
+  var unlockedTitles = getUnlockedTitles();
+
+  var html = '';
+
+  // --- Profile Card ---
+  html += '<div class="profile-card">';
+  html += '<div class="profile-header">';
+  html += '<div class="profile-avatar">' + title.icon + '</div>';
+  html += '<div class="profile-info">';
+  html += '<div class="profile-gym-name">' + (game.gymName || 'Mi Gimnasio') + '</div>';
+  html += '<div class="profile-title-badge">' + title.icon + ' ' + title.name + '</div>';
+  html += '<div class="profile-tier">' + tier + '</div>';
+  html += '</div>';
+  html += '</div>';
+
+  // Level + XP bar
+  html += '<div class="profile-level-row">';
+  html += '<span class="profile-level">Nivel ' + game.level + '</span>';
+  html += '<div class="profile-xp-bar"><div class="profile-xp-fill" style="width:' + xpPct + '%"></div></div>';
+  html += '<span class="profile-xp-text">' + game.xp + '/' + game.xpToNext + ' XP</span>';
+  html += '</div>';
+
+  // Prestige stars
+  if (game.prestigeStars > 0) {
+    var starsText = '';
+    for (var s = 0; s < game.prestigeStars; s++) starsText += '⭐';
+    html += '<div class="profile-stars">' + starsText + ' x' + (1 + game.prestigeStars * 0.25).toFixed(2) + ' ingresos</div>';
+  }
+
+  // Current theme
+  var theme = GYM_THEMES.find(function(t) { return t.id === game.decoration.theme; }) || GYM_THEMES[0];
+  html += '<div class="profile-theme">' + theme.icon + ' Tema: ' + theme.name + '</div>';
+  html += '</div>';
+
+  // --- Titles Section ---
+  html += '<div class="section-title" style="margin-top:16px;">🏅 Títulos</div>';
+  html += '<p class="section-subtitle">Elegí tu título activo. Se muestra en tu perfil.</p>';
+  html += '<div class="profile-titles-grid">';
+  PLAYER_TITLES.forEach(function(t) {
+    var unlocked = t.check();
+    var isActive = game.profile.activeTitle === t.id;
+    html += '<div class="profile-title-card' + (unlocked ? '' : ' locked') + (isActive ? ' active' : '') + '"' +
+      (unlocked ? ' onclick="setActiveTitle(\'' + t.id + '\')"' : '') + '>';
+    html += '<div class="profile-title-icon">' + t.icon + '</div>';
+    html += '<div class="profile-title-name">' + t.name + '</div>';
+    html += '<div class="profile-title-desc">' + (unlocked ? t.desc : '🔒 ' + t.desc) + '</div>';
+    if (isActive) html += '<div class="profile-title-active">ACTIVO</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // --- Stats Section ---
+  html += '<div class="section-title" style="margin-top:16px;">📊 Estadísticas</div>';
+  html += '<div class="profile-stats-grid">';
+
+  var stats = [
+    { icon: '💰', label: 'Total ganado', value: fmtMoney(game.totalMoneyEarned) },
+    { icon: '🕐', label: 'Tiempo jugado', value: formatPlayTime(game.stats.totalPlayTime || 0) },
+    { icon: '📅', label: 'Días jugados', value: game.stats.daysPlayed || 0 },
+    { icon: '👥', label: 'Máx miembros', value: game.stats.maxMembers || 0 },
+    { icon: '🏆', label: 'Competencias ganadas', value: game.stats.competitionsWon || 0 },
+    { icon: '🏅', label: 'Champion wins', value: game.stats.championWins || 0 },
+    { icon: '🧘', label: 'Clases completadas', value: game.stats.classesCompleted || 0 },
+    { icon: '📢', label: 'Campañas lanzadas', value: game.stats.campaignsLaunched || 0 },
+    { icon: '🧃', label: 'Suplementos usados', value: game.stats.supplementsBought || 0 },
+    { icon: '🏪', label: 'Rivales superados', value: game.stats.rivalsDefeated || 0 },
+    { icon: '📋', label: 'Misiones completadas', value: game.stats.missionsCompleted || 0 },
+    { icon: '⚡', label: 'Eventos resueltos', value: game.stats.eventsHandled || 0 },
+    { icon: '🔬', label: 'Mejoras investigadas', value: game.stats.skillsResearched || 0 },
+    { icon: '🏗️', label: 'Zonas desbloqueadas', value: game.stats.zonesUnlocked || 0 },
+    { icon: '⭐', label: 'VIPs atendidos', value: game.stats.vipsServed || 0 },
+    { icon: '🔥', label: 'Streak máximo', value: game.stats.maxStreak || 0 },
+    { icon: '🌟', label: 'Prestigios', value: game.stats.prestigeCount || 0 },
+    { icon: '🎖️', label: 'Logros', value: unlockedAchievements + '/' + ACHIEVEMENTS.length },
+  ];
+
+  stats.forEach(function(s) {
+    html += '<div class="profile-stat-item">';
+    html += '<span class="profile-stat-icon">' + s.icon + '</span>';
+    html += '<span class="profile-stat-label">' + s.label + '</span>';
+    html += '<span class="profile-stat-value">' + s.value + '</span>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // --- Recent Achievements ---
+  html += '<div class="section-title" style="margin-top:16px;">🎖️ Logros Recientes</div>';
+  html += '<div class="profile-achievements-showcase">';
+  var unlocked = ACHIEVEMENTS.filter(function(a) { return game.achievements[a.id]; });
+  var recent = unlocked.slice(-8).reverse();
+  if (recent.length === 0) {
+    html += '<p style="color:var(--text-muted);text-align:center;padding:16px;">Todavía no desbloqueaste ningún logro.</p>';
+  } else {
+    recent.forEach(function(a) {
+      html += '<div class="profile-achievement-badge" title="' + a.name + ': ' + a.desc + '">';
+      html += '<span class="profile-badge-icon">' + a.icon + '</span>';
+      html += '<span class="profile-badge-name">' + a.name + '</span>';
+      html += '</div>';
+    });
+  }
+  html += '</div>';
+  html += '<button class="btn btn-small" onclick="document.querySelector(\'[data-tab=achievements]\').click()" style="margin-top:8px;">Ver todos los logros →</button>';
+
+  container.innerHTML = html;
+}
+
+function formatPlayTime(seconds) {
+  var h = Math.floor(seconds / 3600);
+  var m = Math.floor((seconds % 3600) / 60);
+  if (h > 0) return h + 'h ' + m + 'm';
+  return m + 'm';
+}
+
+// ===== GYM DECORATION PANEL =====
+function toggleDecorationPanel() {
+  var panel = document.getElementById('decorationPanel');
+  if (panel) {
+    panel.classList.toggle('hidden');
+    if (!panel.classList.contains('hidden')) renderDecorationPanel();
+  }
+}
+
+function renderDecorationPanel() {
+  var panel = document.getElementById('decorationPanel');
+  if (!panel) return;
+
+  var html = '';
+
+  // --- Themes ---
+  html += '<div class="section-title">🎨 Temas Visuales</div>';
+  html += '<p class="section-subtitle">Cambiá el estilo visual de todo tu gym. Los temas persisten después del prestige.</p>';
+  html += '<div class="deco-themes-grid">';
+  GYM_THEMES.forEach(function(theme) {
+    var owned = game.decoration.unlockedThemes.indexOf(theme.id) >= 0;
+    var active = game.decoration.theme === theme.id;
+    var locked = game.level < theme.reqLevel;
+    var canBuy = !owned && !locked && game.money >= theme.cost;
+
+    html += '<div class="deco-theme-card' + (active ? ' active' : '') + (locked && !owned ? ' locked' : '') + '">';
+    html += '<div class="deco-theme-preview" style="background:' + theme.bgDark + ';border-color:' + theme.accent + ';">';
+    html += '<div class="deco-theme-accent" style="background:' + theme.accent + ';"></div>';
+    html += '</div>';
+    html += '<div class="deco-theme-name">' + theme.icon + ' ' + theme.name + '</div>';
+
+    if (active) {
+      html += '<div class="deco-theme-status" style="color:var(--green);">✓ Activo</div>';
+    } else if (owned) {
+      html += '<button class="btn btn-small btn-cyan" onclick="setTheme(\'' + theme.id + '\')">Usar</button>';
+    } else if (locked) {
+      html += '<div class="deco-theme-status" style="color:var(--text-muted);">🔒 Nivel ' + theme.reqLevel + '</div>';
+    } else {
+      html += '<button class="btn btn-small btn-buy" ' + (canBuy ? '' : 'disabled') + ' onclick="buyTheme(\'' + theme.id + '\')">' + fmtMoney(theme.cost) + '</button>';
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // --- Decorations ---
+  html += '<div class="section-title" style="margin-top:16px;">🏠 Objetos Decorativos</div>';
+  html += '<p class="section-subtitle">Comprá decoraciones para tu gym. Dan bonus pasivos. Se reinician con el prestige.</p>';
+  html += '<div class="deco-items-grid">';
+  GYM_DECORATIONS.forEach(function(item) {
+    var owned = game.decoration.items[item.id];
+    var locked = game.level < item.reqLevel;
+    var canBuy = !owned && !locked && game.money >= item.cost;
+
+    var bonusText = Object.keys(item.bonuses).map(function(k) {
+      var v = item.bonuses[k];
+      if (k === 'capacity') return '+' + v + ' cap';
+      var labels = { income: 'ingreso', reputation: 'rep', classQuality: 'calidad clase', compReward: 'premios comp' };
+      return '+' + Math.round(v * 100) + '% ' + (labels[k] || k);
+    }).join(', ');
+
+    html += '<div class="deco-item-card' + (owned ? ' owned' : '') + (locked ? ' locked' : '') + '">';
+    html += '<div class="deco-item-icon">' + item.icon + '</div>';
+    html += '<div class="deco-item-info">';
+    html += '<div class="deco-item-name">' + item.name + '</div>';
+    html += '<div class="deco-item-bonus">' + bonusText + '</div>';
+    html += '</div>';
+
+    if (owned) {
+      html += '<div class="deco-item-status" style="color:var(--green);">✓</div>';
+    } else if (locked) {
+      html += '<div class="deco-item-status" style="color:var(--text-muted);">🔒 Lvl ' + item.reqLevel + '</div>';
+    } else {
+      html += '<button class="btn btn-small btn-buy" ' + (canBuy ? '' : 'disabled') + ' onclick="buyDecoration(\'' + item.id + '\')">' + fmtMoney(item.cost) + '</button>';
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+
+  panel.innerHTML = html;
 }

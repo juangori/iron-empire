@@ -117,6 +117,13 @@ const ACHIEVEMENTS = [
   { id: 'champion_bestia', name: 'La Bestia', icon: '💪', desc: 'Tu campeón llegó a etapa Bestia', check: () => game.champion && game.champion.recruited && (game.champion.stats.fuerza + game.champion.stats.resistencia + game.champion.stats.velocidad + game.champion.stats.tecnica) >= 200 },
   { id: 'champion_wins3', name: 'Racha Ganadora', icon: '🔥', desc: 'Ganá 3 competencias con tu campeón', check: () => game.stats.championWins >= 3 },
   { id: 'champion_equipped', name: 'Full Equipo', icon: '⚔️', desc: 'Equipá las 4 ranuras del campeón', check: () => game.champion && game.champion.equipment && game.champion.equipment.hands && game.champion.equipment.waist && game.champion.equipment.feet && game.champion.equipment.head },
+  // Decoration & Profile
+  { id: 'first_decoration', name: 'Decorador', icon: '🎨', desc: 'Comprá tu primera decoración', check: () => game.decoration && Object.keys(game.decoration.items || {}).length >= 1 },
+  { id: 'five_decorations', name: 'Diseñador de Interiores', icon: '🏠', desc: 'Comprá 5 decoraciones', check: () => game.decoration && Object.keys(game.decoration.items || {}).length >= 5 },
+  { id: 'all_decorations', name: 'Gym Completo', icon: '🖼️', desc: 'Comprá las 10 decoraciones', check: () => game.decoration && Object.keys(game.decoration.items || {}).length >= 10 },
+  { id: 'three_themes', name: 'Fashionista', icon: '🌈', desc: 'Desbloqueá 3 temas visuales', check: () => game.decoration && (game.decoration.unlockedThemes || []).length >= 3 },
+  { id: 'set_title', name: 'Identificado', icon: '👤', desc: 'Elegí un título activo para tu perfil', check: () => game.profile && game.profile.activeTitle && game.profile.activeTitle !== 'principiante' },
+  { id: 'iron_legend', name: 'Iron Legend', icon: '🔥', desc: 'Obtené el título Iron Legend', check: () => game.level >= 25 && game.totalMoneyEarned >= 10000000 && game.stats.championWins >= 50 },
 ];
 
 const GYM_CLASSES = [
@@ -733,3 +740,42 @@ const CHAMPION_REST_ENERGY = 25;
 const CHAMPION_REST_COST = 2000;
 const CHAMPION_XP_PER_LEVEL = 100;
 const CHAMPION_REWARD_MULT = 2.0;
+
+// ===== PLAYER TITLES =====
+const PLAYER_TITLES = [
+  { id: 'principiante', name: 'Principiante', icon: '🏋️', desc: 'Recién empezás', check: () => true },
+  { id: 'entrenador', name: 'Entrenador', icon: '💪', desc: 'Nivel 10', check: () => game.level >= 10 },
+  { id: 'empresario', name: 'Empresario', icon: '🏢', desc: 'Ganá $500K total', check: () => game.totalMoneyEarned >= 500000 },
+  { id: 'magnate', name: 'Magnate', icon: '👑', desc: 'Ganá $5M total', check: () => game.totalMoneyEarned >= 5000000 },
+  { id: 'franquiciado', name: 'Franquiciado', icon: '🌟', desc: 'Hacé 1 prestige', check: () => (game.stats.prestigeCount || 0) >= 1 },
+  { id: 'franquicia_estrella', name: 'Franquicia Estrella', icon: '⭐', desc: 'Hacé 3 prestiges', check: () => (game.stats.prestigeCount || 0) >= 3 },
+  { id: 'campeon_invicto', name: 'Campeón Invicto', icon: '🏆', desc: '20 champion wins', check: () => game.stats.championWins >= 20 },
+  { id: 'completista', name: 'Completista', icon: '🎖️', desc: '40 achievements', check: () => Object.values(game.achievements).filter(Boolean).length >= 40 },
+  { id: 'perfeccionista', name: 'Perfeccionista', icon: '💎', desc: 'Todos los achievements', check: () => Object.values(game.achievements).filter(Boolean).length >= ACHIEVEMENTS.length },
+  { id: 'cientifico', name: 'Científico', icon: '🧬', desc: 'Todas las 30 skills', check: () => game.stats.skillsResearched >= 30 },
+  { id: 'arquitecto', name: 'Arquitecto', icon: '🏗️', desc: 'Todas las 6 zonas', check: () => game.stats.zonesUnlocked >= 6 },
+  { id: 'iron_legend', name: 'Iron Legend', icon: '🔥', desc: 'Nivel 25 + $10M + 50 champion wins', check: () => game.level >= 25 && game.totalMoneyEarned >= 10000000 && game.stats.championWins >= 50 },
+];
+
+// ===== GYM THEMES =====
+const GYM_THEMES = [
+  { id: 'classic', name: 'Clásico', icon: '🔶', cost: 0, reqLevel: 1, accent: '#f59e0b', accentGlow: '#f59e0b44', accentDark: '#b45309', bgDark: '#0a0a0f', bgCard: '#12121a' },
+  { id: 'neon', name: 'Neon Azul', icon: '🔵', cost: 25000, reqLevel: 5, accent: '#3b82f6', accentGlow: '#3b82f644', accentDark: '#1d4ed8', bgDark: '#0a0a1a', bgCard: '#10102a' },
+  { id: 'luxury', name: 'Luxury', icon: '💜', cost: 75000, reqLevel: 10, accent: '#a855f7', accentGlow: '#a855f744', accentDark: '#7c3aed', bgDark: '#0f0a1a', bgCard: '#18102a' },
+  { id: 'power', name: 'Power Red', icon: '🔴', cost: 150000, reqLevel: 15, accent: '#ef4444', accentGlow: '#ef444444', accentDark: '#b91c1c', bgDark: '#1a0a0a', bgCard: '#2a1010' },
+  { id: 'nature', name: 'Nature', icon: '💚', cost: 300000, reqLevel: 20, accent: '#22c55e', accentGlow: '#22c55e44', accentDark: '#15803d', bgDark: '#0a1a0f', bgCard: '#102a18' },
+];
+
+// ===== GYM DECORATIONS =====
+const GYM_DECORATIONS = [
+  { id: 'poster', name: 'Poster Motivacional', icon: '🖼️', cost: 2000, reqLevel: 2, position: { left: '5%', top: '15%' }, bonuses: { reputation: 0.02 } },
+  { id: 'planta', name: 'Planta', icon: '🌿', cost: 3000, reqLevel: 3, position: { left: '3%', top: '65%' }, bonuses: { income: 0.01 } },
+  { id: 'tv', name: 'TV Grande', icon: '📺', cost: 8000, reqLevel: 5, position: { left: '45%', top: '10%' }, bonuses: { capacity: 3 } },
+  { id: 'espejo', name: 'Espejo de Pared', icon: '🪞', cost: 5000, reqLevel: 4, position: { left: '88%', top: '15%' }, bonuses: { classQuality: 0.05 } },
+  { id: 'fuente', name: 'Fuente de Agua', icon: '🚰', cost: 10000, reqLevel: 6, position: { left: '92%', top: '65%' }, bonuses: { income: 0.02 } },
+  { id: 'parlantes', name: 'Parlantes', icon: '🔊', cost: 15000, reqLevel: 8, position: { left: '25%', top: '10%' }, bonuses: { classQuality: 0.05 } },
+  { id: 'bandera', name: 'Bandera del Gym', icon: '🚩', cost: 20000, reqLevel: 10, position: { left: '65%', top: '8%' }, bonuses: { reputation: 0.05 } },
+  { id: 'trofeos', name: 'Trofeos Vitrina', icon: '🏆', cost: 50000, reqLevel: 12, position: { left: '75%', top: '15%' }, bonuses: { compReward: 0.10 } },
+  { id: 'piso', name: 'Piso Premium', icon: '🟫', cost: 100000, reqLevel: 15, position: { left: '50%', top: '85%' }, bonuses: { income: 0.03 } },
+  { id: 'led', name: 'Luces LED', icon: '💡', cost: 200000, reqLevel: 18, position: { left: '50%', top: '3%' }, bonuses: { income: 0.02, capacity: 5 } },
+];

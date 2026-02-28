@@ -2931,3 +2931,334 @@ body::before {
   min-width: 65px;
   color: var(--text-dim);
 }
+
+/* ===== PLAYER PROFILE ===== */
+.profile-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 16px;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.profile-avatar {
+  font-size: 48px;
+  width: 72px;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.04);
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+}
+
+.profile-info { flex: 1; }
+
+.profile-gym-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 2px;
+  color: var(--text);
+}
+
+.profile-title-badge {
+  display: inline-block;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid var(--accent);
+  border-radius: 20px;
+  padding: 2px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  margin-top: 4px;
+}
+
+.profile-tier {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.profile-level-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.profile-level {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--accent);
+  min-width: 65px;
+}
+
+.profile-xp-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.profile-xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--green));
+  border-radius: 4px;
+  transition: width 0.5s;
+}
+
+.profile-xp-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  min-width: 90px;
+  text-align: right;
+}
+
+.profile-stars {
+  font-size: 14px;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+
+.profile-theme {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+/* Titles grid */
+.profile-titles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.profile-title-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.profile-title-card:hover:not(.locked) {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.profile-title-card.active {
+  border-color: var(--accent);
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.profile-title-card.locked {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.profile-title-icon { font-size: 28px; margin-bottom: 4px; }
+.profile-title-name { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+.profile-title-desc { font-size: 11px; color: var(--text-muted); }
+
+.profile-title-active {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green);
+  margin-top: 4px;
+  letter-spacing: 1px;
+}
+
+/* Stats grid */
+.profile-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.profile-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.profile-stat-icon { font-size: 18px; min-width: 24px; text-align: center; }
+.profile-stat-label { flex: 1; font-size: 13px; color: var(--text-dim); }
+.profile-stat-value { font-weight: 700; font-size: 14px; color: var(--text); }
+
+/* Achievements showcase */
+.profile-achievements-showcase {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-achievement-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid var(--accent);
+  border-radius: 20px;
+  font-size: 12px;
+}
+
+.profile-badge-icon { font-size: 16px; }
+.profile-badge-name { font-weight: 600; color: var(--accent); }
+
+/* ===== GYM DECORATION ===== */
+.gym-decorate-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  z-index: 5;
+  font-size: 12px;
+  padding: 6px 12px;
+  background: rgba(0,0,0,0.6);
+  border: 1px solid var(--border);
+  color: var(--text);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.3s;
+}
+
+.gym-decorate-btn:hover {
+  background: rgba(245, 158, 11, 0.2);
+  border-color: var(--accent);
+}
+
+.gym-scene-container { position: relative; }
+
+.decoration-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+/* Theme cards */
+.deco-themes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.deco-theme-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+  transition: all 0.3s;
+}
+
+.deco-theme-card.active {
+  border-color: var(--accent);
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.deco-theme-card.locked { opacity: 0.4; }
+
+.deco-theme-preview {
+  width: 100%;
+  height: 40px;
+  border-radius: 6px;
+  border: 2px solid;
+  margin-bottom: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.deco-theme-accent {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+}
+
+.deco-theme-name { font-weight: 600; font-size: 13px; margin-bottom: 6px; }
+.deco-theme-status { font-size: 12px; }
+
+/* Decoration items */
+.deco-items-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.deco-item-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: all 0.3s;
+}
+
+.deco-item-card.owned {
+  border-color: var(--green);
+  background: rgba(34, 197, 94, 0.05);
+}
+
+.deco-item-card.locked { opacity: 0.4; }
+
+.deco-item-icon { font-size: 28px; min-width: 36px; text-align: center; }
+.deco-item-info { flex: 1; }
+.deco-item-name { font-weight: 600; font-size: 13px; margin-bottom: 2px; }
+.deco-item-bonus { font-size: 11px; color: var(--cyan); }
+.deco-item-status { font-size: 14px; }
+
+/* Decoration in gym scene */
+.gym-decoration-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.gym-deco-item {
+  position: absolute;
+  font-size: 24px;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+  animation: decoFloat 3s ease-in-out infinite;
+}
+
+.gym-deco-glow {
+  filter: drop-shadow(0 0 8px var(--accent)) drop-shadow(0 0 16px var(--accent-glow));
+}
+
+.gym-deco-floor {
+  animation: none;
+  font-size: 20px;
+  opacity: 0.6;
+}
+
+@keyframes decoFloat {
+  0%, 100% { transform: translate(-50%, -50%); }
+  50% { transform: translate(-50%, calc(-50% - 3px)); }
+}

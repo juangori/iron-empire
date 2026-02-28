@@ -479,6 +479,21 @@ function renderGymScene() {
         s.icon + '<span class="staff-tag">' + s.role.split(' ')[0] + '</span></div>';
     }).join('');
   }
+
+  // --- Decoration layer ---
+  var decoLayer = document.getElementById('gymDecoLayer');
+  if (decoLayer && game.decoration) {
+    var decoHTML = '';
+    GYM_DECORATIONS.forEach(function(item) {
+      if (game.decoration.items[item.id]) {
+        var extraClass = '';
+        if (item.id === 'led') extraClass = ' gym-deco-glow';
+        if (item.id === 'piso') extraClass = ' gym-deco-floor';
+        decoHTML += '<div class="gym-deco-item' + extraClass + '" style="left:' + item.position.left + ';top:' + item.position.top + ';" title="' + item.name + '">' + item.icon + '</div>';
+      }
+    });
+    decoLayer.innerHTML = decoHTML;
+  }
 }
 
 function _randomPersonEmoji() {

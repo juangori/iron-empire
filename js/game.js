@@ -92,6 +92,18 @@ let game = {
   // Operating costs
   ownProperty: false,
 
+  // Profile
+  profile: {
+    activeTitle: 'principiante'
+  },
+
+  // Gym decoration
+  decoration: {
+    theme: 'classic',
+    unlockedThemes: ['classic'],
+    items: {}
+  },
+
   // Lifetime stats
   stats: {
     classesCompleted: 0,
@@ -113,6 +125,9 @@ let game = {
     championWins: 0,
     championCompetitions: 0,
     championTrainings: 0,
+    maxMembers: 0,
+    maxStreak: 0,
+    prestigeCount: 0,
   }
 };
 
@@ -414,6 +429,99 @@ function normalizeChampionData() {
   if (!game.stats.championWins) game.stats.championWins = 0;
   if (!game.stats.championCompetitions) game.stats.championCompetitions = 0;
   if (!game.stats.championTrainings) game.stats.championTrainings = 0;
+}
+
+function normalizeProfileData() {
+  if (!game.profile) game.profile = { activeTitle: 'principiante' };
+  if (!game.profile.activeTitle) game.profile.activeTitle = 'principiante';
+  if (!game.decoration) game.decoration = { theme: 'classic', unlockedThemes: ['classic'], items: {} };
+  if (!game.decoration.unlockedThemes) game.decoration.unlockedThemes = ['classic'];
+  if (!game.decoration.items) game.decoration.items = {};
+  if (!game.decoration.theme) game.decoration.theme = 'classic';
+  if (!game.stats.maxMembers) game.stats.maxMembers = 0;
+  if (!game.stats.maxStreak) game.stats.maxStreak = 0;
+  if (!game.stats.prestigeCount) game.stats.prestigeCount = 0;
+}
+
+// ===== PROFILE & TITLES =====
+function getUnlockedTitles() {
+  return PLAYER_TITLES.filter(function(t) { return t.check(); });
+}
+
+function setActiveTitle(titleId) {
+  var title = PLAYER_TITLES.find(function(t) { return t.id === titleId; });
+  if (!title || !title.check()) return;
+  game.profile.activeTitle = titleId;
+  renderProfile();
+  saveGame();
+}
+
+function getActiveTitle() {
+  var t = PLAYER_TITLES.find(function(title) { return title.id === game.profile.activeTitle; });
+  return t || PLAYER_TITLES[0];
+}
+
+// ===== GYM DECORATION =====
+function buyTheme(themeId) {
+  var theme = GYM_THEMES.find(function(t) { return t.id === themeId; });
+  if (!theme) return;
+  if (game.decoration.unlockedThemes.indexOf(themeId) >= 0) return;
+  if (game.money < theme.cost || game.level < theme.reqLevel) return;
+  game.money -= theme.cost;
+  game.decoration.unlockedThemes.push(themeId);
+  game.decoration.theme = themeId;
+  applyTheme();
+  addLog('🎨 Desbloqueaste el tema <span class="highlight">' + theme.name + '</span>!');
+  showToast(theme.icon, 'Tema ' + theme.name + ' desbloqueado!');
+  renderDecorationPanel();
+  updateUI();
+  checkAchievements();
+  saveGame();
+}
+
+function setTheme(themeId) {
+  if (game.decoration.unlockedThemes.indexOf(themeId) < 0) return;
+  game.decoration.theme = themeId;
+  applyTheme();
+  renderDecorationPanel();
+  saveGame();
+}
+
+function applyTheme() {
+  var theme = GYM_THEMES.find(function(t) { return t.id === game.decoration.theme; });
+  if (!theme) theme = GYM_THEMES[0];
+  var root = document.documentElement;
+  root.style.setProperty('--accent', theme.accent);
+  root.style.setProperty('--accent-glow', theme.accentGlow);
+  root.style.setProperty('--accent-dark', theme.accentDark);
+  root.style.setProperty('--bg-dark', theme.bgDark);
+  root.style.setProperty('--bg-card', theme.bgCard);
+}
+
+function buyDecoration(itemId) {
+  var item = GYM_DECORATIONS.find(function(d) { return d.id === itemId; });
+  if (!item) return;
+  if (game.decoration.items[itemId]) return;
+  if (game.money < item.cost || game.level < item.reqLevel) return;
+  game.money -= item.cost;
+  game.decoration.items[itemId] = true;
+  addLog('🎨 Compraste <span class="highlight">' + item.name + '</span> ' + item.icon);
+  showToast(item.icon, item.name + ' agregado al gym!');
+  renderDecorationPanel();
+  renderGymScene();
+  updateUI();
+  checkAchievements();
+  saveGame();
+}
+
+function getDecorationBonus(type) {
+  var total = 0;
+  GYM_DECORATIONS.forEach(function(item) {
+    if (game.decoration.items[item.id] && item.bonuses[type]) {
+      total += item.bonuses[type];
+    }
+  });
+  return total;
 }
 
 function isEquipmentBroken(id) {
@@ -758,7 +866,9 @@ function getIncomePerSecond() {
   const suppEffects = getActiveSupplementEffects();
   if (suppEffects.equipIncomeMult !== 1) base *= suppEffects.equipIncomeMult;
   const totalIncome = (base + zoneIncome + rivalIncome) * mult * memberBonus * prestigeMult;
-  return totalIncome * suppEffects.incomeMult;
+  // Decoration income bonus
+  var decoIncome = getDecorationBonus('income');
+  return totalIncome * suppEffects.incomeMult * (1 + decoIncome);
 }
 
 // ===== SUPPLEMENT EFFECTS =====
@@ -1074,6 +1184,8 @@ function getMaxMembers() {
   cap += getRivalCapacityBonus();
   // Skill: capacity mult
   cap *= getSkillEffect('capacityMult');
+  // Decoration capacity bonus
+  cap += getDecorationBonus('capacity');
   return Math.floor(cap);
 }
 
@@ -1265,6 +1377,7 @@ function enterCompetition(id) {
 
   if (won) {
     rewardMult *= getSkillEffect('compRewardMult');
+    rewardMult *= (1 + getDecorationBonus('compReward'));
     const reward = Math.ceil(c.reward * rewardMult);
     game.money += reward;
     game.totalMoneyEarned += reward;
@@ -1303,6 +1416,8 @@ function updateMembers() {
   const max = getMaxMembers();
   game.maxMembers = max;
   game.members = Math.min(attracted, max);
+  // Track max members stat
+  if (game.members > game.stats.maxMembers) game.stats.maxMembers = game.members;
 }
 
 // ===== LEVEL UP =====
@@ -1477,7 +1592,7 @@ function championCompete(compId) {
 
   if (won) {
     var tecnica = getChampionEffectiveStat('tecnica');
-    var rewardMult = CHAMPION_REWARD_MULT * getSkillEffect('compRewardMult') * (1 + tecnica * 0.02);
+    var rewardMult = CHAMPION_REWARD_MULT * getSkillEffect('compRewardMult') * (1 + tecnica * 0.02) * (1 + getDecorationBonus('compReward'));
     var reward = Math.ceil(c.reward * rewardMult);
     var compRepMult = getSkillEffect('compRepMult');
     var repGain = Math.ceil(c.repReward * compRepMult);
@@ -1618,6 +1733,7 @@ function doPrestige() {
   if (!confirm('¿Abrir franquicia? Ganás ' + stars + ' ⭐ pero se reinicia todo (excepto estrellas, logros y stats).')) return;
 
   game.prestigeStars += stars;
+  game.stats.prestigeCount = (game.stats.prestigeCount || 0) + 1;
   game.money = 0;
   game.totalMoneyEarned = 0;
   game.members = 0;
@@ -1636,6 +1752,10 @@ function doPrestige() {
   game.ownProperty = false;
   game.vipMembers = [];
   // Skills persist through prestige!
+  // Themes persist through prestige! Decorations reset.
+  if (game.decoration) {
+    game.decoration.items = {};
+  }
   // Champion persists through prestige! Reset energy to full.
   if (game.champion && game.champion.recruited) {
     game.champion.energy = CHAMPION_MAX_ENERGY;
@@ -1702,6 +1822,8 @@ function repTick() {
       repGain *= (1 + getStaffTotalEffect(s, 'repMult') * getSkillEffect('staffRepMult'));
     }
   });
+  // Decoration reputation bonus
+  repGain *= (1 + getDecorationBonus('reputation'));
   if (repGain > 0) {
     game.reputation += repGain;
     game.dailyTracking.reputationGained += repGain;
@@ -1915,6 +2037,8 @@ function renderAll() {
   normalizeStaffData();
   normalizeEquipmentData();
   normalizeChampionData();
+  normalizeProfileData();
+  applyTheme();
   renderEquipment();
   renderStaff();
   renderAchievements();
@@ -1928,6 +2052,7 @@ function renderAll() {
   renderExpansion();
   renderVipMembers();
   renderChampion();
+  renderProfile();
   renderLog();
   renderGymScene();
   updateUI();
