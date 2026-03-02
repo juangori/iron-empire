@@ -530,15 +530,55 @@ function renderClasses() {
 }
 
 // ===== MARKETING =====
+// Toggle an always-on campaign ON or OFF
+function toggleCampaign(id) {
+  const mc = MARKETING_CAMPAIGNS.find(c => c.id === id);
+  if (!mc || mc.type !== 'always_on') return;
+  if (game.level < mc.reqLevel) return;
+
+  const state = game.marketing[id] || {};
+
+  if (state.active) {
+    game.marketing[id].active = false;
+    addLog('📢 Campaña <span class="highlight">' + mc.name + '</span> desactivada.');
+    showToast(mc.icon, mc.name + ' desactivada.');
+  } else {
+    game.marketing[id] = {
+      active: true,
+      activatedAt: Date.now(),
+      totalSpent: state.totalSpent || 0,
+      totalMembersGenerated: state.totalMembersGenerated || 0,
+      memberAccumulator: state.memberAccumulator || 0,
+      repAccumulator: state.repAccumulator || 0,
+    };
+    addLog('📢 Campaña <span class="highlight">' + mc.name + '</span> activada!');
+    showToast(mc.icon, '¡' + mc.name + ' activada!');
+    game.stats.campaignsLaunched++;
+    game.dailyTracking.campaignsLaunched++;
+    var xpGain = 20;
+    game.xp += xpGain;
+    game.dailyTracking.xpEarned += xpGain;
+  }
+
+  renderMarketing();
+  updateUI();
+  checkAchievements();
+  checkMissionProgress();
+  saveGame();
+}
+
+// Launch a burst (one-time event) campaign
 function launchCampaign(id) {
   const mc = MARKETING_CAMPAIGNS.find(c => c.id === id);
-  if (!mc) return;
+  if (!mc || mc.type !== 'burst') return;
 
+  const now = Date.now();
   const state = game.marketing[id];
-  if (state?.activeUntil && Date.now() < state.activeUntil) return;
+  if (state?.activeUntil && now < state.activeUntil) return;
+  if (state?.cooldownUntil && now < state.cooldownUntil) return;
 
   let cost = mc.cost;
-  if (game.staff.manager?.hired) cost = Math.ceil(cost * 0.8);
+  if (game.staff.manager?.hired && !isStaffSick('manager', 0)) cost = Math.ceil(cost * 0.8);
   cost = Math.ceil(cost * getSkillEffect('campaignCostMult'));
 
   if (game.money < cost) {
@@ -548,24 +588,34 @@ function launchCampaign(id) {
 
   game.money -= cost;
   var durationMult = getSkillEffect('campaignDurationMult');
+  var realDuration = Math.ceil(mc.duration * durationMult);
+  var membersToGive = Math.ceil(mc.membersBoost * getSkillEffect('campaignMembersMult'));
+
+  var suppEffects = getActiveSupplementEffects();
+  if (suppEffects.marketingMult > 1) {
+    membersToGive = Math.ceil(membersToGive * suppEffects.marketingMult);
+  }
+
   game.marketing[id] = {
-    activeUntil: Date.now() + mc.duration * durationMult * 1000
+    startedAt: now,
+    activeUntil: now + realDuration * 1000,
+    cooldownUntil: now + (realDuration + mc.cooldown) * 1000,
+    membersToGive: membersToGive,
+    membersGiven: 0,
   };
 
   var repBoost = Math.ceil(mc.repBoost * getSkillEffect('campaignRepMult'));
   game.reputation += repBoost;
   game.stats.campaignsLaunched++;
   game.dailyTracking.campaignsLaunched++;
-  game.dailyTracking.reputationGained += mc.repBoost;
+  game.dailyTracking.reputationGained += repBoost;
 
   const xpGain = 20;
   game.xp += xpGain;
   game.dailyTracking.xpEarned += xpGain;
 
-  updateMembers();
-
-  addLog('📢 Campaña <span class="highlight">' + mc.name + '</span> lanzada! +' + mc.membersBoost + ' miembros, +' + mc.repBoost + '⭐');
-  showToast(mc.icon, '¡Campaña ' + mc.name + ' en marcha!');
+  addLog('📢 Campaña <span class="highlight">' + mc.name + '</span> lanzada! +' + membersToGive + ' miembros en ' + fmtTime(realDuration) + ', +' + repBoost + '⭐');
+  showToast(mc.icon, '¡' + mc.name + ' en marcha!');
 
   renderMarketing();
   updateUI();
@@ -578,103 +628,209 @@ function renderMarketing() {
   const grid = document.getElementById('marketingGrid');
   if (!grid) return;
 
-  // Marketing summary
-  var activeCampaigns = MARKETING_CAMPAIGNS.filter(mc => {
-    const state = game.marketing[mc.id];
-    return state?.activeUntil && Date.now() < state.activeUntil;
+  const now = Date.now();
+
+  // --- SECTION 1: Always-on campaigns ---
+  const alwaysOnCampaigns = MARKETING_CAMPAIGNS.filter(mc => mc.type === 'always_on');
+  const activeAlwaysOn = alwaysOnCampaigns.filter(mc => {
+    const st = game.marketing[mc.id];
+    return st && st.active;
   });
-  var summaryHTML = '';
-  if (activeCampaigns.length > 0) {
-    summaryHTML = '<div class="marketing-summary"><div class="marketing-summary-title">📢 Campañas Activas: ' + activeCampaigns.length + '</div>';
-    activeCampaigns.forEach(mc => {
+
+  let alwaysOnHTML = '<div class="marketing-section-title">📡 Campañas Continuas <span style="font-size:12px;color:var(--text-dim);font-weight:400;">— activá y desactivá cuando quieras</span></div>';
+  alwaysOnHTML += '<div class="marketing-always-on-grid">';
+
+  alwaysOnCampaigns.forEach(mc => {
+    const state = game.marketing[mc.id] || {};
+    const locked = game.level < mc.reqLevel;
+    const isActive = !!(state.active);
+
+    let costPerDay = mc.costPerDay;
+    if (game.staff.manager?.hired && !isStaffSick('manager', 0)) costPerDay *= 0.8;
+    costPerDay = Math.ceil(costPerDay * getSkillEffect('campaignCostMult'));
+    const membersPerDay = Math.ceil(mc.membersPerDay * getSkillEffect('campaignMembersMult'));
+    const repPerDay = Math.ceil(mc.repPerDay * getSkillEffect('campaignRepMult'));
+    const costPerMember = membersPerDay > 0 ? (costPerDay / membersPerDay).toFixed(0) : '—';
+
+    let insightsHTML = '';
+    if (isActive && state.activatedAt) {
+      const totalGens = state.totalMembersGenerated || 0;
+      const totalSpent = state.totalSpent || 0;
+      const cpm = totalGens > 0 ? Math.round(totalSpent / totalGens) : 0;
+      const activeForMs = now - state.activatedAt;
+      const activeForStr = fmtTime(Math.floor(activeForMs / 1000));
+      insightsHTML = '<div class="campaign-insights">' +
+        '<div class="insights-row"><span>⏱️ Tiempo activa</span><span>' + activeForStr + '</span></div>' +
+        '<div class="insights-row"><span>👥 Socios generados</span><span class="val">' + totalGens + '</span></div>' +
+        '<div class="insights-row"><span>💸 Total invertido</span><span class="val">' + fmtMoney(totalSpent) + '</span></div>' +
+        (totalGens > 0 ? '<div class="insights-row"><span>📊 Costo por socio</span><span class="val">' + fmtMoney(cpm) + '</span></div>' : '') +
+      '</div>';
+    }
+
+    let toggleBtn = '';
+    if (locked) {
+      toggleBtn = '<div class="campaign-locked-msg">🔒 Nivel ' + mc.reqLevel + ' requerido</div>';
+    } else {
+      toggleBtn = '<button class="btn campaign-toggle-btn ' + (isActive ? 'on' : 'off') + '" onclick="toggleCampaign(\'' + mc.id + '\')">' +
+        (isActive ? '🟢 ACTIVA — DESACTIVAR' : '⚫ ACTIVAR CAMPAÑA') +
+      '</button>';
+    }
+
+    alwaysOnHTML +=
+      '<div class="marketing-card always-on ' + (locked ? 'locked' : '') + ' ' + (isActive ? 'active' : '') + '">' +
+        '<div class="marketing-header">' +
+          '<span class="marketing-icon">' + mc.icon + '</span>' +
+          (isActive ? '<span class="marketing-badge running" style="font-size:11px;padding:3px 8px;">EN VIVO</span>' : '') +
+        '</div>' +
+        '<div class="marketing-name">' + mc.name + '</div>' +
+        '<div class="marketing-desc">' + mc.desc + '</div>' +
+        '<div class="marketing-stats">' +
+          '<div class="marketing-stat"><span style="color:var(--cyan);">👥 ' + membersPerDay + ' socios/día</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--purple);">⭐ ' + repPerDay + ' rep/día</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--accent);">💰 ' + fmtMoney(costPerDay) + '/día</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--text-dim);">📊 ~$' + costPerMember + '/socio</span></div>' +
+        '</div>' +
+        insightsHTML +
+        toggleBtn +
+      '</div>';
+  });
+
+  alwaysOnHTML += '</div>';
+
+  // --- SECTION 2: Burst campaigns ---
+  const burstCampaigns = MARKETING_CAMPAIGNS.filter(mc => mc.type === 'burst');
+  const activeBurst = burstCampaigns.filter(mc => {
+    const st = game.marketing[mc.id];
+    return st?.activeUntil && now < st.activeUntil;
+  });
+
+  let burstSummaryHTML = '';
+  if (activeBurst.length > 0) {
+    burstSummaryHTML = '<div class="marketing-summary">' +
+      '<div class="marketing-summary-title">🚀 Campañas de Impacto Activas: ' + activeBurst.length + '</div>';
+    activeBurst.forEach(mc => {
       const state = game.marketing[mc.id];
-      const timeLeft = Math.ceil((state.activeUntil - Date.now()) / 1000);
-      const totalDuration = mc.duration;
-      const elapsed = totalDuration - timeLeft;
-      const progressPct = Math.round((elapsed / totalDuration) * 100);
-      summaryHTML += '<div class="marketing-active-item">' +
+      const timeLeft = Math.ceil((state.activeUntil - now) / 1000);
+      const totalMs = state.activeUntil - (state.startedAt || state.activeUntil - mc.duration * 1000);
+      const elapsedMs = now - (state.startedAt || now);
+      const progressPct = Math.min(100, Math.round((elapsedMs / totalMs) * 100));
+      const membersLeft = Math.ceil((state.membersToGive || mc.membersBoost) - (state.membersGiven || 0));
+      burstSummaryHTML += '<div class="marketing-active-item">' +
         '<span>' + mc.icon + ' ' + mc.name + '</span>' +
-        '<span style="color:var(--cyan);">+' + mc.membersBoost + ' miembros</span>' +
+        '<span style="color:var(--cyan);">👥 ' + membersLeft + ' socios restantes</span>' +
         '<span style="color:var(--text-dim);">⏱️ ' + fmtTime(timeLeft) + '</span>' +
         '<div class="marketing-progress-bar"><div class="marketing-progress-fill" style="width:' + progressPct + '%"></div></div>' +
       '</div>';
     });
-    summaryHTML += '</div>';
+    burstSummaryHTML += '</div>';
   }
 
-  var cardsHTML = MARKETING_CAMPAIGNS.map(mc => {
+  let burstSectionHTML = '<div class="marketing-section-title" style="margin-top:24px;">🚀 Campañas de Impacto <span style="font-size:12px;color:var(--text-dim);font-weight:400;">— eventos puntuales de alto alcance</span></div>';
+  burstSectionHTML += burstSummaryHTML;
+  burstSectionHTML += '<div class="marketing-grid">';
+
+  burstCampaigns.forEach(mc => {
     const state = game.marketing[mc.id] || {};
     const locked = game.level < mc.reqLevel;
-    const isActive = state.activeUntil && Date.now() < state.activeUntil;
+    const isActive = state.activeUntil && now < state.activeUntil;
+    const isOnCooldown = !isActive && state.cooldownUntil && now < state.cooldownUntil;
 
     let cost = mc.cost;
-    if (game.staff.manager?.hired) cost = Math.ceil(cost * 0.8);
+    if (game.staff.manager?.hired && !isStaffSick('manager', 0)) cost = Math.ceil(cost * 0.8);
     cost = Math.ceil(cost * getSkillEffect('campaignCostMult'));
     const canAfford = game.money >= cost;
+    const membersEff = Math.ceil(mc.membersBoost * getSkillEffect('campaignMembersMult'));
 
     let timerHTML = '';
     let btnHTML = '';
 
     if (locked) {
-      btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;margin-top:8px;">🔒 Requiere Nivel ' + mc.reqLevel + '</div>';
+      btnHTML = '<div class="campaign-locked-msg">🔒 Nivel ' + mc.reqLevel + ' requerido</div>';
     } else if (isActive) {
-      const timeLeft = Math.ceil((state.activeUntil - Date.now()) / 1000);
-      const totalDuration = mc.duration;
-      const progressPct = Math.round(((totalDuration - timeLeft) / totalDuration) * 100);
+      const timeLeft = Math.ceil((state.activeUntil - now) / 1000);
+      const totalMs = state.activeUntil - (state.startedAt || state.activeUntil - mc.duration * 1000);
+      const progressPct = Math.min(100, Math.round(((now - (state.startedAt || now)) / totalMs) * 100));
+      const membersLeft = Math.ceil((state.membersToGive || mc.membersBoost) - (state.membersGiven || 0));
       timerHTML = '<div style="text-align:center;margin-bottom:8px;">' +
         '<span class="marketing-badge running">ACTIVA — ' + fmtTime(timeLeft) + '</span>' +
+        '<div style="color:var(--cyan);font-size:11px;margin-top:4px;">👥 ' + membersLeft + ' socios restantes</div>' +
         '<div class="marketing-progress-bar" style="margin-top:6px;"><div class="marketing-progress-fill" style="width:' + progressPct + '%"></div></div>' +
       '</div>';
       btnHTML = '<button class="btn btn-green" disabled>✅ EN CURSO</button>';
+    } else if (isOnCooldown) {
+      const cdLeft = Math.ceil((state.cooldownUntil - now) / 1000);
+      const cdTotal = mc.cooldown;
+      const cdPct = Math.min(100, Math.round(((cdTotal - cdLeft) / cdTotal) * 100));
+      timerHTML = '<div style="text-align:center;margin-bottom:8px;">' +
+        '<span class="marketing-badge" style="background:var(--bg-card);color:var(--text-dim);border:1px solid var(--border);">COOLDOWN — ' + fmtTime(cdLeft) + '</span>' +
+        '<div class="marketing-progress-bar" style="margin-top:6px;"><div class="marketing-progress-fill" style="width:' + cdPct + '%;background:linear-gradient(90deg,var(--text-dim),var(--border));"></div></div>' +
+      '</div>';
+      btnHTML = '<button class="btn" style="background:var(--bg-card);color:var(--text-dim);cursor:not-allowed;" disabled>⏳ COOLDOWN</button>';
     } else {
-      btnHTML = '<button class="btn btn-cyan" ' + (canAfford ? '' : 'disabled') + ' onclick="launchCampaign(\'' + mc.id + '\')">📢 LANZAR — ' + fmtMoney(cost) + '</button>';
+      btnHTML = '<button class="btn btn-cyan" ' + (canAfford ? '' : 'disabled') + ' onclick="launchCampaign(\'' + mc.id + '\')">🚀 LANZAR — ' + fmtMoney(cost) + '</button>';
     }
 
-    return (
-      '<div class="marketing-card ' + (locked ? 'locked' : '') + ' ' + (isActive ? 'active' : '') + '">' +
+    burstSectionHTML +=
+      '<div class="marketing-card ' + (locked ? 'locked' : '') + ' ' + (isActive ? 'active' : '') + ' ' + (isOnCooldown ? 'cooldown' : '') + '">' +
         '<div class="marketing-header">' +
           '<span class="marketing-icon">' + mc.icon + '</span>' +
         '</div>' +
         '<div class="marketing-name">' + mc.name + '</div>' +
         '<div class="marketing-desc">' + mc.desc + '</div>' +
         '<div class="marketing-stats">' +
-          '<div class="marketing-stat"><span style="color:var(--cyan);">👥 +' + mc.membersBoost + ' miembros</span></div>' +
-          '<div class="marketing-stat"><span style="color:var(--purple);">⭐ +' + mc.repBoost + ' rep</span></div>' +
-          '<div class="marketing-stat"><span style="color:var(--text-dim);">⏱️ Duración: ' + fmtTime(mc.duration) + '</span></div>' +
-          '<div class="marketing-stat"><span style="color:var(--red);">💰 Costo: ' + fmtMoney(cost) + '</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--cyan);">👥 +' + membersEff + ' socios</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--purple);">⭐ +' + mc.repBoost + ' reputación</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--text-dim);">⏱️ ' + fmtTime(mc.duration) + ' · CD: ' + fmtTime(mc.cooldown) + '</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--accent);">💰 ' + fmtMoney(cost) + '</span></div>' +
         '</div>' +
         timerHTML +
         btnHTML +
-      '</div>'
-    );
-  }).join('');
+      '</div>';
+  });
 
-  grid.innerHTML = summaryHTML + cardsHTML;
+  burstSectionHTML += '</div>';
+
+  grid.innerHTML = alwaysOnHTML + burstSectionHTML;
 }
 
 // ===== SUPPLEMENTS =====
+var TOLERANCE_LABELS = [
+  { label: 'Sin tolerancia', color: 'var(--green)', pct: 100, warn: false },
+  { label: 'Tolerancia leve', color: 'var(--accent)', pct: 85, warn: false },
+  { label: 'Tolerancia moderada', color: 'orange', pct: 65, warn: true },
+  { label: 'Tolerancia máxima', color: 'var(--red)', pct: 45, warn: true },
+];
+
 function renderSupplements() {
   var grid = document.getElementById('supplementsGrid');
   if (!grid) return;
 
-  // Summary of active supplements
+  var now = Date.now();
+
   var activeSupps = SUPPLEMENTS.filter(function(sup) {
     var state = game.supplements[sup.id];
-    return state && state.activeUntil && Date.now() < state.activeUntil;
+    return state && state.activeUntil && now < state.activeUntil;
   });
+  var activeIds = activeSupps.map(function(s) { return s.id; });
+  var hasCombo = activeIds.includes('protein') && activeIds.includes('creatine');
 
+  // Summary of active supplements
   var summaryHTML = '';
   if (activeSupps.length > 0) {
-    summaryHTML = '<div class="supplement-summary"><div class="supplement-summary-title">🧃 Suplementos Activos: ' + activeSupps.length + '</div>';
+    summaryHTML = '<div class="supplement-summary">' +
+      '<div class="supplement-summary-title">🧃 Suplementos Activos: ' + activeSupps.length +
+      (hasCombo ? ' <span style="color:var(--accent);font-size:13px;">⚡ COMBO +10% ingresos!</span>' : '') +
+      '</div>';
     activeSupps.forEach(function(sup) {
       var state = game.supplements[sup.id];
-      var timeLeft = Math.ceil((state.activeUntil - Date.now()) / 1000);
-      var totalDuration = sup.duration;
-      var elapsed = totalDuration - timeLeft;
-      var progressPct = Math.round((elapsed / totalDuration) * 100);
+      var timeLeft = Math.ceil((state.activeUntil - now) / 1000);
+      var progressPct = Math.min(100, Math.round(((sup.duration - timeLeft) / sup.duration) * 100));
+      var tLevel = Math.min(3, state.toleranceLevel || 0);
+      var tInfo = TOLERANCE_LABELS[tLevel];
       summaryHTML += '<div class="supplement-active-item">' +
         '<span>' + sup.icon + ' ' + sup.name + '</span>' +
-        '<span style="color:var(--green);">' + getSupplementEffectText(sup) + '</span>' +
+        '<span style="color:var(--green);">' + getSupplementEffectText(sup, tLevel) + '</span>' +
+        '<span style="color:' + tInfo.color + ';font-size:11px;">' + tInfo.label + ' (' + tInfo.pct + '%)</span>' +
         '<span style="color:var(--text-dim);">⏱️ ' + fmtTime(timeLeft) + '</span>' +
         '<div class="supplement-progress-bar"><div class="supplement-progress-fill" style="width:' + progressPct + '%"></div></div>' +
       '</div>';
@@ -685,20 +841,41 @@ function renderSupplements() {
   var cardsHTML = SUPPLEMENTS.map(function(sup) {
     var state = game.supplements[sup.id] || {};
     var locked = game.level < sup.reqLevel;
-    var isActive = state.activeUntil && Date.now() < state.activeUntil;
+    var isActive = !!(state.activeUntil && now < state.activeUntil);
+    var tLevel = Math.min(3, state.toleranceLevel || 0);
+    var tInfo = TOLERANCE_LABELS[tLevel];
 
     var cost = getSupplementCost(sup);
     var canAfford = game.money >= cost;
+
+    // Combo badge
+    var comboPartner = sup.combo ? SUPPLEMENTS.find(function(s) { return s.id === sup.combo; }) : null;
+    var comboActive = comboPartner && activeIds.includes(comboPartner.id);
+    var comboBadge = comboPartner
+      ? '<span class="combo-badge ' + (comboActive ? 'combo-on' : '') + '">⚡ COMBO con ' + comboPartner.name + (comboActive ? ' ✓' : '') + '</span>'
+      : '';
+
+    // Tolerance meter (only show if tolerance > 0 or has been used)
+    var toleranceHTML = '';
+    if (!locked && (tLevel > 0 || state.lastUsedTick)) {
+      var bars = [0, 1, 2].map(function(i) {
+        return '<div class="tolerance-bar ' + (i < tLevel ? 'filled' : '') + '" style="' + (i < tLevel ? 'background:' + tInfo.color : '') + '"></div>';
+      }).join('');
+      toleranceHTML = '<div class="tolerance-meter">' +
+        '<span class="tolerance-label" style="color:' + tInfo.color + ';">' + tInfo.label + ' — ' + tInfo.pct + '% efecto</span>' +
+        '<div class="tolerance-bars">' + bars + '</div>' +
+        (tInfo.warn ? '<div class="tolerance-warning">⚠️ Efecto reducido. Descansá un día para recuperar.</div>' : '') +
+      '</div>';
+    }
 
     var timerHTML = '';
     var btnHTML = '';
 
     if (locked) {
-      btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;margin-top:8px;">🔒 Requiere Nivel ' + sup.reqLevel + '</div>';
+      btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;margin-top:8px;">🔒 Nivel ' + sup.reqLevel + ' requerido</div>';
     } else if (isActive) {
-      var timeLeft = Math.ceil((state.activeUntil - Date.now()) / 1000);
-      var totalDuration = sup.duration;
-      var progressPct = Math.round(((totalDuration - timeLeft) / totalDuration) * 100);
+      var timeLeft = Math.ceil((state.activeUntil - now) / 1000);
+      var progressPct = Math.min(100, Math.round(((sup.duration - timeLeft) / sup.duration) * 100));
       timerHTML = '<div style="text-align:center;margin-bottom:8px;">' +
         '<span class="supplement-badge running">ACTIVO — ' + fmtTime(timeLeft) + '</span>' +
         '<div class="supplement-progress-bar" style="margin-top:6px;"><div class="supplement-progress-fill" style="width:' + progressPct + '%"></div></div>' +
@@ -713,13 +890,14 @@ function renderSupplements() {
         '<div class="supplement-header">' +
           '<span class="supplement-icon">' + sup.icon + '</span>' +
         '</div>' +
-        '<div class="supplement-name">' + sup.name + '</div>' +
+        '<div class="supplement-name">' + sup.name + (comboBadge ? '<br>' + comboBadge : '') + '</div>' +
         '<div class="supplement-desc">' + sup.desc + '</div>' +
         '<div class="supplement-stats">' +
-          '<div class="supplement-stat">💪 <span class="val">' + getSupplementEffectText(sup) + '</span></div>' +
+          '<div class="supplement-stat">💪 <span class="val">' + getSupplementEffectText(sup, tLevel) + '</span></div>' +
           '<div class="supplement-stat">⏱️ <span class="val">' + fmtTime(sup.duration) + '</span></div>' +
           '<div class="supplement-stat">💰 <span class="val">' + fmtMoney(cost) + '</span></div>' +
         '</div>' +
+        toleranceHTML +
         timerHTML +
         btnHTML +
       '</div>'
@@ -729,16 +907,31 @@ function renderSupplements() {
   grid.innerHTML = summaryHTML + cardsHTML;
 }
 
-function getSupplementEffectText(sup) {
+// Returns effect text scaled by current tolerance
+function getSupplementEffectText(sup, toleranceLevel) {
+  var tLevel = Math.min(3, toleranceLevel || 0);
+  var tMult = [1.0, 0.85, 0.65, 0.45][tLevel];
   var parts = [];
   var e = sup.effects;
-  if (e.incomeMult) parts.push('+' + Math.round((e.incomeMult - 1) * 100) + '% income');
-  if (e.equipIncomeMult) parts.push('+' + Math.round((e.equipIncomeMult - 1) * 100) + '% income equipos');
-  if (e.classIncomeMult) parts.push('+' + Math.round((e.classIncomeMult - 1) * 100) + '% income clases');
-  if (e.marketingMult) parts.push('+' + Math.round((e.marketingMult - 1) * 100) + '% marketing');
-  if (e.capacityBonus) parts.push('+' + e.capacityBonus + ' capacidad');
-  if (e.repBonus) parts.push('+' + e.repBonus + ' rep');
-  if (e.repPerMin) parts.push('+' + e.repPerMin + ' rep/min');
+  if (e.incomeMult) {
+    var scaled = Math.round((e.incomeMult - 1) * 100 * tMult);
+    parts.push('+' + scaled + '% ingresos');
+  }
+  if (e.equipIncomeMult) {
+    var scaled = Math.round((e.equipIncomeMult - 1) * 100 * tMult);
+    parts.push('+' + scaled + '% ing. equipos');
+  }
+  if (e.classIncomeMult) {
+    var scaled = Math.round((e.classIncomeMult - 1) * 100 * tMult);
+    parts.push('+' + scaled + '% ing. clases');
+  }
+  if (e.marketingMult) {
+    var scaled = Math.round((e.marketingMult - 1) * 100 * tMult);
+    parts.push('+' + scaled + '% marketing');
+  }
+  if (e.capacityBonus) parts.push('+' + Math.round(e.capacityBonus * tMult) + ' capacidad');
+  if (e.repBonus) parts.push('+' + Math.round(e.repBonus * tMult) + ' reputación');
+  if (e.repPerMin) parts.push('+' + (e.repPerMin * tMult).toFixed(1) + ' rep/min');
   return parts.join(', ');
 }
 
@@ -1002,6 +1195,112 @@ function endTutorial() {
 
   showToast('🎓', '¡Tutorial completado! ¡A construir tu imperio!');
   saveGame();
+}
+
+// ===== TAB WALKTHROUGHS =====
+var _walkthroughTabId = null;
+
+function showTabWalkthrough(tabId) {
+  var wt = TAB_WALKTHROUGHS[tabId];
+  if (!wt) return;
+  _walkthroughTabId = tabId;
+
+  var tipsHTML = wt.tips.map(function(t) {
+    return '<li class="walkthrough-tip">' + t + '</li>';
+  }).join('');
+
+  document.getElementById('tabWalkthroughCard').innerHTML =
+    '<div class="walkthrough-icon">' + wt.icon + '</div>' +
+    '<div class="walkthrough-title">' + wt.title + '</div>' +
+    '<div class="walkthrough-intro">' + wt.intro + '</div>' +
+    '<ul class="walkthrough-tips">' + tipsHTML + '</ul>' +
+    '<div class="walkthrough-actions">' +
+      '<button class="btn btn-small walkthrough-wiki-btn" onclick="openWikiFromWalkthrough(\'' + (wt.wiki || tabId) + '\')">📖 Ver Wiki</button>' +
+      '<button class="btn btn-buy walkthrough-ok-btn" onclick="dismissTabWalkthrough(\'' + tabId + '\')">✅ Entendido</button>' +
+    '</div>';
+
+  document.getElementById('tabWalkthroughOverlay').classList.remove('hidden');
+}
+
+function dismissTabWalkthrough(tabId) {
+  if (!game.tabsSeen) game.tabsSeen = {};
+  game.tabsSeen[tabId || _walkthroughTabId] = true;
+  document.getElementById('tabWalkthroughOverlay').classList.add('hidden');
+  _walkthroughTabId = null;
+  saveGame();
+}
+
+function openWikiFromWalkthrough(sectionId) {
+  dismissTabWalkthrough(_walkthroughTabId);
+  openWiki(sectionId);
+}
+
+function openWiki(sectionId) {
+  switchTab('wiki');
+  if (sectionId) {
+    setTimeout(function() {
+      var el = document.getElementById('wiki-' + sectionId);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        el.classList.add('wiki-section-highlight');
+        setTimeout(function() { el.classList.remove('wiki-section-highlight'); }, 2000);
+      }
+    }, 200);
+  }
+}
+
+// ===== WIKI =====
+function renderWiki() {
+  var container = document.getElementById('wikiContainer');
+  if (!container) return;
+
+  var html = '';
+  WIKI_CONTENT.forEach(function(section) {
+    var safeContent = section.content.replace(/"/g, '&quot;').toLowerCase();
+    html +=
+      '<div class="wiki-section" id="wiki-' + section.id + '" data-title="' + section.title.toLowerCase() + '" data-content="' + safeContent + '">' +
+        '<div class="wiki-section-header" onclick="toggleWikiSection(\'' + section.id + '\')">' +
+          '<span class="wiki-section-icon">' + section.icon + '</span>' +
+          '<span class="wiki-section-title">' + section.title + '</span>' +
+          '<span class="wiki-section-chevron" id="wiki-chevron-' + section.id + '">▼</span>' +
+        '</div>' +
+        '<div class="wiki-section-body hidden" id="wiki-body-' + section.id + '">' +
+          '<div class="wiki-content">' + section.content + '</div>' +
+        '</div>' +
+      '</div>';
+  });
+
+  container.innerHTML = html;
+}
+
+function toggleWikiSection(sectionId) {
+  var body = document.getElementById('wiki-body-' + sectionId);
+  var chevron = document.getElementById('wiki-chevron-' + sectionId);
+  if (!body) return;
+  var isHidden = body.classList.contains('hidden');
+  body.classList.toggle('hidden');
+  if (chevron) chevron.textContent = isHidden ? '▲' : '▼';
+}
+
+function searchWiki(query) {
+  var q = (query || '').toLowerCase().trim();
+  var sections = document.querySelectorAll('.wiki-section');
+  sections.forEach(function(sec) {
+    if (!q) {
+      sec.classList.remove('hidden');
+      return;
+    }
+    var title = sec.getAttribute('data-title') || '';
+    var content = sec.getAttribute('data-content') || '';
+    var match = title.indexOf(q) !== -1 || content.indexOf(q) !== -1;
+    sec.classList.toggle('hidden', !match);
+    if (match) {
+      var body = sec.querySelector('.wiki-section-body');
+      var chevron = sec.querySelector('.wiki-section-chevron');
+      if (body) body.classList.remove('hidden');
+      if (chevron) chevron.textContent = '▲';
+    }
+  });
 }
 
 // ===== SKILL TREE =====
@@ -1571,7 +1870,7 @@ var TAB_REMINDER_CONFIG = {
   marketing: {
     minAbsence: 300,
     check: function() {
-      return MARKETING.some(function(m) {
+      return MARKETING_CAMPAIGNS.some(function(m) {
         if (game.level < m.reqLevel) return false;
         var state = game.marketing[m.id];
         if (state && state.activeUntil && Date.now() < state.activeUntil) return false;
@@ -1711,105 +2010,152 @@ function renderChampion() {
   var container = document.getElementById('championContainer');
   if (!container) return;
 
-  // Not unlocked yet - show normal competitions
+  // Not unlocked yet
   if (game.level < CHAMPION_UNLOCK_LEVEL) {
-    var html = '<div class="champion-locked-panel">' +
-      '<div style="font-size:64px;margin-bottom:16px;">🏅</div>' +
-      '<h3 style="margin:0 0 8px;">Campeón</h3>' +
-      '<p style="color:var(--text-dim);margin:0 0 8px;">Desbloqueá tu campeón en <strong>Nivel ' + CHAMPION_UNLOCK_LEVEL + '</strong></p>' +
-      '<p style="color:var(--text-muted);font-size:13px;margin:0;">Estás en Nivel ' + game.level + '</p>' +
-    '</div>';
-    html += renderNormalCompetitions();
-    container.innerHTML = html;
+    var pct = Math.round((game.level / CHAMPION_UNLOCK_LEVEL) * 100);
+    container.innerHTML =
+      '<div class="champion-locked-panel">' +
+        '<div style="font-size:64px;margin-bottom:16px;">🏅</div>' +
+        '<h3 style="margin:0 0 8px;">Sistema de Campeón</h3>' +
+        '<p style="color:var(--text-dim);margin:0 0 12px;">Desbloqueá en <strong>Nivel ' + CHAMPION_UNLOCK_LEVEL + '</strong>. Estás en Nivel ' + game.level + '.</p>' +
+        '<div class="champ-progress-bar"><div class="champ-progress-fill" style="width:' + pct + '%"></div></div>' +
+        '<p style="color:var(--text-muted);font-size:12px;margin-top:8px;">Nivel ' + game.level + ' / ' + CHAMPION_UNLOCK_LEVEL + '</p>' +
+      '</div>' +
+      renderNormalCompetitions();
     return;
   }
 
-  // Not recruited yet - show recruit + normal competitions
+  // Not recruited yet
   if (!game.champion.recruited) {
     var canAfford = game.money >= CHAMPION_RECRUIT_COST;
-    var html = '<div class="champion-locked-panel">' +
-      '<div style="font-size:64px;margin-bottom:16px;">🏅</div>' +
-      '<h3 style="margin:0 0 8px;">Reclutá tu Campeón</h3>' +
-      '<p style="color:var(--text-dim);margin:0 0 16px;">Un peleador busca gym. Entrenalo, equipalo y llevalo a competir por premios increíbles. ¡Tu campeón gana el doble!</p>' +
-      '<button class="btn btn-buy" style="font-size:16px;padding:14px 28px;" ' +
-        (canAfford ? '' : 'disabled') +
-        ' onclick="recruitChampion()">🏅 RECLUTAR — ' + fmtMoney(CHAMPION_RECRUIT_COST) + '</button>' +
-    '</div>';
-    html += renderNormalCompetitions();
-    container.innerHTML = html;
+    container.innerHTML =
+      '<div class="champion-locked-panel">' +
+        '<div style="font-size:64px;margin-bottom:16px;">🥊</div>' +
+        '<h3 style="margin:0 0 8px;">Reclutá tu Campeón</h3>' +
+        '<p style="color:var(--text-dim);margin:0 0 8px;">Un peleador élite busca entrenador. Dirigilo, entrenalo y llevalo a la gloria.</p>' +
+        '<p style="color:var(--text-muted);font-size:13px;margin:0 0 16px;">Con campeón ganás el doble en todas las competencias.</p>' +
+        '<button class="btn btn-buy" style="font-size:16px;padding:14px 28px;" ' + (canAfford ? '' : 'disabled') + ' onclick="recruitChampion()">🏅 RECLUTAR — ' + fmtMoney(CHAMPION_RECRUIT_COST) + '</button>' +
+      '</div>' +
+      renderNormalCompetitions();
     return;
   }
 
-  // Full champion UI
-  var stage = getChampionVisualStage();
-  var isTraining = game.champion.trainingUntil && Date.now() < game.champion.trainingUntil;
-  var html = '';
+  var now = Date.now();
+  var isTraining = !!(game.champion.trainingUntil && now < game.champion.trainingUntil);
+  var fatigue = game.champion.fatigue || 0;
+  var isExhausted = fatigue >= CHAMPION_FATIGUE_THRESHOLD;
+  var fatigePct = Math.round((fatigue / CHAMPION_MAX_FATIGUE) * 100);
+  var fatigueColor = fatigePct < 40 ? 'var(--green)' : fatigePct < 70 ? 'var(--accent)' : 'var(--red)';
+  var recoveryTimeSec = getChampionRecoveryTimeSeconds();
 
-  // --- Champion Visual Display ---
-  html += '<div class="champion-display">';
-  html += '<div class="champion-stage-label">' + stage.name.toUpperCase() + '</div>';
-  html += renderChampionBody(stage);
-  html += '<div class="champion-name">' + game.champion.name + '</div>';
-  html += '<div class="champion-record">🏆 ' + game.champion.wins + 'V - ' + game.champion.losses + 'D</div>';
-  html += '<button class="btn btn-small btn-cyan" onclick="showChampionCustomize()" style="margin-top:8px;font-size:12px;">✏️ Personalizar</button>';
-  html += '</div>';
-
-  // --- Customization panel (hidden by default) ---
-  html += '<div class="champion-customize hidden" id="championCustomize">';
-  html += renderChampionCustomizePanel();
-  html += '</div>';
-
-  // --- Level + XP bar ---
   var xpNeeded = getChampionXpToNext();
   var xpPct = Math.min(100, Math.floor((game.champion.xp / xpNeeded) * 100));
-  html += '<div class="champion-info-bar">';
-  html += '<div class="champion-level-badge">🏅 NIVEL ' + game.champion.level + '</div>';
-  html += '<div class="champion-xp-bar"><div class="champion-xp-fill" style="width:' + xpPct + '%"></div><span class="champion-xp-text">' + game.champion.xp + ' / ' + xpNeeded + ' XP</span></div>';
-  html += '</div>';
+  var totalStats = getChampionTotalStats();
 
-  // --- Energy bar ---
-  var energyPct = Math.floor((game.champion.energy / CHAMPION_MAX_ENERGY) * 100);
-  var energyColor = energyPct > 50 ? 'var(--green)' : energyPct > 20 ? 'var(--accent)' : 'var(--red)';
-  html += '<div class="champion-info-bar">';
-  html += '<div style="font-size:14px;font-weight:600;margin-bottom:8px;">⚡ Energía: ' + game.champion.energy + '/' + CHAMPION_MAX_ENERGY + '</div>';
-  html += '<div class="champion-energy-bar"><div class="champion-energy-fill" style="width:' + energyPct + '%;background:' + energyColor + ';"></div></div>';
-  var canRest = game.champion.energy < CHAMPION_MAX_ENERGY && game.money >= CHAMPION_REST_COST;
-  html += '<button class="btn btn-small btn-purple" ' + (canRest ? '' : 'disabled') + ' onclick="championRest()" style="margin-top:8px;">😴 DESCANSAR — ' + fmtMoney(CHAMPION_REST_COST) + ' (+' + CHAMPION_REST_ENERGY + '⚡)</button>';
-  html += '</div>';
+  var html = '';
 
-  // --- Stats section ---
-  html += '<div class="section-title" style="margin-top:16px;">📊 Estadísticas</div>';
-  html += '<div class="champion-stats-grid">';
+  // ===== FICHA DEL CAMPEÓN =====
+  html += '<div class="champ-sheet">';
+
+  // Header: name + level + record
+  html += '<div class="champ-header">';
+  html += '<div class="champ-name-row">';
+  html += '<span class="champ-name-display" id="champNameDisplay">' + (game.champion.name || 'Campeón') + '</span>';
+  html += '<button class="btn-icon" onclick="showChampionRename()" title="Cambiar nombre">✏️</button>';
+  html += '</div>';
+  html += '<div class="champ-meta">';
+  html += '<span class="champ-level-badge">🏅 NIV. ' + game.champion.level + '</span>';
+  html += '<span class="champ-record">🏆 ' + game.champion.wins + 'V · ' + game.champion.losses + 'D</span>';
+  html += '<span class="champ-total-stat">📊 Total: ' + totalStats + '</span>';
+  html += '</div>';
+  html += '<div class="champ-xp-row">';
+  html += '<div class="champ-xp-bar"><div class="champ-xp-fill" style="width:' + xpPct + '%"></div></div>';
+  html += '<span class="champ-xp-text">' + game.champion.xp + ' / ' + xpNeeded + ' XP</span>';
+  html += '</div>';
+  html += '</div>'; // champ-header
+
+  // Inline rename form (hidden by default)
+  html += '<div class="champ-rename-form hidden" id="champRenameForm">' +
+    '<input class="champ-rename-input" id="champRenameInput" type="text" maxlength="20" placeholder="Nombre del campeón" value="' + (game.champion.name || 'Campeón') + '">' +
+    '<button class="btn btn-small btn-cyan" onclick="saveChampionRename()">✅ Guardar</button>' +
+    '<button class="btn btn-small" onclick="cancelChampionRename()">✖</button>' +
+  '</div>';
+
+  // ===== ESTADÍSTICAS =====
+  html += '<div class="champ-section-title">📊 Estadísticas</div>';
+  html += '<div class="champ-stats-list">';
   CHAMPION_STATS.forEach(function(stat) {
-    var base = game.champion.stats[stat];
+    var base = game.champion.stats[stat] || 1;
     var effective = getChampionEffectiveStat(stat);
     var bonus = effective - base;
     var cost = getChampionTrainingCost(stat);
-    var canAfford = game.money >= cost;
-    var canTrain = !isTraining && game.champion.energy >= CHAMPION_TRAINING_ENERGY && canAfford;
+    var duration = getChampionTrainingDuration(stat);
+    var canAffordTrain = game.money >= cost;
+    var canTrain = !isTraining && !isExhausted && canAffordTrain;
+    var maxStatBar = Math.max(30, effective + 5);
+    var barPct = Math.min(100, Math.round((effective / maxStatBar) * 100));
 
-    html += '<div class="champion-stat-card">';
-    html += '<div class="champion-stat-header">' + CHAMPION_STAT_ICONS[stat] + ' ' + CHAMPION_STAT_NAMES[stat] + '</div>';
-    html += '<div class="champion-stat-value">' + base + (bonus > 0 ? ' <span style="color:var(--cyan);font-size:16px;">(+' + bonus + ')</span>' : '') + '</div>';
-
+    html += '<div class="champ-stat-row">';
+    // Icon + name + description
+    html += '<div class="champ-stat-left">';
+    html += '<div class="champ-stat-label">' + CHAMPION_STAT_ICONS[stat] + ' <strong>' + CHAMPION_STAT_NAMES[stat] + '</strong>';
+    if (bonus > 0) html += ' <span class="champ-stat-bonus">+' + bonus + ' (equipo)</span>';
+    html += '</div>';
+    html += '<div class="champ-stat-desc">' + CHAMPION_STAT_DESC[stat] + '</div>';
+    html += '<div class="champ-stat-bar-row">';
+    html += '<div class="champ-stat-bar"><div class="champ-stat-fill" style="width:' + barPct + '%"></div></div>';
+    html += '<span class="champ-stat-val">' + effective + '</span>';
+    html += '</div>';
+    html += '</div>'; // champ-stat-left
+    // Train button / progress
+    html += '<div class="champ-stat-right">';
     if (isTraining && game.champion.trainingStat === stat) {
-      var duration = getChampionTrainingDuration(stat) * 1000;
-      var startTime = game.champion.trainingUntil - duration;
-      var elapsed = Date.now() - startTime;
-      var pct = Math.min(100, Math.round((elapsed / duration) * 100));
-      var remaining = Math.max(0, Math.ceil((game.champion.trainingUntil - Date.now()) / 1000));
-      html += '<div class="staff-training-bar"><div class="staff-training-fill" style="width:' + pct + '%"></div></div>';
-      html += '<div class="staff-training-time">Entrenando... ' + fmtTime(remaining) + '</div>';
+      var dur = getChampionTrainingDuration(stat) * 1000;
+      var startTime = game.champion.trainingUntil - dur;
+      var elapsed = now - startTime;
+      var pct = Math.min(100, Math.round((elapsed / dur) * 100));
+      var remaining = Math.max(0, Math.ceil((game.champion.trainingUntil - now) / 1000));
+      html += '<div class="champ-training-active">';
+      html += '<div class="champ-train-bar"><div class="champ-train-fill" style="width:' + pct + '%"></div></div>';
+      html += '<div class="champ-train-time">Entrenando... ' + fmtTime(remaining) + '</div>';
+      html += '</div>';
     } else {
-      html += '<button class="btn btn-buy btn-small" style="width:100%;margin-top:8px;" ' + (canTrain ? '' : 'disabled') +
-        ' onclick="trainChampion(\'' + stat + '\')">📚 ENTRENAR — ' + fmtMoney(cost) + ' (⚡' + CHAMPION_TRAINING_ENERGY + ')</button>';
+      html += '<button class="btn btn-buy btn-small champ-train-btn" ' + (canTrain ? '' : 'disabled') +
+        ' onclick="trainChampion(\'' + stat + '\')">' +
+        '📚 ENTRENAR<br><span style="font-size:11px;">' + fmtMoney(cost) + ' · ' + fmtTime(duration) + '</span>' +
+        '</button>';
     }
     html += '</div>';
+    html += '</div>'; // champ-stat-row
   });
-  html += '</div>';
+  html += '</div>'; // champ-stats-list
 
-  // --- Equipment section ---
-  html += '<div class="section-title" style="margin-top:16px;">⚔️ Equipamiento</div>';
+  // ===== ESTADO FÍSICO (FATIGA) =====
+  html += '<div class="champ-section-title">⚡ Estado Físico</div>';
+  html += '<div class="champ-fatigue-panel">';
+  var stateLabel, stateColor;
+  if (isExhausted) { stateLabel = '⚠️ AGOTADO'; stateColor = 'var(--red)'; }
+  else if (fatigePct >= 50) { stateLabel = '😓 CANSADO'; stateColor = 'var(--accent)'; }
+  else if (fatigePct >= 20) { stateLabel = '💪 ACTIVO'; stateColor = 'var(--cyan)'; }
+  else { stateLabel = '✅ DESCANSADO'; stateColor = 'var(--green)'; }
+
+  html += '<div class="champ-fatigue-header">';
+  html += '<span style="color:' + stateColor + ';font-weight:700;">' + stateLabel + '</span>';
+  html += '<span class="champ-fatigue-num" style="color:' + fatigueColor + ';">Fatiga: ' + fatigue + '/' + CHAMPION_MAX_FATIGUE + '</span>';
+  html += '</div>';
+  html += '<div class="champ-fatigue-bar"><div class="champ-fatigue-fill" style="width:' + fatigePct + '%;background:' + fatigueColor + ';"></div></div>';
+  if (fatigue > 0) {
+    html += '<div class="champ-fatigue-recovery">⏱️ Recuperación: ~' + fmtTime(recoveryTimeSec) + ' restantes · mejorá Stamina para acelerar</div>';
+  } else {
+    html += '<div class="champ-fatigue-recovery" style="color:var(--green);">Listo para entrenar y competir</div>';
+  }
+  if (isExhausted) {
+    html += '<div class="champ-exhausted-msg">⚠️ Campeón agotado — no puede entrenar ni competir. Esperá a que se recupere. No hay atajos.</div>';
+  }
+  html += '</div>'; // champ-fatigue-panel
+
+  // ===== EQUIPAMIENTO =====
+  html += '<div class="champ-section-title">🛡️ Equipamiento</div>';
   html += '<div class="champion-equip-grid">';
   var slots = ['head', 'hands', 'waist', 'feet'];
   var slotNames = { head: 'Cabeza', hands: 'Manos', waist: 'Cintura', feet: 'Pies' };
@@ -1821,7 +2167,6 @@ function renderChampion() {
 
     html += '<div class="champion-equip-slot">';
     html += '<div class="champion-slot-label">' + slotIcons[slot] + ' ' + slotNames[slot] + '</div>';
-
     if (equipped) {
       var eqStats = Object.keys(equipped.stats).map(function(k) {
         return CHAMPION_STAT_ICONS[k] + '+' + equipped.stats[k];
@@ -1831,8 +2176,6 @@ function renderChampion() {
     } else {
       html += '<div class="champion-empty-slot">— Vacío —</div>';
     }
-
-    // Available upgrades for this slot
     var available = CHAMPION_EQUIPMENT.filter(function(e) {
       return e.slot === slot && e.id !== equippedId && game.champion.level >= e.reqChampLevel;
     });
@@ -1842,328 +2185,104 @@ function renderChampion() {
         return CHAMPION_STAT_ICONS[k] + '+' + eq.stats[k];
       }).join(' ');
       html += '<button class="btn btn-small btn-buy" style="width:100%;margin-top:6px;font-size:12px;" ' + (canBuy ? '' : 'disabled') +
-        ' onclick="equipChampion(\'' + eq.id + '\')">' + eq.icon + ' ' + eq.name + ' — ' + fmtMoney(eq.cost) +
-        ' <span style="opacity:0.8;">(' + statText + ')</span></button>';
+        ' onclick="equipChampion(\'' + eq.id + '\')">' + eq.icon + ' ' + eq.name + ' — ' + fmtMoney(eq.cost) + ' <span style="opacity:0.7;">(' + statText + ')</span></button>';
     });
-
-    // Locked upgrades hint
-    var locked = CHAMPION_EQUIPMENT.filter(function(e) {
+    var lockedItems = CHAMPION_EQUIPMENT.filter(function(e) {
       return e.slot === slot && e.id !== equippedId && game.champion.level < e.reqChampLevel;
     });
-    if (locked.length > 0) {
-      html += '<div style="color:var(--text-muted);font-size:11px;margin-top:4px;">🔒 Más items en nivel ' + locked[0].reqChampLevel + '</div>';
+    if (lockedItems.length > 0) {
+      html += '<div style="color:var(--text-muted);font-size:11px;margin-top:4px;">🔒 Más items en nivel ' + lockedItems[0].reqChampLevel + '</div>';
     }
-
     html += '</div>';
   });
-  html += '</div>';
+  html += '</div>'; // champion-equip-grid
 
-  // --- Compete section ---
-  html += '<div class="section-title" style="margin-top:16px;">⚔️ Competir</div>';
-  html += '<p class="section-subtitle" style="margin-bottom:12px;">Tu campeón gana el doble de premios. Necesita ⚡' + CHAMPION_COMPETE_ENERGY + ' energía.</p>';
+  // ===== COMPETENCIAS =====
+  html += '<div class="champ-section-title">⚔️ Competencias <span style="font-size:13px;color:var(--cyan);font-weight:400;">— tu campeón gana el doble</span></div>';
   html += '<div class="champion-comp-list">';
+
   COMPETITIONS.forEach(function(c) {
     var state = game.competitions[c.id] || { wins: 0, losses: 0, cooldownUntil: 0 };
     var locked = game.reputation < c.minRep;
-    var onCooldown = Date.now() < state.cooldownUntil;
-    var canCompete = !locked && !onCooldown && !isTraining && game.champion.energy >= CHAMPION_COMPETE_ENERGY;
-
-    var tecnica = getChampionEffectiveStat('tecnica');
-    var rewardMult = CHAMPION_REWARD_MULT * getSkillEffect('compRewardMult') * (1 + tecnica * 0.02);
+    var onCooldown = !locked && now < state.cooldownUntil;
     var fuerza = getChampionEffectiveStat('fuerza');
     var velocidad = getChampionEffectiveStat('velocidad');
-    var statBonus = (fuerza * 0.01) + (velocidad * 0.015);
+    var mentalidad = getChampionEffectiveStat('mentalidad');
+    var tecnica = getChampionEffectiveStat('tecnica');
+    var resistencia = getChampionEffectiveStat('resistencia');
+    var statBonus = (fuerza * 0.008) + (velocidad * 0.012) + (mentalidad * 0.01);
     var chance = Math.min(0.95, c.winChance + statBonus + getSkillEffect('compWinChanceBonus', 0));
+    var rewardMult = CHAMPION_REWARD_MULT * getSkillEffect('compRewardMult') * (1 + tecnica * 0.02) * (1 + fuerza * 0.01);
+    var fatigueCost = Math.max(15, CHAMPION_FATIGUE_PER_COMPETE - Math.floor(resistencia * 0.5));
+    var canCompete = !locked && !onCooldown && !isTraining && !isExhausted;
+
+    var chancePct = Math.round(chance * 100);
+    var chanceColor = chancePct >= 70 ? 'var(--green)' : chancePct >= 40 ? 'var(--accent)' : 'var(--red)';
 
     var actionHTML = '';
     if (locked) {
       actionHTML = '<span style="color:var(--text-muted);font-size:12px;">🔒 ' + c.minRep + ' rep</span>';
     } else if (onCooldown) {
-      var timeLeft = Math.ceil((state.cooldownUntil - Date.now()) / 1000);
+      var timeLeft = Math.ceil((state.cooldownUntil - now) / 1000);
       actionHTML = '<span style="color:var(--text-dim);font-size:12px;">⏱️ ' + fmtTime(timeLeft) + '</span>';
     } else {
       actionHTML = '<button class="btn btn-buy btn-small" ' + (canCompete ? '' : 'disabled') +
-        ' onclick="championCompete(\'' + c.id + '\')">🏅 COMPETIR</button>';
+        ' onclick="championCompete(\'' + c.id + '\')">🏅 COMPETIR<br><span style="font-size:10px;opacity:0.8;">-' + fatigueCost + ' fatiga</span></button>';
     }
 
     html += '<div class="champion-comp-row' + (locked ? ' locked' : '') + '">' +
       '<div class="champion-comp-info">' +
         '<span class="champion-comp-icon">' + c.icon + '</span>' +
-        '<span class="champion-comp-name">' + c.name + '</span>' +
+        '<div>' +
+          '<div class="champion-comp-name">' + c.name + '</div>' +
+          '<div style="font-size:11px;color:var(--text-muted);">' + c.desc + '</div>' +
+          (state.wins + state.losses > 0 ? '<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Récord: ' + state.wins + 'V · ' + state.losses + 'D</div>' : '') +
+        '</div>' +
       '</div>' +
       '<div class="champion-comp-details">' +
-        '<span>💰 ' + fmtMoney(Math.ceil(c.reward * rewardMult)) + '</span>' +
-        '<span>🎯 ' + Math.round(chance * 100) + '%</span>' +
+        '<div style="text-align:right;">' +
+          '<div style="color:var(--accent);font-weight:700;">' + fmtMoney(Math.ceil(c.reward * rewardMult)) + '</div>' +
+          '<div style="font-size:11px;color:var(--text-dim);">+' + Math.ceil(c.repReward * getSkillEffect('compRepMult')) + '⭐</div>' +
+        '</div>' +
+        '<div class="champ-chance-badge" style="background:' + chanceColor + '20;color:' + chanceColor + ';border:1px solid ' + chanceColor + ';">' + chancePct + '%</div>' +
       '</div>' +
       '<div class="champion-comp-action">' + actionHTML + '</div>' +
     '</div>';
   });
-  html += '</div>';
+  html += '</div>'; // champion-comp-list
+  html += '</div>'; // champ-sheet
 
   container.innerHTML = html;
 }
 
-// ===== SVG CHARACTER GENERATOR =====
-function generateChampionSVG(appearance, stage, equipment) {
-  var skin = CHAMPION_SKIN_COLORS[appearance.skin || 0].color;
-  var skinDark = darkenColor(skin, 20);
-  var hairColor = CHAMPION_HAIR_COLORS[appearance.hairColor || 0].color;
-  var eyeColor = CHAMPION_EYE_COLORS[appearance.eyeColor || 0].color;
-  var hairId = CHAMPION_HAIR_STYLES[appearance.hair || 0].id;
-  var isFemale = appearance.gender === 'female';
-
-  // Base dimensions (center at 100, total viewBox 200x320)
-  var cx = 100;
-  var tw = 32 * stage.torsoW; // torso half-width
-  var sw = 38 * stage.shoulderW; // shoulder half-width
-  var aw = 10 * stage.armW; // arm width
-  var lw = 14 * stage.legW; // leg half-width
-  var headR = 22;
-
-  // Y positions
-  var headY = 58;
-  var neckY = headY + headR - 2;
-  var shoulderY = neckY + 14;
-  var torsoBottom = shoulderY + 65;
-  var waistW = tw * 0.75;
-  var legTop = torsoBottom;
-  var legBottom = legTop + 75;
-  var footY = legBottom + 6;
-
-  var svg = '<svg class="champion-svg" viewBox="0 0 200 320" xmlns="http://www.w3.org/2000/svg">';
-
-  // Shadow
-  svg += '<ellipse cx="' + cx + '" cy="308" rx="35" ry="6" fill="rgba(0,0,0,0.25)"/>';
-
-  // === LEGS ===
-  // Left leg
-  svg += '<path d="M' + (cx - lw - 3) + ' ' + legTop + ' L' + (cx - lw - 5) + ' ' + legBottom +
-    ' L' + (cx - 3) + ' ' + legBottom + ' L' + (cx - 2) + ' ' + legTop + ' Z" fill="' + skin + '"/>';
-  // Right leg
-  svg += '<path d="M' + (cx + 2) + ' ' + legTop + ' L' + (cx + 3) + ' ' + legBottom +
-    ' L' + (cx + lw + 5) + ' ' + legBottom + ' L' + (cx + lw + 3) + ' ' + legTop + ' Z" fill="' + skin + '"/>';
-
-  // Shorts
-  var shortsColor = isFemale ? '#2d3436' : '#2d3436';
-  svg += '<path d="M' + (cx - tw) + ' ' + (torsoBottom - 5) + ' L' + (cx - lw - 6) + ' ' + (legTop + 28) +
-    ' L' + (cx - 1) + ' ' + (legTop + 25) + ' L' + (cx + 1) + ' ' + (legTop + 25) +
-    ' L' + (cx + lw + 6) + ' ' + (legTop + 28) + ' L' + (cx + tw) + ' ' + (torsoBottom - 5) +
-    ' Z" fill="' + shortsColor + '"/>';
-
-  // Shoes (feet)
-  var shoeColor = equipment.feet ? CHAMPION_EQUIPMENT.find(function(e) { return e.id === equipment.feet; }).svgColor : '#555';
-  svg += '<rect x="' + (cx - lw - 8) + '" y="' + legBottom + '" width="' + (lw + 8) + '" height="8" rx="4" fill="' + shoeColor + '"/>';
-  svg += '<rect x="' + (cx + 1) + '" y="' + legBottom + '" width="' + (lw + 8) + '" height="8" rx="4" fill="' + shoeColor + '"/>';
-
-  // === TORSO ===
-  if (isFemale) {
-    svg += '<path d="M' + (cx - sw) + ' ' + shoulderY + ' Q' + (cx - tw - 4) + ' ' + (shoulderY + 25) + ' ' + (cx - waistW) + ' ' + torsoBottom +
-      ' L' + (cx + waistW) + ' ' + torsoBottom + ' Q' + (cx + tw + 4) + ' ' + (shoulderY + 25) + ' ' + (cx + sw) + ' ' + shoulderY + ' Z" fill="' + skin + '"/>';
-  } else {
-    svg += '<path d="M' + (cx - sw) + ' ' + shoulderY + ' L' + (cx - waistW) + ' ' + torsoBottom +
-      ' L' + (cx + waistW) + ' ' + torsoBottom + ' L' + (cx + sw) + ' ' + shoulderY + ' Z" fill="' + skin + '"/>';
-  }
-
-  // Tank top
-  var tankColor = isFemale ? '#e84393' : '#2c3e50';
-  var tankTopW = sw - 6;
-  svg += '<path d="M' + (cx - tankTopW) + ' ' + (shoulderY + 3) + ' L' + (cx - waistW + 2) + ' ' + (torsoBottom - 2) +
-    ' L' + (cx + waistW - 2) + ' ' + (torsoBottom - 2) + ' L' + (cx + tankTopW) + ' ' + (shoulderY + 3) + ' Z" fill="' + tankColor + '" opacity="0.85"/>';
-
-  // Belt equipment
-  if (equipment.waist) {
-    var beltEq = CHAMPION_EQUIPMENT.find(function(e) { return e.id === equipment.waist; });
-    svg += '<rect x="' + (cx - waistW - 2) + '" y="' + (torsoBottom - 8) + '" width="' + ((waistW + 2) * 2) + '" height="8" rx="3" fill="' + beltEq.svgColor + '"/>';
-    svg += '<circle cx="' + cx + '" cy="' + (torsoBottom - 4) + '" r="3" fill="' + darkenColor(beltEq.svgColor, -30) + '"/>';
-  }
-
-  // === ARMS ===
-  var armLen = 60;
-  // Left arm
-  svg += '<path d="M' + (cx - sw) + ' ' + shoulderY + ' L' + (cx - sw - aw * 0.6) + ' ' + (shoulderY + armLen) +
-    ' L' + (cx - sw + aw * 0.6) + ' ' + (shoulderY + armLen) + ' L' + (cx - sw + aw * 0.3) + ' ' + shoulderY + ' Z" fill="' + skin + '"/>';
-  // Right arm
-  svg += '<path d="M' + (cx + sw - aw * 0.3) + ' ' + shoulderY + ' L' + (cx + sw - aw * 0.6) + ' ' + (shoulderY + armLen) +
-    ' L' + (cx + sw + aw * 0.6) + ' ' + (shoulderY + armLen) + ' L' + (cx + sw) + ' ' + shoulderY + ' Z" fill="' + skin + '"/>';
-
-  // Hands/gloves
-  var handY = shoulderY + armLen;
-  if (equipment.hands) {
-    var glovesEq = CHAMPION_EQUIPMENT.find(function(e) { return e.id === equipment.hands; });
-    svg += '<circle cx="' + (cx - sw) + '" cy="' + (handY + 2) + '" r="' + (aw * 0.65 + 2) + '" fill="' + glovesEq.svgColor + '"/>';
-    svg += '<circle cx="' + (cx + sw) + '" cy="' + (handY + 2) + '" r="' + (aw * 0.65 + 2) + '" fill="' + glovesEq.svgColor + '"/>';
-  } else {
-    svg += '<circle cx="' + (cx - sw) + '" cy="' + (handY + 2) + '" r="' + (aw * 0.4 + 2) + '" fill="' + skin + '"/>';
-    svg += '<circle cx="' + (cx + sw) + '" cy="' + (handY + 2) + '" r="' + (aw * 0.4 + 2) + '" fill="' + skin + '"/>';
-  }
-
-  // Muscle definition lines for muscular stages
-  if (stage.torsoW >= 1.2) {
-    svg += '<line x1="' + cx + '" y1="' + (shoulderY + 15) + '" x2="' + cx + '" y2="' + (torsoBottom - 15) + '" stroke="' + skinDark + '" stroke-width="0.8" opacity="0.4"/>';
-    // Pecs
-    svg += '<path d="M' + (cx - 8) + ' ' + (shoulderY + 15) + ' Q' + cx + ' ' + (shoulderY + 22) + ' ' + (cx + 8) + ' ' + (shoulderY + 15) + '" stroke="' + skinDark + '" fill="none" stroke-width="0.7" opacity="0.35"/>';
-    // Bicep lines
-    svg += '<line x1="' + (cx - sw + 1) + '" y1="' + (shoulderY + 15) + '" x2="' + (cx - sw - 1) + '" y2="' + (shoulderY + 35) + '" stroke="' + skinDark + '" stroke-width="0.7" opacity="0.3"/>';
-    svg += '<line x1="' + (cx + sw - 1) + '" y1="' + (shoulderY + 15) + '" x2="' + (cx + sw + 1) + '" y2="' + (shoulderY + 35) + '" stroke="' + skinDark + '" stroke-width="0.7" opacity="0.3"/>';
-  }
-
-  // === NECK ===
-  svg += '<rect x="' + (cx - 6) + '" y="' + neckY + '" width="12" height="14" rx="3" fill="' + skin + '"/>';
-
-  // === HEAD ===
-  svg += '<circle cx="' + cx + '" cy="' + headY + '" r="' + headR + '" fill="' + skin + '"/>';
-
-  // Ears
-  svg += '<ellipse cx="' + (cx - headR + 1) + '" cy="' + headY + '" rx="3" ry="5" fill="' + skinDark + '"/>';
-  svg += '<ellipse cx="' + (cx + headR - 1) + '" cy="' + headY + '" rx="3" ry="5" fill="' + skinDark + '"/>';
-
-  // Eyes
-  svg += '<ellipse cx="' + (cx - 8) + '" cy="' + (headY - 2) + '" rx="3.5" ry="4" fill="white"/>';
-  svg += '<ellipse cx="' + (cx + 8) + '" cy="' + (headY - 2) + '" rx="3.5" ry="4" fill="white"/>';
-  svg += '<circle cx="' + (cx - 7.5) + '" cy="' + (headY - 1.5) + '" r="2.2" fill="' + eyeColor + '"/>';
-  svg += '<circle cx="' + (cx + 8.5) + '" cy="' + (headY - 1.5) + '" r="2.2" fill="' + eyeColor + '"/>';
-  svg += '<circle cx="' + (cx - 7) + '" cy="' + (headY - 2) + '" r="0.8" fill="white"/>';
-  svg += '<circle cx="' + (cx + 9) + '" cy="' + (headY - 2) + '" r="0.8" fill="white"/>';
-
-  // Eyebrows
-  svg += '<line x1="' + (cx - 11) + '" y1="' + (headY - 8) + '" x2="' + (cx - 4) + '" y2="' + (headY - 7.5) + '" stroke="' + hairColor + '" stroke-width="1.8" stroke-linecap="round"/>';
-  svg += '<line x1="' + (cx + 4) + '" y1="' + (headY - 7.5) + '" x2="' + (cx + 11) + '" y2="' + (headY - 8) + '" stroke="' + hairColor + '" stroke-width="1.8" stroke-linecap="round"/>';
-
-  // Nose
-  svg += '<path d="M' + cx + ' ' + (headY + 1) + ' L' + (cx - 3) + ' ' + (headY + 7) + ' L' + (cx + 3) + ' ' + (headY + 7) + '" fill="none" stroke="' + skinDark + '" stroke-width="0.8"/>';
-
-  // Mouth
-  svg += '<path d="M' + (cx - 6) + ' ' + (headY + 11) + ' Q' + cx + ' ' + (headY + 15) + ' ' + (cx + 6) + ' ' + (headY + 11) + '" fill="none" stroke="' + skinDark + '" stroke-width="1.2" stroke-linecap="round"/>';
-
-  // === HAIR ===
-  svg += generateHairSVG(hairId, cx, headY, headR, hairColor, isFemale);
-
-  // === HEAD EQUIPMENT ===
-  if (equipment.head) {
-    var headEq = CHAMPION_EQUIPMENT.find(function(e) { return e.id === equipment.head; });
-    if (headEq.id === 'crown') {
-      svg += '<path d="M' + (cx - 18) + ' ' + (headY - headR - 5) + ' L' + (cx - 14) + ' ' + (headY - headR - 18) +
-        ' L' + (cx - 6) + ' ' + (headY - headR - 10) + ' L' + cx + ' ' + (headY - headR - 22) +
-        ' L' + (cx + 6) + ' ' + (headY - headR - 10) + ' L' + (cx + 14) + ' ' + (headY - headR - 18) +
-        ' L' + (cx + 18) + ' ' + (headY - headR - 5) + ' Z" fill="' + headEq.svgColor + '"/>';
-      // Jewels
-      svg += '<circle cx="' + cx + '" cy="' + (headY - headR - 12) + '" r="2" fill="#e74c3c"/>';
-      svg += '<circle cx="' + (cx - 10) + '" cy="' + (headY - headR - 9) + '" r="1.5" fill="#3498db"/>';
-      svg += '<circle cx="' + (cx + 10) + '" cy="' + (headY - headR - 9) + '" r="1.5" fill="#2ecc71"/>';
-    } else {
-      // Headband
-      svg += '<rect x="' + (cx - headR - 1) + '" y="' + (headY - headR + 2) + '" width="' + ((headR + 1) * 2) + '" height="6" rx="3" fill="' + headEq.svgColor + '"/>';
+// Show/hide rename form
+function showChampionRename() {
+  var form = document.getElementById('champRenameForm');
+  var input = document.getElementById('champRenameInput');
+  if (form) {
+    form.classList.toggle('hidden');
+    if (input && !form.classList.contains('hidden')) {
+      input.value = game.champion.name || 'Campeón';
+      input.focus();
     }
   }
-
-  svg += '</svg>';
-  return svg;
 }
 
-function generateHairSVG(hairId, cx, headY, headR, hairColor, isFemale) {
-  var svg = '';
-  var top = headY - headR;
-
-  switch (hairId) {
-    case 'short':
-      svg += '<path d="M' + (cx - headR - 1) + ' ' + (headY - 5) + ' Q' + (cx - headR - 2) + ' ' + (top - 4) + ' ' + cx + ' ' + (top - 6) +
-        ' Q' + (cx + headR + 2) + ' ' + (top - 4) + ' ' + (cx + headR + 1) + ' ' + (headY - 5) + '" fill="' + hairColor + '"/>';
-      break;
-    case 'long':
-      svg += '<path d="M' + (cx - headR - 2) + ' ' + (headY - 3) + ' Q' + (cx - headR - 3) + ' ' + (top - 5) + ' ' + cx + ' ' + (top - 8) +
-        ' Q' + (cx + headR + 3) + ' ' + (top - 5) + ' ' + (cx + headR + 2) + ' ' + (headY - 3) + '" fill="' + hairColor + '"/>';
-      // Side hair flowing down
-      svg += '<path d="M' + (cx - headR - 2) + ' ' + (headY - 3) + ' Q' + (cx - headR - 6) + ' ' + (headY + 20) + ' ' + (cx - headR + 2) + ' ' + (headY + 35) + '" fill="' + hairColor + '" stroke="' + hairColor + '" stroke-width="6" stroke-linecap="round"/>';
-      svg += '<path d="M' + (cx + headR + 2) + ' ' + (headY - 3) + ' Q' + (cx + headR + 6) + ' ' + (headY + 20) + ' ' + (cx + headR - 2) + ' ' + (headY + 35) + '" fill="' + hairColor + '" stroke="' + hairColor + '" stroke-width="6" stroke-linecap="round"/>';
-      break;
-    case 'buzzcut':
-      svg += '<path d="M' + (cx - headR) + ' ' + (headY - 4) + ' Q' + (cx - headR) + ' ' + (top + 1) + ' ' + cx + ' ' + (top - 1) +
-        ' Q' + (cx + headR) + ' ' + (top + 1) + ' ' + (cx + headR) + ' ' + (headY - 4) + '" fill="' + hairColor + '" opacity="0.6"/>';
-      break;
-    case 'mohawk':
-      svg += '<path d="M' + (cx - 5) + ' ' + (headY - 5) + ' L' + (cx - 4) + ' ' + (top - 18) + ' L' + cx + ' ' + (top - 22) +
-        ' L' + (cx + 4) + ' ' + (top - 18) + ' L' + (cx + 5) + ' ' + (headY - 5) + ' Z" fill="' + hairColor + '"/>';
-      break;
-    case 'ponytail':
-      svg += '<path d="M' + (cx - headR - 1) + ' ' + (headY - 5) + ' Q' + (cx - headR - 2) + ' ' + (top - 4) + ' ' + cx + ' ' + (top - 6) +
-        ' Q' + (cx + headR + 2) + ' ' + (top - 4) + ' ' + (cx + headR + 1) + ' ' + (headY - 5) + '" fill="' + hairColor + '"/>';
-      // Ponytail going back
-      svg += '<path d="M' + (cx + 2) + ' ' + (headY + headR - 5) + ' Q' + (cx + 15) + ' ' + (headY + headR + 10) + ' ' + (cx + 5) + ' ' + (headY + headR + 25) + '" stroke="' + hairColor + '" fill="none" stroke-width="7" stroke-linecap="round"/>';
-      break;
-    case 'afro':
-      svg += '<circle cx="' + cx + '" cy="' + (headY - 4) + '" r="' + (headR + 10) + '" fill="' + hairColor + '"/>';
-      break;
-  }
-  return svg;
+function saveChampionRename() {
+  var input = document.getElementById('champRenameInput');
+  if (input) renameChampion(input.value);
+  var form = document.getElementById('champRenameForm');
+  if (form) form.classList.add('hidden');
 }
 
-function darkenColor(hex, amount) {
-  var r = parseInt(hex.slice(1, 3), 16);
-  var g = parseInt(hex.slice(3, 5), 16);
-  var b = parseInt(hex.slice(5, 7), 16);
-  r = Math.max(0, Math.min(255, r - amount));
-  g = Math.max(0, Math.min(255, g - amount));
-  b = Math.max(0, Math.min(255, b - amount));
-  return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+function cancelChampionRename() {
+  var form = document.getElementById('champRenameForm');
+  if (form) form.classList.add('hidden');
 }
 
-function renderChampionBody(stage) {
-  var app = game.champion.appearance;
-  var eq = game.champion.equipment;
-  return '<div class="champion-body-wrapper" id="championBodyWrapper">' +
-    generateChampionSVG(app, stage, eq) +
-    '<canvas id="championCanvas" class="champion-canvas" width="200" height="320"></canvas>' +
-    '</div>';
-}
-
-function renderChampionCustomizePanel() {
-  var app = game.champion.appearance;
-  var html = '<div class="champion-customize-inner">';
-
-  // Gender
-  html += '<div class="customize-row"><span class="customize-label">Género:</span>';
-  html += '<button class="btn btn-small ' + (app.gender === 'male' ? 'btn-cyan' : '') + '" onclick="setChampionAppearance(\'gender\',\'male\')">♂ Masculino</button> ';
-  html += '<button class="btn btn-small ' + (app.gender === 'female' ? 'btn-cyan' : '') + '" onclick="setChampionAppearance(\'gender\',\'female\')">♀ Femenino</button>';
-  html += '</div>';
-
-  // Skin color
-  html += '<div class="customize-row"><span class="customize-label">Piel:</span>';
-  CHAMPION_SKIN_COLORS.forEach(function(s, i) {
-    html += '<button class="btn btn-small customize-color-btn ' + (app.skin === i ? 'selected' : '') + '" onclick="setChampionAppearance(\'skin\',' + i + ')" title="' + s.name + '">' +
-      '<span class="color-swatch" style="background:' + s.color + ';"></span></button> ';
-  });
-  html += '</div>';
-
-  // Hair style
-  html += '<div class="customize-row"><span class="customize-label">Pelo:</span>';
-  CHAMPION_HAIR_STYLES.forEach(function(h, i) {
-    html += '<button class="btn btn-small ' + (app.hair === i ? 'btn-cyan' : '') + '" onclick="setChampionAppearance(\'hair\',' + i + ')">' + h.name + '</button> ';
-  });
-  html += '</div>';
-
-  // Hair color
-  html += '<div class="customize-row"><span class="customize-label">Color pelo:</span>';
-  CHAMPION_HAIR_COLORS.forEach(function(c, i) {
-    html += '<button class="btn btn-small customize-color-btn ' + (app.hairColor === i ? 'selected' : '') + '" onclick="setChampionAppearance(\'hairColor\',' + i + ')" title="' + c.name + '">' +
-      '<span class="color-swatch" style="background:' + c.color + ';"></span></button> ';
-  });
-  html += '</div>';
-
-  // Eye color
-  html += '<div class="customize-row"><span class="customize-label">Ojos:</span>';
-  CHAMPION_EYE_COLORS.forEach(function(c, i) {
-    html += '<button class="btn btn-small customize-color-btn ' + (app.eyeColor === i ? 'selected' : '') + '" onclick="setChampionAppearance(\'eyeColor\',' + i + ')" title="' + c.name + '">' +
-      '<span class="color-swatch" style="background:' + c.color + ';"></span></button> ';
-  });
-  html += '</div>';
-
-  html += '</div>';
-  return html;
-}
-
-function showChampionCustomize() {
-  var panel = document.getElementById('championCustomize');
-  if (panel) panel.classList.toggle('hidden');
+// SVG generation removed — stub kept to avoid errors in old saves
+function generateChampionSVG(appearance, stage, equipment) {
+  return '';
 }
 
 // Normal competitions (without champion) — shown in champion tab before recruiting
@@ -2209,132 +2328,6 @@ function renderNormalCompetitions() {
   });
   html += '</div>';
   return html;
-}
-
-// ===== CHAMPION PARTICLE EFFECTS =====
-var championParticles = [];
-var championEffectActive = false;
-var championFlashAlpha = 0;
-
-function triggerLevelUpEffect() {
-  var canvas = document.getElementById('championCanvas');
-  if (!canvas) return;
-  var ctx = canvas.getContext('2d');
-
-  championParticles = [];
-  championEffectActive = true;
-  championFlashAlpha = 1.0;
-
-  // Spawn particles from center
-  var cx = 100, cy = 160;
-  var colors = ['#ffd700', '#ffec8b', '#fff8dc', '#ffa500', '#ffffff'];
-  for (var i = 0; i < 70; i++) {
-    var angle = Math.random() * Math.PI * 2;
-    var speed = 1.5 + Math.random() * 4;
-    championParticles.push({
-      x: cx + (Math.random() - 0.5) * 20,
-      y: cy + (Math.random() - 0.5) * 40,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 1.5,
-      life: 1.0,
-      decay: 0.008 + Math.random() * 0.012,
-      size: 1.5 + Math.random() * 3.5,
-      color: colors[Math.floor(Math.random() * colors.length)]
-    });
-  }
-  // Sparkles (delayed, smaller, slower)
-  for (var j = 0; j < 30; j++) {
-    var a2 = Math.random() * Math.PI * 2;
-    var s2 = 0.3 + Math.random() * 1.5;
-    championParticles.push({
-      x: cx + (Math.random() - 0.5) * 60,
-      y: cy + (Math.random() - 0.5) * 80,
-      vx: Math.cos(a2) * s2,
-      vy: Math.sin(a2) * s2 + 0.5,
-      life: 1.0,
-      decay: 0.006 + Math.random() * 0.008,
-      size: 0.8 + Math.random() * 1.5,
-      color: colors[Math.floor(Math.random() * colors.length)],
-      delay: 20 + Math.floor(Math.random() * 30)
-    });
-  }
-
-  requestAnimationFrame(function() { animateChampionEffect(ctx, canvas); });
-}
-
-function animateChampionEffect(ctx, canvas) {
-  if (!championEffectActive) return;
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // Flash
-  if (championFlashAlpha > 0) {
-    ctx.fillStyle = 'rgba(255, 215, 0, ' + championFlashAlpha * 0.6 + ')';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    championFlashAlpha -= 0.04;
-  }
-
-  // Particles
-  var alive = false;
-  for (var i = 0; i < championParticles.length; i++) {
-    var p = championParticles[i];
-    if (p.delay && p.delay > 0) { p.delay--; alive = true; continue; }
-    if (p.life <= 0) continue;
-
-    p.x += p.vx;
-    p.y += p.vy;
-    p.vy += 0.03; // gravity
-    p.life -= p.decay;
-    alive = true;
-
-    ctx.globalAlpha = p.life;
-    ctx.fillStyle = p.color;
-    ctx.beginPath();
-    // Star shape for sparkle effect
-    if (p.size < 2) {
-      drawStar(ctx, p.x, p.y, 4, p.size * 1.5, p.size * 0.5);
-    } else {
-      ctx.arc(p.x, p.y, p.size * p.life, 0, Math.PI * 2);
-    }
-    ctx.fill();
-  }
-  ctx.globalAlpha = 1;
-
-  if (alive || championFlashAlpha > 0) {
-    requestAnimationFrame(function() { animateChampionEffect(ctx, canvas); });
-  } else {
-    championEffectActive = false;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-  }
-}
-
-function drawStar(ctx, x, y, points, outer, inner) {
-  ctx.beginPath();
-  for (var i = 0; i < points * 2; i++) {
-    var r = i % 2 === 0 ? outer : inner;
-    var a = (Math.PI / points) * i - Math.PI / 2;
-    if (i === 0) ctx.moveTo(x + r * Math.cos(a), y + r * Math.sin(a));
-    else ctx.lineTo(x + r * Math.cos(a), y + r * Math.sin(a));
-  }
-  ctx.closePath();
-}
-
-function triggerStageTransition() {
-  var wrapper = document.getElementById('championBodyWrapper');
-  if (!wrapper) return;
-  wrapper.classList.add('champion-transforming');
-  triggerLevelUpEffect();
-
-  // Show transformation text
-  var textEl = document.createElement('div');
-  textEl.className = 'champion-transform-text';
-  textEl.textContent = '¡TRANSFORMACIÓN!';
-  wrapper.parentElement.appendChild(textEl);
-
-  setTimeout(function() {
-    wrapper.classList.remove('champion-transforming');
-    if (textEl.parentElement) textEl.parentElement.removeChild(textEl);
-  }, 2000);
 }
 
 // ===== PLAYER PROFILE =====

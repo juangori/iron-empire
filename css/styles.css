@@ -1146,6 +1146,11 @@ body::before {
 }
 
 /* ===== MARKETING ===== */
+/* Outer wrapper — no grid, sections manage their own layout */
+.marketing-tab-container {
+  display: block;
+}
+
 .marketing-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -1170,6 +1175,11 @@ body::before {
 .marketing-card.active {
   border-color: var(--green);
   box-shadow: 0 0 15px var(--green-glow);
+}
+
+.marketing-card.cooldown {
+  border-color: var(--border);
+  opacity: 0.75;
 }
 
 .marketing-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
@@ -1251,7 +1261,126 @@ body::before {
 
 .marketing-stat .val { color: var(--cyan); font-weight: 600; }
 
+/* Section titles inside marketing tab */
+.marketing-section-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Always-on campaigns grid (wider cards) */
+.marketing-always-on-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+/* Toggle button */
+.campaign-toggle-btn {
+  width: 100%;
+  margin-top: 4px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.campaign-toggle-btn.on {
+  background: linear-gradient(135deg, var(--green), #00a86b);
+  color: #000;
+  border: none;
+}
+.campaign-toggle-btn.off {
+  background: var(--bg-card);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+.campaign-toggle-btn.off:hover {
+  border-color: var(--cyan);
+  color: var(--cyan);
+}
+
+/* ROI insights panel inside always-on cards */
+.campaign-insights {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+.insights-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  color: var(--text-dim);
+}
+.insights-row .val {
+  color: var(--cyan);
+  font-weight: 600;
+}
+
+/* Always-on card active glow */
+.marketing-card.always-on.active {
+  border-color: var(--green);
+  box-shadow: 0 0 15px var(--green-glow);
+}
+
+.campaign-locked-msg {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+  margin-top: 8px;
+}
+
 /* ===== SUPPLEMENTS ===== */
+
+/* Tolerance meter */
+.tolerance-meter {
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.tolerance-label {
+  font-size: 11px;
+  font-weight: 600;
+  display: block;
+  margin-bottom: 5px;
+}
+.tolerance-bars {
+  display: flex;
+  gap: 4px;
+}
+.tolerance-bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+}
+.tolerance-bar.filled {
+  border: none;
+}
+.tolerance-warning {
+  font-size: 11px;
+  color: orange;
+  margin-top: 5px;
+}
+
+/* Combo badges on supplement cards */
+.combo-badge {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.combo-badge.combo-on {
+  color: var(--accent);
+}
+
 .supplement-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -2515,7 +2644,7 @@ body::before {
   .logo { font-size: 22px; }
   .tab-content { padding: 16px; }
   .gym-name-display { font-size: 26px; }
-  .equipment-grid, .marketing-grid, .supplement-grid, .rival-grid, .classes-grid, .expansion-grid { grid-template-columns: 1fr; }
+  .equipment-grid, .marketing-grid, .marketing-always-on-grid, .supplement-grid, .rival-grid, .classes-grid, .expansion-grid, .marketing-tab-container { grid-template-columns: 1fr; }
   .staff-grid { grid-template-columns: 1fr; }
   .skill-branch-skills { flex-direction: column; align-items: stretch; }
   .skill-node { max-width: 100%; min-width: auto; }
@@ -2772,203 +2901,6 @@ body::before {
   border-radius: 12px;
   border: 1px solid var(--border);
 }
-
-.champion-display {
-  text-align: center;
-  padding: 24px;
-  background: var(--bg-card);
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  margin-bottom: 16px;
-}
-
-.champion-stage-label {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 16px;
-  letter-spacing: 3px;
-  color: var(--accent);
-  margin-bottom: 12px;
-}
-
-/* SVG Character */
-.champion-body-wrapper {
-  position: relative;
-  width: 200px;
-  height: 320px;
-  margin: 0 auto 12px;
-}
-
-.champion-svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-  transition: opacity 0.5s ease;
-}
-
-.champion-canvas {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-}
-
-.champion-transforming .champion-svg {
-  animation: championTransform 1.5s ease-in-out;
-}
-
-@keyframes championTransform {
-  0% { opacity: 1; transform: scale(1); }
-  30% { opacity: 0; transform: scale(0.9); filter: brightness(3); }
-  60% { opacity: 0; transform: scale(1.05); }
-  100% { opacity: 1; transform: scale(1); }
-}
-
-.champion-transform-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 28px;
-  color: #ffd700;
-  text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.4);
-  letter-spacing: 4px;
-  animation: transformTextAnim 2s ease-out forwards;
-  z-index: 10;
-  white-space: nowrap;
-}
-
-@keyframes transformTextAnim {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-  20% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-  60% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  100% { opacity: 0; transform: translate(-50%, -70%) scale(1); }
-}
-
-/* Color swatch buttons for customization */
-.customize-color-btn {
-  padding: 3px !important;
-  min-width: 32px;
-  min-height: 32px;
-}
-
-.customize-color-btn.selected {
-  border-color: var(--cyan) !important;
-  box-shadow: 0 0 8px rgba(0, 188, 212, 0.5);
-}
-
-.color-swatch {
-  display: block;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.15);
-}
-
-.champion-name {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 22px;
-  letter-spacing: 2px;
-  color: var(--text);
-  margin-top: 8px;
-}
-
-.champion-record {
-  font-size: 13px;
-  color: var(--text-dim);
-}
-
-/* Info bars (level + energy) */
-.champion-info-bar {
-  padding: 12px 16px;
-  background: var(--bg-card);
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  margin-bottom: 12px;
-}
-
-.champion-level-badge {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 16px;
-  letter-spacing: 1px;
-  color: var(--accent);
-  margin-bottom: 8px;
-}
-
-.champion-xp-bar {
-  height: 10px;
-  background: rgba(255,255,255,0.06);
-  border-radius: 5px;
-  overflow: hidden;
-  position: relative;
-}
-
-.champion-xp-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--green));
-  border-radius: 5px;
-  transition: width 0.5s;
-}
-
-.champion-xp-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 9px;
-  font-weight: 700;
-  color: var(--text);
-  text-shadow: 0 0 4px rgba(0,0,0,0.8);
-}
-
-.champion-energy-bar {
-  height: 14px;
-  background: rgba(255,255,255,0.06);
-  border-radius: 7px;
-  overflow: hidden;
-}
-
-.champion-energy-fill {
-  height: 100%;
-  border-radius: 7px;
-  transition: width 0.3s;
-}
-
-/* Stats grid */
-.champion-stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.champion-stat-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 14px;
-  transition: border-color 0.3s;
-}
-
-.champion-stat-card:hover {
-  border-color: var(--accent);
-}
-
-.champion-stat-header {
-  font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 4px;
-}
-
-.champion-stat-value {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 32px;
-  color: var(--accent);
-  margin-bottom: 4px;
-}
-
 /* Equipment grid */
 .champion-equip-grid {
   display: grid;
@@ -3063,33 +2995,6 @@ body::before {
 .champion-comp-action {
   min-width: 100px;
   text-align: right;
-}
-
-/* Customize panel */
-.champion-customize {
-  margin-bottom: 16px;
-}
-
-.champion-customize-inner {
-  padding: 16px;
-  background: var(--bg-card);
-  border-radius: 10px;
-  border: 1px solid var(--border);
-}
-
-.customize-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-
-.customize-label {
-  font-weight: 600;
-  font-size: 13px;
-  min-width: 65px;
-  color: var(--text-dim);
 }
 
 /* ===== PLAYER PROFILE ===== */
@@ -3422,3 +3327,531 @@ body::before {
   0%, 100% { transform: translate(-50%, -50%); }
   50% { transform: translate(-50%, calc(-50% - 3px)); }
 }
+/* ===== CHAMPION SHEET (RPG card) ===== */
+.champ-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.champ-header {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 12px;
+}
+
+.champ-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.champ-name-display {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 2px;
+  color: var(--text);
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  padding: 2px 6px;
+}
+.btn-icon:hover { opacity: 1; }
+
+.champ-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.champ-level-badge {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 15px;
+  letter-spacing: 1px;
+  color: var(--accent);
+  background: rgba(255, 152, 0, 0.12);
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid rgba(255, 152, 0, 0.3);
+}
+
+.champ-record {
+  font-size: 13px;
+  color: var(--cyan);
+  font-weight: 600;
+}
+
+.champ-total-stat {
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.champ-xp-row {
+  position: relative;
+}
+
+.champ-xp-bar {
+  height: 10px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.champ-xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--green));
+  border-radius: 5px;
+  transition: width 0.5s;
+}
+
+.champ-xp-text {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  text-align: right;
+}
+
+.champ-rename-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(0,188,212,0.06);
+  border-radius: 8px;
+  border: 1px solid rgba(0,188,212,0.2);
+  margin-bottom: 12px;
+}
+
+.champ-rename-input {
+  flex: 1;
+  background: var(--bg-input, var(--bg-card));
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: var(--text);
+  font-size: 15px;
+  font-family: inherit;
+}
+
+.champ-section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  padding: 10px 0 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+  margin-top: 4px;
+}
+
+/* Stats list */
+.champ-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.champ-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  transition: border-color 0.2s;
+}
+
+.champ-stat-row:hover {
+  border-color: var(--accent);
+}
+
+.champ-stat-left {
+  flex: 1;
+  min-width: 0;
+}
+
+.champ-stat-label {
+  font-weight: 700;
+  font-size: 14px;
+  margin-bottom: 2px;
+}
+
+.champ-stat-bonus {
+  font-size: 11px;
+  color: var(--cyan);
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.champ-stat-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.champ-stat-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.champ-stat-bar {
+  flex: 1;
+  height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.champ-stat-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--accent));
+  border-radius: 4px;
+  transition: width 0.4s;
+}
+
+.champ-stat-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  color: var(--accent);
+  min-width: 28px;
+  text-align: right;
+}
+
+.champ-stat-right {
+  min-width: 130px;
+  text-align: center;
+}
+
+.champ-train-btn {
+  width: 100%;
+  line-height: 1.4;
+}
+
+.champ-training-active {
+  width: 100%;
+}
+
+.champ-train-bar {
+  height: 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.champ-train-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+  border-radius: 4px;
+  transition: width 0.5s;
+}
+
+.champ-train-time {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+/* Fatigue panel */
+.champ-fatigue-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 4px;
+}
+
+.champ-fatigue-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.champ-fatigue-num {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.champ-fatigue-bar {
+  height: 14px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 7px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.champ-fatigue-fill {
+  height: 100%;
+  border-radius: 7px;
+  transition: width 0.4s;
+}
+
+.champ-fatigue-recovery {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.champ-exhausted-msg {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(244, 67, 54, 0.1);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--red);
+}
+
+/* Win chance badge */
+.champ-chance-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* Progress bar for unlock state */
+.champ-progress-bar {
+  height: 10px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 5px;
+  overflow: hidden;
+  margin: 8px auto;
+  max-width: 300px;
+}
+
+.champ-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--green));
+  border-radius: 5px;
+  transition: width 0.5s;
+}
+
+/* ===== TAB WALKTHROUGH MODAL ===== */
+.tab-walkthrough-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  animation: fadeIn 0.25s ease;
+  padding: 16px;
+}
+
+.tab-walkthrough-overlay.hidden {
+  display: none;
+}
+
+.tab-walkthrough-card {
+  background: var(--bg-card);
+  border: 2px solid var(--accent);
+  border-radius: 16px;
+  padding: 28px 32px;
+  max-width: 520px;
+  width: 100%;
+  animation: eventPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px var(--accent-glow);
+}
+
+.walkthrough-icon {
+  font-size: 48px;
+  text-align: center;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.walkthrough-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.walkthrough-intro {
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.walkthrough-tips {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.walkthrough-tip {
+  font-size: 13px;
+  color: var(--text);
+  line-height: 1.5;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 6px 6px 0;
+}
+
+.walkthrough-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.walkthrough-wiki-btn {
+  font-size: 13px;
+}
+
+.walkthrough-ok-btn {
+  flex: 1;
+  max-width: 200px;
+}
+
+/* ===== WIKI TAB ===== */
+.wiki-search {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+}
+
+.wiki-search:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.wiki-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.wiki-section.hidden {
+  display: none;
+}
+
+.wiki-section-highlight {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 20px var(--accent-glow);
+}
+
+.wiki-section-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.2s;
+}
+
+.wiki-section-header:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.wiki-section-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.wiki-section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 17px;
+  letter-spacing: 1px;
+  color: var(--text);
+  flex: 1;
+}
+
+.wiki-section-chevron {
+  font-size: 12px;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+
+.wiki-section-body {
+  border-top: 1px solid var(--border);
+  padding: 16px;
+}
+
+.wiki-section-body.hidden {
+  display: none;
+}
+
+.wiki-content p {
+  font-size: 14px;
+  color: var(--text-dim);
+  line-height: 1.7;
+  margin: 0 0 12px;
+}
+
+.wiki-content ul {
+  margin: 0 0 12px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.wiki-content li {
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.wiki-content strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.wiki-content em {
+  color: var(--cyan);
+  font-style: italic;
+}
+
+.wiki-tip-box {
+  background: rgba(0, 188, 212, 0.07);
+  border-left: 3px solid var(--cyan);
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin-top: 4px;
+}
+

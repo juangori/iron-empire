@@ -172,6 +172,11 @@
   <div class="event-card" id="eventCard"></div>
 </div>
 
+<!-- TAB WALKTHROUGH OVERLAY -->
+<div class="tab-walkthrough-overlay hidden" id="tabWalkthroughOverlay">
+  <div class="tab-walkthrough-card" id="tabWalkthroughCard"></div>
+</div>
+
 <!-- HEADER -->
 <header class="header">
   <div class="header-inner">
@@ -298,6 +303,7 @@
         <div class="sidebar-category-items">
           <button class="sidebar-item" data-tab="prestige"><span class="item-icon">🌟</span><span class="item-label">Prestigio</span></button>
           <button class="sidebar-item" data-tab="settings"><span class="item-icon">⚙️</span><span class="item-label">Opciones</span></button>
+          <button class="sidebar-item" data-tab="wiki" onclick="switchTab('wiki')"><span class="item-icon">📖</span><span class="item-label">Wiki</span></button>
         </div>
       </div>
     </nav>
@@ -401,8 +407,8 @@
   <!-- MARKETING TAB -->
   <div class="tab-content" id="tab-marketing">
     <div class="section-title">📢 Marketing</div>
-    <p class="section-subtitle">Lanzá campañas de publicidad para atraer miembros y ganar reputación rápidamente.</p>
-    <div class="marketing-grid" id="marketingGrid"></div>
+    <p class="section-subtitle">Campañas continuas que podés activar y pausar, más eventos de impacto para picos de crecimiento.</p>
+    <div class="marketing-tab-container" id="marketingGrid"></div>
   </div>
 
   <!-- SUPPLEMENTS TAB -->
@@ -491,7 +497,7 @@
       <button class="btn btn-purple" style="max-width:300px;margin:0 auto;font-size:16px;padding:14px;" id="prestigeBtn" onclick="doPrestige()">
         🌟 ABRIR FRANQUICIA
       </button>
-      <p style="color:var(--text-muted);font-size:12px;margin-top:12px;">Necesitás al menos $100,000 ganados en total</p>
+      <p style="color:var(--text-muted);font-size:12px;margin-top:12px;">Necesitás al menos $2,000,000 ganados en total</p>
     </div>
 
     <div class="leaderboard-section">
@@ -536,6 +542,14 @@
         <button class="btn btn-red btn-small" onclick="resetGame()">🗑️ BORRAR TODO</button>
       </div>
     </div>
+  </div>
+
+  <!-- WIKI TAB -->
+  <div class="tab-content" id="tab-wiki">
+    <div class="section-title">📖 Wiki — Guía del Juego</div>
+    <p class="section-subtitle">Todo lo que necesitás saber para dominar Iron Empire.</p>
+    <input class="wiki-search" id="wikiSearch" type="text" placeholder="🔍 Buscar en la wiki..." oninput="searchWiki(this.value)">
+    <div id="wikiContainer"></div>
   </div>
 
   </main>

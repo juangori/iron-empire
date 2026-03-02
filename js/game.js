@@ -67,17 +67,15 @@ let game = {
   champion: {
     recruited: false,
     name: 'Campeón',
-    appearance: { gender: 'male', skin: 0, hair: 0, hairColor: 0, eyeColor: 0 },
-    stats: { fuerza: 1, resistencia: 1, velocidad: 1, tecnica: 1 },
+    stats: { fuerza: 1, resistencia: 1, velocidad: 1, tecnica: 1, stamina: 1, mentalidad: 1 },
     level: 1,
     xp: 0,
-    energy: 100,
+    fatigue: 0,
     equipment: { hands: null, waist: null, feet: null, head: null },
     trainingUntil: 0,
     trainingStat: null,
     wins: 0,
     losses: 0,
-    previousStage: null
   },
 
   // VIP members
@@ -106,6 +104,8 @@ let game = {
 
   // Tab visit tracking (for reminders)
   tabLastVisited: {},
+  // First-visit walkthrough tracking
+  tabsSeen: {},
 
   // Lifetime stats
   stats: {
@@ -409,26 +409,26 @@ function normalizeEquipmentData() {
 }
 
 function normalizeChampionData() {
-  if (!game.champion) {
-    game.champion = {
-      recruited: false, name: 'Campeón',
-      appearance: { gender: 'male', skin: 0, hair: 0, hairColor: 0, eyeColor: 0 },
-      stats: { fuerza: 1, resistencia: 1, velocidad: 1, tecnica: 1 },
-      level: 1, xp: 0, energy: 100,
-      equipment: { hands: null, waist: null, feet: null, head: null },
-      trainingUntil: 0, trainingStat: null, wins: 0, losses: 0,
-      previousStage: null
-    };
-  }
+  if (!game.champion) game.champion = {};
+  if (game.champion.recruited === undefined) game.champion.recruited = false;
+  if (!game.champion.name) game.champion.name = 'Campeón';
+  if (!game.champion.stats) game.champion.stats = {};
+  // Init all 6 stats with defaults
+  CHAMPION_STATS.forEach(function(s) {
+    if (game.champion.stats[s] === undefined) game.champion.stats[s] = 1;
+  });
+  if (game.champion.level === undefined) game.champion.level = 1;
+  if (game.champion.xp === undefined) game.champion.xp = 0;
+  // Migrate energy → fatigue
+  if (game.champion.fatigue === undefined) game.champion.fatigue = 0;
+  delete game.champion.energy;
+  delete game.champion.appearance;
+  delete game.champion.previousStage;
   if (!game.champion.equipment) game.champion.equipment = { hands: null, waist: null, feet: null, head: null };
-  if (!game.champion.appearance) game.champion.appearance = { gender: 'male', skin: 0, hair: 0, hairColor: 0, eyeColor: 0 };
-  if (game.champion.appearance.hairColor === undefined) game.champion.appearance.hairColor = 0;
-  if (game.champion.appearance.eyeColor === undefined) game.champion.appearance.eyeColor = 0;
-  if (!game.champion.stats) game.champion.stats = { fuerza: 1, resistencia: 1, velocidad: 1, tecnica: 1 };
-  if (game.champion.energy === undefined) game.champion.energy = CHAMPION_MAX_ENERGY;
+  if (!game.champion.trainingUntil) game.champion.trainingUntil = 0;
+  if (!game.champion.trainingStat) game.champion.trainingStat = null;
   if (!game.champion.wins) game.champion.wins = 0;
   if (!game.champion.losses) game.champion.losses = 0;
-  if (!game.champion.previousStage) game.champion.previousStage = null;
   if (!game.stats.championWins) game.stats.championWins = 0;
   if (!game.stats.championCompetitions) game.stats.championCompetitions = 0;
   if (!game.stats.championTrainings) game.stats.championTrainings = 0;
@@ -445,6 +445,7 @@ function normalizeProfileData() {
   if (!game.stats.maxStreak) game.stats.maxStreak = 0;
   if (!game.stats.prestigeCount) game.stats.prestigeCount = 0;
   if (!game.tabLastVisited) game.tabLastVisited = {};
+  if (!game.tabsSeen) game.tabsSeen = {};
 }
 
 // ===== PROFILE & TITLES =====
@@ -853,7 +854,7 @@ function getIncomePerSecond() {
 
   // Skill: member income mult
   const memberIncomeMult = getSkillEffect('memberIncomeMult');
-  const memberBonus = (1 + (game.members * 0.005)) * memberIncomeMult;
+  const memberBonus = Math.min(3.0, 1 + game.members * 0.002) * memberIncomeMult;
 
   const prestigeMult = 1 + (game.prestigeStars * 0.25);
 
@@ -876,21 +877,32 @@ function getIncomePerSecond() {
 }
 
 // ===== SUPPLEMENT EFFECTS =====
+// Tolerance multipliers per level: 0=100%, 1=85%, 2=65%, 3=45%
+var TOLERANCE_MULTS = [1.0, 0.85, 0.65, 0.45];
+
 function getActiveSupplementEffects() {
   var effects = { incomeMult: 1, equipIncomeMult: 1, classIncomeMult: 1, marketingMult: 1, capacityBonus: 0, repBonus: 0, repPerMin: 0 };
+  var now = Date.now();
   SUPPLEMENTS.forEach(function(sup) {
     var state = game.supplements[sup.id];
-    if (state && state.activeUntil && Date.now() < state.activeUntil) {
+    if (state && state.activeUntil && now < state.activeUntil) {
+      var tolerance = Math.min(3, state.toleranceLevel || 0);
+      var tMult = TOLERANCE_MULTS[tolerance];
       var e = sup.effects;
-      if (e.incomeMult) effects.incomeMult *= e.incomeMult;
-      if (e.equipIncomeMult) effects.equipIncomeMult *= e.equipIncomeMult;
-      if (e.classIncomeMult) effects.classIncomeMult *= e.classIncomeMult;
-      if (e.marketingMult) effects.marketingMult *= e.marketingMult;
-      if (e.capacityBonus) effects.capacityBonus += e.capacityBonus;
-      if (e.repBonus) effects.repBonus += e.repBonus;
-      if (e.repPerMin) effects.repPerMin += e.repPerMin;
+      // Scale bonus by tolerance (1.0 at 0, degrading toward 0.45 at 3)
+      if (e.incomeMult) effects.incomeMult *= 1 + (e.incomeMult - 1) * tMult;
+      if (e.equipIncomeMult) effects.equipIncomeMult *= 1 + (e.equipIncomeMult - 1) * tMult;
+      if (e.classIncomeMult) effects.classIncomeMult *= 1 + (e.classIncomeMult - 1) * tMult;
+      if (e.marketingMult) effects.marketingMult *= 1 + (e.marketingMult - 1) * tMult;
+      if (e.capacityBonus) effects.capacityBonus += Math.round(e.capacityBonus * tMult);
+      if (e.repBonus) effects.repBonus += Math.round(e.repBonus * tMult);
+      if (e.repPerMin) effects.repPerMin += e.repPerMin * tMult;
     }
   });
+  // Combo bonus: Proteína + Creatina → +10% ingresos
+  var proteinActive = game.supplements['protein'] && now < game.supplements['protein'].activeUntil;
+  var creatineActive = game.supplements['creatine'] && now < game.supplements['creatine'].activeUntil;
+  if (proteinActive && creatineActive) effects.incomeMult *= 1.1;
   return effects;
 }
 
@@ -936,7 +948,12 @@ function buySupplement(id) {
   }
 
   game.money -= cost;
-  game.supplements[id] = { activeUntil: Date.now() + sup.duration * 1000 };
+  var prevTolerance = (game.supplements[id] && game.supplements[id].toleranceLevel) || 0;
+  game.supplements[id] = {
+    activeUntil: Date.now() + sup.duration * 1000,
+    toleranceLevel: Math.min(3, prevTolerance + 1),
+    lastUsedTick: game.tickCount,
+  };
 
   if (sup.effects.repBonus) {
     game.reputation += sup.effects.repBonus;
@@ -960,6 +977,23 @@ function buySupplement(id) {
   checkAchievements();
   checkMissionProgress();
   saveGame();
+}
+
+// Reduce supplement tolerance by 1 per game day of inactivity (called every 600 ticks)
+function supplementToleranceDecay() {
+  var now = Date.now();
+  SUPPLEMENTS.forEach(function(sup) {
+    var state = game.supplements[sup.id];
+    if (!state || !state.toleranceLevel) return;
+    // Don't decay while still active
+    if (state.activeUntil && now < state.activeUntil) return;
+    // Decay once per game day of inactivity since last use
+    var ticksSinceUse = game.tickCount - (state.lastUsedTick || 0);
+    if (ticksSinceUse >= 600) {
+      state.toleranceLevel = Math.max(0, state.toleranceLevel - 1);
+      state.lastUsedTick = game.tickCount;
+    }
+  });
 }
 
 // ===== RIVAL GYMS =====
@@ -1445,8 +1479,29 @@ function checkLevelUp() {
 
 function getChampionTotalStats() {
   if (!game.champion || !game.champion.recruited) return 0;
-  var s = game.champion.stats;
-  return (s.fuerza || 0) + (s.resistencia || 0) + (s.velocidad || 0) + (s.tecnica || 0);
+  return CHAMPION_STATS.reduce(function(sum, s) { return sum + (game.champion.stats[s] || 0); }, 0);
+}
+
+// Returns estimated full recovery time in seconds given current stamina
+function getChampionRecoveryRate() {
+  var stamina = getChampionEffectiveStat('stamina');
+  return 2 + Math.floor(stamina * 0.5); // fatigue points recovered per 30 ticks
+}
+
+function getChampionRecoveryTimeSeconds() {
+  var remaining = game.champion.fatigue || 0;
+  if (remaining <= 0) return 0;
+  var rate = getChampionRecoveryRate(); // per 30 ticks
+  return Math.ceil((remaining / rate) * 30); // seconds
+}
+
+function renameChampion(newName) {
+  if (!game.champion) return;
+  newName = (newName || '').trim().slice(0, 20);
+  if (!newName) return;
+  game.champion.name = newName;
+  renderChampion();
+  saveGame();
 }
 
 function getChampionEffectiveStat(stat) {
@@ -1461,17 +1516,6 @@ function getChampionEffectiveStat(stat) {
   return base;
 }
 
-function getChampionVisualStage() {
-  var total = getChampionTotalStats();
-  var stage = CHAMPION_VISUAL_STAGES[0];
-  for (var i = CHAMPION_VISUAL_STAGES.length - 1; i >= 0; i--) {
-    if (total >= CHAMPION_VISUAL_STAGES[i].minStats) {
-      stage = CHAMPION_VISUAL_STAGES[i];
-      break;
-    }
-  }
-  return stage;
-}
 
 function getChampionTrainingCost(stat) {
   var currentVal = game.champion.stats[stat] || 1;
@@ -1512,8 +1556,8 @@ function trainChampion(stat) {
     showToast('❌', '¡Tu campeón ya está entrenando!');
     return;
   }
-  if (game.champion.energy < CHAMPION_TRAINING_ENERGY) {
-    showToast('😴', '¡Tu campeón no tiene energía! Dejalo descansar.');
+  if (game.champion.fatigue >= CHAMPION_FATIGUE_THRESHOLD) {
+    showToast('😴', '¡Campeón agotado! Esperá a que recupere energía.');
     return;
   }
 
@@ -1524,7 +1568,7 @@ function trainChampion(stat) {
   }
 
   game.money -= cost;
-  game.champion.energy -= CHAMPION_TRAINING_ENERGY;
+  game.champion.fatigue = Math.min(CHAMPION_MAX_FATIGUE, game.champion.fatigue + CHAMPION_FATIGUE_PER_TRAIN);
   var duration = getChampionTrainingDuration(stat);
   game.champion.trainingUntil = Date.now() + duration * 1000;
   game.champion.trainingStat = stat;
@@ -1556,12 +1600,12 @@ function checkChampionTraining() {
 
 function championCompete(compId) {
   if (!game.champion || !game.champion.recruited) return;
-  if (game.champion.energy < CHAMPION_COMPETE_ENERGY) {
-    showToast('😴', '¡Tu campeón no tiene energía para competir!');
+  if (game.champion.fatigue >= CHAMPION_FATIGUE_THRESHOLD) {
+    showToast('😴', '¡Campeón agotado! Necesita descansar antes de competir.');
     return;
   }
   if (game.champion.trainingUntil && Date.now() < game.champion.trainingUntil) {
-    showToast('⏳', '¡Tu campeón está entrenando!');
+    showToast('⏳', '¡Tu campeón está entrenando, esperá que termine!');
     return;
   }
 
@@ -1573,18 +1617,22 @@ function championCompete(compId) {
   var state = game.competitions[compId];
   if (Date.now() < state.cooldownUntil) return;
 
-  game.champion.energy -= CHAMPION_COMPETE_ENERGY;
+  // Compute fatigue cost (resistencia reduces it slightly)
+  var resistencia = getChampionEffectiveStat('resistencia');
+  var fatigueCost = Math.max(15, CHAMPION_FATIGUE_PER_COMPETE - Math.floor(resistencia * 0.5));
+  game.champion.fatigue = Math.min(CHAMPION_MAX_FATIGUE, game.champion.fatigue + fatigueCost);
 
-  // Win chance based on champion stats
+  // Win chance: base + fuerza + velocidad + mentalidad bonus
   var fuerza = getChampionEffectiveStat('fuerza');
   var velocidad = getChampionEffectiveStat('velocidad');
-  var statBonus = (fuerza * 0.01) + (velocidad * 0.015);
+  var mentalidad = getChampionEffectiveStat('mentalidad');
+  var statBonus = (fuerza * 0.008) + (velocidad * 0.012) + (mentalidad * 0.01);
   var chance = c.winChance + statBonus + getSkillEffect('compWinChanceBonus', 0);
   chance = Math.min(chance, 0.95);
 
   var won = Math.random() < chance;
 
-  // Set cooldown (75% of normal)
+  // Cooldown (skill-modified)
   var cooldownMult = getSkillEffect('compCooldownMult');
   state.cooldownUntil = Date.now() + c.cooldown * cooldownMult * 0.75 * 1000;
 
@@ -1596,10 +1644,10 @@ function championCompete(compId) {
 
   if (won) {
     var tecnica = getChampionEffectiveStat('tecnica');
-    var rewardMult = CHAMPION_REWARD_MULT * getSkillEffect('compRewardMult') * (1 + tecnica * 0.02) * (1 + getDecorationBonus('compReward'));
+    var rewardMult = CHAMPION_REWARD_MULT * getSkillEffect('compRewardMult') * (1 + tecnica * 0.02) * (1 + fuerza * 0.01) * (1 + getDecorationBonus('compReward'));
     var reward = Math.ceil(c.reward * rewardMult);
     var compRepMult = getSkillEffect('compRepMult');
-    var repGain = Math.ceil(c.repReward * compRepMult);
+    var repGain = Math.ceil(c.repReward * compRepMult * (1 + tecnica * 0.01));
     var compXpMult = getSkillEffect('compXpMult');
     var xpGain = Math.ceil(c.xpReward * compXpMult);
 
@@ -1616,7 +1664,7 @@ function championCompete(compId) {
     game.dailyTracking.reputationGained += repGain;
     game.dailyTracking.xpEarned += xpGain;
 
-    addLog('🏅 ¡VICTORIA del Campeón en <span class="highlight">' + c.name + '</span>! +<span class="money-log">' + fmtMoney(reward) + '</span>');
+    addLog('🏅 ¡VICTORIA en <span class="highlight">' + c.name + '</span>! +<span class="money-log">' + fmtMoney(reward) + '</span> +' + repGain + '⭐');
     showToast('🏅', '¡Victoria en ' + c.name + '!');
     floatNumber('+' + fmtMoney(reward));
   } else {
@@ -1626,7 +1674,7 @@ function championCompete(compId) {
     state.losses++;
     game.champion.losses++;
 
-    addLog('🏅 Tu campeón perdió en <span class="highlight">' + c.name + '</span>. ¡A seguir entrenando!');
+    addLog('🏅 Derrota en <span class="highlight">' + c.name + '</span>. ¡A seguir entrenando!');
     showToast('😤', 'Derrota en ' + c.name);
   }
 
@@ -1645,53 +1693,21 @@ function checkChampionLevelUp() {
   while (game.champion.xp >= xpNeeded) {
     game.champion.xp -= xpNeeded;
     game.champion.level++;
-    addLog('🏅 ¡Tu campeón subió a <span class="highlight">Nivel ' + game.champion.level + '</span>!');
+    addLog('🏅 ¡Campeón subió a <span class="highlight">Nivel ' + game.champion.level + '</span>!');
     showToast('🏅', '¡Campeón Nivel ' + game.champion.level + '!');
-    // Trigger level-up particle effect
-    if (typeof triggerLevelUpEffect === 'function') triggerLevelUpEffect();
     xpNeeded = getChampionXpToNext();
   }
-  // Check for muscle stage transition
-  checkChampionStageTransition();
 }
 
-function checkChampionStageTransition() {
+// Fatigue recovers automatically every 30 ticks. Rate scales with Stamina stat.
+function championFatigueTick() {
   if (!game.champion || !game.champion.recruited) return;
-  var currentStage = getChampionVisualStage();
-  var prevName = game.champion.previousStage;
-  if (prevName && prevName !== currentStage.name) {
-    addLog('💥 ¡Tu campeón alcanzó la etapa <span class="highlight">' + currentStage.name.toUpperCase() + '</span>!');
-    showToast('💥', '¡' + currentStage.name.toUpperCase() + '!');
-    if (typeof triggerStageTransition === 'function') triggerStageTransition();
+  if (game.champion.fatigue <= 0) return;
+  if (game.tickCount % 30 === 0) {
+    var stamina = getChampionEffectiveStat('stamina');
+    var recovery = 2 + Math.floor(stamina * 0.5);
+    game.champion.fatigue = Math.max(0, game.champion.fatigue - recovery);
   }
-  game.champion.previousStage = currentStage.name;
-}
-
-function championEnergyTick() {
-  if (!game.champion || !game.champion.recruited) return;
-  if (game.tickCount % 60 === 0 && game.champion.energy < CHAMPION_MAX_ENERGY) {
-    game.champion.energy = Math.min(CHAMPION_MAX_ENERGY, game.champion.energy + CHAMPION_ENERGY_REGEN);
-  }
-}
-
-function championRest() {
-  if (!game.champion || !game.champion.recruited) return;
-  if (game.champion.energy >= CHAMPION_MAX_ENERGY) {
-    showToast('✅', '¡Tu campeón ya tiene energía al máximo!');
-    return;
-  }
-  if (game.money < CHAMPION_REST_COST) {
-    showToast('❌', '¡No tenés suficiente plata!');
-    return;
-  }
-
-  game.money -= CHAMPION_REST_COST;
-  game.champion.energy = Math.min(CHAMPION_MAX_ENERGY, game.champion.energy + CHAMPION_REST_ENERGY);
-  addLog('🏅 Campeón descansó. Energía: ' + game.champion.energy + '%');
-  showToast('😴', 'Energía +' + CHAMPION_REST_ENERGY);
-  renderChampion();
-  updateUI();
-  saveGame();
 }
 
 function equipChampion(eqId) {
@@ -1714,17 +1730,11 @@ function equipChampion(eqId) {
   saveGame();
 }
 
-function setChampionAppearance(key, value) {
-  if (!game.champion) return;
-  game.champion.appearance[key] = value;
-  renderChampion();
-  saveGame();
-}
 
 // ===== PRESTIGE =====
 function getPrestigeStars() {
-  if (game.totalMoneyEarned < 100000) return 0;
-  return Math.floor(Math.sqrt(game.totalMoneyEarned / 100000));
+  if (game.totalMoneyEarned < 2000000) return 0;
+  return Math.floor(Math.sqrt(game.totalMoneyEarned / 2000000));
 }
 
 function doPrestige() {
@@ -1760,9 +1770,9 @@ function doPrestige() {
   if (game.decoration) {
     game.decoration.items = {};
   }
-  // Champion persists through prestige! Reset energy to full.
+  // Champion persists through prestige! Reset fatigue.
   if (game.champion && game.champion.recruited) {
-    game.champion.energy = CHAMPION_MAX_ENERGY;
+    game.champion.fatigue = 0;
     game.champion.trainingUntil = 0;
     game.champion.trainingStat = null;
   }
@@ -1799,7 +1809,7 @@ function updateSessionTimer() {
 let autoMemberTimer = 0;
 function autoMemberTick() {
   autoMemberTimer++;
-  if (autoMemberTimer >= 10) {
+  if (autoMemberTimer >= 25) {
     autoMemberTimer = 0;
     let autoAdd = 0;
     STAFF.forEach(s => {
@@ -1877,6 +1887,79 @@ function supplementTick() {
   }
 }
 
+// Always-on campaigns: deduct cost per tick, generate members & rep gradually
+function campaignAlwaysOnTick() {
+  MARKETING_CAMPAIGNS.forEach(function(mc) {
+    if (mc.type !== 'always_on') return;
+    var state = game.marketing[mc.id];
+    if (!state || !state.active) return;
+
+    // Cost per tick (game day = 600 ticks)
+    var costPerTick = mc.costPerDay / 600;
+    if (game.staff.manager && game.staff.manager.hired && !isStaffSick('manager', 0)) costPerTick *= 0.8;
+    costPerTick *= getSkillEffect('campaignCostMult');
+
+    if (game.money < costPerTick) {
+      game.marketing[mc.id].active = false;
+      addLog('⚠️ Campaña <span class="highlight">' + mc.name + '</span> pausada por falta de fondos.');
+      showToast('⚠️', mc.name + ': sin fondos, campaña pausada!');
+      return;
+    }
+
+    game.money -= costPerTick;
+    state.totalSpent = (state.totalSpent || 0) + costPerTick;
+
+    // Members per tick
+    var membersPerTick = mc.membersPerDay / 600;
+    membersPerTick *= getSkillEffect('campaignMembersMult');
+    membersPerTick *= getActiveSupplementEffects().marketingMult;
+
+    state.memberAccumulator = (state.memberAccumulator || 0) + membersPerTick;
+    var wholeMembers = Math.floor(state.memberAccumulator);
+    if (wholeMembers > 0) {
+      state.memberAccumulator -= wholeMembers;
+      var added = Math.min(wholeMembers, Math.max(0, game.maxMembers - game.members));
+      if (added > 0) {
+        game.members += added;
+        game.stats.totalMembersJoined = (game.stats.totalMembersJoined || 0) + added;
+        state.totalMembersGenerated = (state.totalMembersGenerated || 0) + added;
+      }
+    }
+
+    // Rep per tick
+    var repPerTick = mc.repPerDay / 600;
+    repPerTick *= getSkillEffect('campaignRepMult');
+    state.repAccumulator = (state.repAccumulator || 0) + repPerTick;
+    var wholeRep = Math.floor(state.repAccumulator);
+    if (wholeRep > 0) {
+      state.repAccumulator -= wholeRep;
+      game.reputation += wholeRep;
+      game.dailyTracking.reputationGained += wholeRep;
+    }
+  });
+}
+
+// Burst campaigns: distribute promised members gradually over duration
+function campaignBurstTick() {
+  var now = Date.now();
+  MARKETING_CAMPAIGNS.forEach(function(mc) {
+    if (mc.type !== 'burst') return;
+    var state = game.marketing[mc.id];
+    if (!state || !state.activeUntil || now >= state.activeUntil) return;
+    if (!state.membersToGive || (state.membersGiven || 0) >= state.membersToGive) return;
+    var totalSec = (state.activeUntil - state.startedAt) / 1000;
+    if (totalSec <= 0) return;
+    var membersPerSec = state.membersToGive / totalSec;
+    var newGiven = Math.min(state.membersToGive, (state.membersGiven || 0) + membersPerSec);
+    var wholeDelta = Math.floor(newGiven) - Math.floor(state.membersGiven || 0);
+    state.membersGiven = newGiven;
+    if (wholeDelta > 0 && game.members < game.maxMembers) {
+      game.members = Math.min(game.members + wholeDelta, game.maxMembers);
+      game.stats.totalMembersJoined = (game.stats.totalMembersJoined || 0) + wholeDelta;
+    }
+  });
+}
+
 // ===== MAIN GAME TICK (every second) =====
 function gameTick() {
   if (!game.started) return;
@@ -1899,8 +1982,10 @@ function gameTick() {
   checkEquipmentBreakdown();
   checkStaffIllness();
   checkChampionTraining();
-  championEnergyTick();
+  championFatigueTick();
   autoMemberTick();
+  campaignAlwaysOnTick();
+  campaignBurstTick();
   repTick();
   classTick();
   supplementTick();
@@ -1915,6 +2000,11 @@ function gameTick() {
   if (game.tickCount % 5 === 0) {
     checkAchievements();
     checkMissionProgress();
+  }
+
+  // Supplement tolerance decay: once per game day (600 ticks)
+  if (game.tickCount % 600 === 0) {
+    supplementToleranceDecay();
   }
 
   if (game.tickCount % 30 === 0) {
@@ -2028,11 +2118,14 @@ function importSave() {
 function resetGame() {
   if (!confirm('¿Estás seguro? Se borra TODO el progreso permanentemente.')) return;
   if (!confirm('¿Realmente seguro? No hay vuelta atrás.')) return;
+  // Flag PRIMERO — onAuthSuccess lo chequea y saltea todo cloud load al recargar
+  localStorage.setItem('ironEmpireReset', '1');
   localStorage.removeItem('ironEmpireSave');
   localStorage.removeItem('ironEmpireLastTick');
-  // Also delete cloud save if logged in
+  // Fire-and-forget cloud delete (el flag garantiza el reset aunque no llegue a borrarse)
   if (typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined') {
-    db.collection('saves').doc(currentUser.uid).delete().catch(() => {});
+    db.collection('saves').doc(currentUser.uid).delete().catch(function() {});
+    db.collection('leaderboard').doc(currentUser.uid).delete().catch(function() {});
   }
   location.reload();
 }
@@ -2105,6 +2198,11 @@ function switchTab(tabId) {
 
   activeTab = tabId;
 
+  // First-visit walkthrough
+  if (game.tutorialDone && !game.tabsSeen[tabId] && typeof TAB_WALKTHROUGHS !== 'undefined' && TAB_WALKTHROUGHS[tabId]) {
+    setTimeout(function() { showTabWalkthrough(tabId); }, 150);
+  }
+
   // Track last visited time for reminders
   if (!game.tabLastVisited) game.tabLastVisited = {};
   game.tabLastVisited[tabId] = Date.now();
@@ -2117,6 +2215,7 @@ function switchTab(tabId) {
 
   // Tab-specific actions
   if (tabId === 'prestige') renderLeaderboard();
+  if (tabId === 'wiki') renderWiki();
   if (tabId === 'achievements') {
     game._lastSeenAchievementCount = ACHIEVEMENTS.filter(function(a) { return game.achievements[a.id]; }).length;
   }

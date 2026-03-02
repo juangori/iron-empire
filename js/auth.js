@@ -294,6 +294,13 @@ async function onAuthSuccess(user, isNewUser) {
   currentUser = user;
   document.getElementById('authScreen').classList.add('hidden');
 
+  // If a reset was requested, skip all saves and show fresh start
+  if (localStorage.getItem('ironEmpireReset')) {
+    localStorage.removeItem('ironEmpireReset');
+    document.getElementById('nameModal').classList.remove('hidden');
+    return;
+  }
+
   if (isNewUser) {
     // Brand new user → show gym name modal → then tutorial
     document.getElementById('nameModal').classList.remove('hidden');
