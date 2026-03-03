@@ -2269,6 +2269,10 @@ function renderChampion() {
   var container = document.getElementById('championContainer');
   if (!container) return;
 
+  // Skip re-render while rename form is open (avoids destroying the input)
+  var renameForm = document.getElementById('champRenameForm');
+  if (renameForm && !renameForm.classList.contains('hidden')) return;
+
   // Not unlocked yet
   if (game.level < CHAMPION_UNLOCK_LEVEL) {
     var pct = Math.round((game.level / CHAMPION_UNLOCK_LEVEL) * 100);
