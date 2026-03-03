@@ -1159,6 +1159,21 @@ function getOperatingCostsPerSecond() {
   return getOperatingCostsPerDay() / 600;
 }
 
+function getCampaignCostsPerSecond() {
+  var total = 0;
+  if (typeof MARKETING_CAMPAIGNS === 'undefined') return 0;
+  MARKETING_CAMPAIGNS.forEach(function(mc) {
+    if (mc.type !== 'always_on') return;
+    var state = game.marketing[mc.id];
+    if (!state || !state.active) return;
+    var costPerTick = mc.costPerDay / 600;
+    if (game.staff.manager && game.staff.manager.hired && !isStaffSick('manager', 0)) costPerTick *= 0.8;
+    costPerTick *= getSkillEffect('campaignCostMult');
+    total += costPerTick;
+  });
+  return total;
+}
+
 function buyProperty() {
   if (game.ownProperty) {
     showToast('❌', '¡Ya sos dueño del local!');
@@ -1963,6 +1978,7 @@ function campaignBurstTick() {
 // ===== MAIN GAME TICK (every second) =====
 function gameTick() {
   if (!game.started) return;
+  if (!game.tutorialDone) { updateUI(); return; }
 
   const income = getIncomePerSecond();
   const salaries = getStaffSalaryPerSecond();
@@ -2043,6 +2059,357 @@ function manualSave() {
     saveCloudSave();
   }
   showToast('💾', '¡Partida guardada!');
+}
+
+// ===== OFFLINE PROGRESSION =====
+function calculateOfflineProgress(elapsedSeconds) {
+  var cap = 28800; // 8 hours max
+  var capped = Math.min(elapsedSeconds, cap);
+  if (capped < 10) return null;
+
+  var report = {
+    elapsed: capped,
+    money: 0,
+    expenses: 0,
+    members: 0,
+    reputation: 0,
+    xp: 0,
+    equipUpgraded: [],
+    equipRepaired: [],
+    zonesBuilt: [],
+    staffTrained: [],
+    classesCompleted: [],
+    championTrained: null,
+    championFatigue: 0,
+    campaignCosts: 0,
+    campaignMembers: 0,
+    campaignRep: 0,
+    burstCampaignsFinished: []
+  };
+
+  // 1. Net income (income - salaries - operating costs)
+  var income = getIncomePerSecond();
+  var salaries = getStaffSalaryPerSecond();
+  var opCosts = getOperatingCostsPerSecond();
+  var netIncome = income - salaries - opCosts;
+  var totalMoney = netIncome * capped;
+  report.money = Math.max(0, income * capped);
+  report.expenses = (salaries + opCosts) * capped;
+  game.money += totalMoney;
+  if (totalMoney > 0) {
+    game.totalMoneyEarned += totalMoney;
+  }
+
+  // 2. Equipment upgrade completion
+  EQUIPMENT.forEach(function(eq) {
+    var state = game.equipment[eq.id];
+    if (!state) return;
+    if (state.upgradingUntil > 0 && Date.now() >= state.upgradingUntil) {
+      state.upgradingUntil = 0;
+      state.level++;
+      report.equipUpgraded.push(eq.name + ' → LVL ' + state.level);
+    }
+  });
+
+  // 3. Equipment repair completion
+  EQUIPMENT.forEach(function(eq) {
+    var state = game.equipment[eq.id];
+    if (!state) return;
+    if (state.brokenUntil > 0 && Date.now() >= state.brokenUntil) {
+      state.brokenUntil = 0;
+      game.stats.equipRepaired++;
+      report.equipRepaired.push(eq.name);
+    }
+  });
+
+  // 4. Zone construction completion
+  if (game.zoneBuilding) {
+    Object.keys(game.zoneBuilding).forEach(function(zId) {
+      if (Date.now() >= game.zoneBuilding[zId]) {
+        game.zones[zId] = true;
+        delete game.zoneBuilding[zId];
+        var zone = GYM_ZONES.find(function(z) { return z.id === zId; });
+        if (zone) {
+          game.stats.zonesUnlocked++;
+          report.zonesBuilt.push(zone.name + ' ' + zone.icon);
+        }
+      }
+    });
+  }
+
+  // 5. Staff training completion
+  STAFF.forEach(function(s) {
+    var state = game.staff[s.id];
+    if (!state || !state.hired) return;
+    if (state.trainingUntil > 0 && Date.now() >= state.trainingUntil) {
+      state.level = (state.level || 1) + 1;
+      var xpGain = 25 * state.level;
+      game.xp += xpGain;
+      report.xp += xpGain;
+      state.trainingUntil = 0;
+      report.staffTrained.push(s.name + ' → LVL ' + state.level);
+    }
+    if (state.extras) {
+      state.extras.forEach(function(ex, i) {
+        if (ex.trainingUntil > 0 && Date.now() >= ex.trainingUntil) {
+          ex.level = (ex.level || 1) + 1;
+          var xpGain = 25 * ex.level;
+          game.xp += xpGain;
+          report.xp += xpGain;
+          ex.trainingUntil = 0;
+          report.staffTrained.push(s.name + ' #' + (i + 2) + ' → LVL ' + ex.level);
+        }
+      });
+    }
+    // Clear illness if it expired
+    if (state.sickUntil > 0 && Date.now() >= state.sickUntil) {
+      state.sickUntil = 0;
+    }
+    if (state.extras) {
+      state.extras.forEach(function(ex) {
+        if (ex.sickUntil > 0 && Date.now() >= ex.sickUntil) ex.sickUntil = 0;
+      });
+    }
+  });
+
+  // 6. Class completion
+  if (typeof GYM_CLASSES !== 'undefined') {
+    GYM_CLASSES.forEach(function(gc) {
+      var state = game.classes[gc.id];
+      if (state && state.runningUntil && Date.now() >= state.runningUntil && !state.collected) {
+        state.collected = true;
+        var reward = getClassReward(gc);
+        game.money += reward.income;
+        game.totalMoneyEarned += reward.income;
+        game.xp += reward.xp;
+        game.reputation += reward.rep;
+        game.stats.classesCompleted++;
+        report.classesCompleted.push(gc.name + ': +' + fmtMoney(reward.income));
+        report.xp += reward.xp;
+        report.reputation += reward.rep;
+        report.money += reward.income;
+      }
+    });
+  }
+
+  // 7. Always-on marketing campaigns (cost + members + rep)
+  if (typeof MARKETING_CAMPAIGNS !== 'undefined') {
+    MARKETING_CAMPAIGNS.forEach(function(mc) {
+      if (mc.type !== 'always_on') return;
+      var state = game.marketing[mc.id];
+      if (!state || !state.active) return;
+
+      var costPerTick = mc.costPerDay / 600;
+      if (game.staff.manager && game.staff.manager.hired && !isStaffSick('manager', 0)) costPerTick *= 0.8;
+      costPerTick *= getSkillEffect('campaignCostMult');
+      var totalCampaignCost = costPerTick * capped;
+
+      if (game.money >= totalCampaignCost) {
+        game.money -= totalCampaignCost;
+        state.totalSpent = (state.totalSpent || 0) + totalCampaignCost;
+        report.campaignCosts += totalCampaignCost;
+
+        // Members generated
+        var membersPerTick = mc.membersPerDay / 600;
+        membersPerTick *= getSkillEffect('campaignMembersMult');
+        var totalNewMembers = Math.floor(membersPerTick * capped);
+        var added = Math.min(totalNewMembers, Math.max(0, game.maxMembers - game.members));
+        if (added > 0) {
+          game.members += added;
+          game.stats.totalMembersJoined = (game.stats.totalMembersJoined || 0) + added;
+          state.totalMembersGenerated = (state.totalMembersGenerated || 0) + added;
+          report.campaignMembers += added;
+        }
+
+        // Rep generated
+        var repPerTick = mc.repPerDay / 600;
+        repPerTick *= getSkillEffect('campaignRepMult');
+        var totalRep = repPerTick * capped;
+        game.reputation += totalRep;
+        report.campaignRep += totalRep;
+      } else {
+        // Not enough money - pause campaign
+        game.marketing[mc.id].active = false;
+      }
+    });
+
+    // 8. Burst campaign completion
+    MARKETING_CAMPAIGNS.forEach(function(mc) {
+      if (mc.type !== 'burst') return;
+      var state = game.marketing[mc.id];
+      if (!state || !state.activeUntil) return;
+      if (Date.now() >= state.activeUntil && state.membersToGive > (state.membersGiven || 0)) {
+        var remaining = state.membersToGive - (state.membersGiven || 0);
+        var added = Math.min(remaining, Math.max(0, game.maxMembers - game.members));
+        if (added > 0) {
+          game.members += added;
+          state.membersGiven = (state.membersGiven || 0) + added;
+          report.campaignMembers += added;
+          report.burstCampaignsFinished.push(mc.name);
+        }
+      }
+    });
+  }
+
+  // 9. Reputation from members (passive)
+  var repGain = game.members * 0.02 * getSkillEffect('memberRepMult');
+  STAFF.forEach(function(s) {
+    if (game.staff[s.id] && game.staff[s.id].hired && s.repMult) {
+      repGain *= (1 + getStaffTotalEffect(s, 'repMult') * getSkillEffect('staffRepMult'));
+    }
+  });
+  repGain *= (1 + getDecorationBonus('reputation'));
+  var totalRep = repGain * capped;
+  game.reputation += totalRep;
+  report.reputation += totalRep;
+
+  // 10. Auto-members from staff (every 25 ticks)
+  var autoMemberCycles = Math.floor(capped / 25);
+  if (autoMemberCycles > 0) {
+    var autoAdd = 0;
+    STAFF.forEach(function(s) {
+      if (game.staff[s.id] && game.staff[s.id].hired && s.autoMembers) {
+        autoAdd += getStaffTotalEffect(s, 'autoMembers');
+      }
+    });
+    autoAdd = Math.ceil(autoAdd * getSkillEffect('autoMembersMult'));
+    var totalAutoMembers = autoAdd * autoMemberCycles;
+    var added = Math.min(totalAutoMembers, Math.max(0, game.maxMembers - game.members));
+    if (added > 0) {
+      game.members += added;
+      report.members += added;
+    }
+  }
+
+  // 11. Champion training completion + fatigue recovery
+  if (game.champion && game.champion.recruited) {
+    // Training completion
+    if (game.champion.trainingUntil && Date.now() >= game.champion.trainingUntil) {
+      var stat = game.champion.trainingStat;
+      if (stat) {
+        game.champion.stats[stat]++;
+        report.championTrained = CHAMPION_STAT_NAMES[stat] + ' → ' + game.champion.stats[stat];
+      }
+      game.champion.trainingUntil = 0;
+      game.champion.trainingStat = null;
+    }
+    // Fatigue recovery (every 30 ticks)
+    if (game.champion.fatigue > 0) {
+      var recoveryCycles = Math.floor(capped / 30);
+      var stamina = getChampionEffectiveStat('stamina');
+      var recoveryPerCycle = 2 + Math.floor(stamina * 0.5);
+      var totalRecovery = recoveryCycles * recoveryPerCycle;
+      var oldFatigue = game.champion.fatigue;
+      game.champion.fatigue = Math.max(0, game.champion.fatigue - totalRecovery);
+      report.championFatigue = oldFatigue - game.champion.fatigue;
+    }
+  }
+
+  // 12. Supplement expiry (just let them expire naturally, no special handling needed)
+
+  // 13. Level up check
+  checkLevelUp();
+
+  // 14. Update members count
+  updateMembers();
+
+  return report;
+}
+
+function showOfflineReport(report) {
+  if (!report) return;
+
+  var lines = [];
+  lines.push('<div class="offline-report-header">');
+  lines.push('<div class="offline-report-icon">💤</div>');
+  lines.push('<h3>Mientras no estabas...</h3>');
+  lines.push('<div class="offline-report-time">' + fmtTime(report.elapsed) + ' offline</div>');
+  lines.push('</div>');
+
+  lines.push('<div class="offline-report-body">');
+
+  // Money section
+  if (report.money > 0 || report.expenses > 0) {
+    lines.push('<div class="offline-section">');
+    lines.push('<div class="offline-section-title">💰 Economía</div>');
+    if (report.money > 0) lines.push('<div class="offline-item positive">Ingresos brutos: +' + fmtMoney(report.money) + '</div>');
+    if (report.expenses > 0) lines.push('<div class="offline-item negative">Gastos (salarios + mantenimiento): -' + fmtMoney(report.expenses) + '</div>');
+    var net = report.money - report.expenses;
+    lines.push('<div class="offline-item ' + (net >= 0 ? 'positive' : 'negative') + ' net">Neto: ' + (net >= 0 ? '+' : '') + fmtMoney(net) + '</div>');
+    lines.push('</div>');
+  }
+
+  // Construction & upgrades
+  var constructions = [].concat(report.equipUpgraded, report.equipRepaired, report.zonesBuilt, report.staffTrained);
+  if (constructions.length > 0) {
+    lines.push('<div class="offline-section">');
+    lines.push('<div class="offline-section-title">🏗️ Completado</div>');
+    report.equipUpgraded.forEach(function(e) { lines.push('<div class="offline-item">⬆️ ' + e + '</div>'); });
+    report.equipRepaired.forEach(function(e) { lines.push('<div class="offline-item">🔧 ' + e + ' reparado</div>'); });
+    report.zonesBuilt.forEach(function(e) { lines.push('<div class="offline-item">🏗️ ' + e + '</div>'); });
+    report.staffTrained.forEach(function(e) { lines.push('<div class="offline-item">🎓 ' + e + '</div>'); });
+    lines.push('</div>');
+  }
+
+  // Classes
+  if (report.classesCompleted.length > 0) {
+    lines.push('<div class="offline-section">');
+    lines.push('<div class="offline-section-title">🧘 Clases Completadas</div>');
+    report.classesCompleted.forEach(function(c) { lines.push('<div class="offline-item">✅ ' + c + '</div>'); });
+    lines.push('</div>');
+  }
+
+  // Marketing
+  if (report.campaignMembers > 0 || report.campaignCosts > 0) {
+    lines.push('<div class="offline-section">');
+    lines.push('<div class="offline-section-title">📢 Marketing</div>');
+    if (report.campaignCosts > 0) lines.push('<div class="offline-item negative">Costo campañas: -' + fmtMoney(report.campaignCosts) + '</div>');
+    if (report.campaignMembers > 0) lines.push('<div class="offline-item positive">Nuevos miembros: +' + report.campaignMembers + '</div>');
+    if (report.campaignRep > 0) lines.push('<div class="offline-item positive">Reputación: +' + fmt(report.campaignRep) + '</div>');
+    report.burstCampaignsFinished.forEach(function(c) { lines.push('<div class="offline-item">📣 ' + c + ' terminó</div>'); });
+    lines.push('</div>');
+  }
+
+  // Members & Rep
+  if (report.members > 0 || report.reputation > 0) {
+    lines.push('<div class="offline-section">');
+    lines.push('<div class="offline-section-title">👥 Crecimiento</div>');
+    if (report.members > 0) lines.push('<div class="offline-item positive">Miembros (staff): +' + report.members + '</div>');
+    if (report.reputation > 0) lines.push('<div class="offline-item positive">Reputación: +' + fmt(Math.floor(report.reputation)) + '</div>');
+    if (report.xp > 0) lines.push('<div class="offline-item positive">XP: +' + fmt(report.xp) + '</div>');
+    lines.push('</div>');
+  }
+
+  // Champion
+  if (report.championTrained || report.championFatigue > 0) {
+    lines.push('<div class="offline-section">');
+    lines.push('<div class="offline-section-title">🏆 Campeón</div>');
+    if (report.championTrained) lines.push('<div class="offline-item">💪 Entrenamiento completo: ' + report.championTrained + '</div>');
+    if (report.championFatigue > 0) lines.push('<div class="offline-item positive">Fatiga recuperada: -' + report.championFatigue + '</div>');
+    lines.push('</div>');
+  }
+
+  lines.push('</div>'); // close body
+
+  lines.push('<div class="offline-report-footer">');
+  lines.push('<button class="btn btn-buy" onclick="closeOfflineReport()">¡Vamos! 💪</button>');
+  lines.push('</div>');
+
+  // Show modal
+  var modal = document.getElementById('offlineReportModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'offlineReportModal';
+    modal.className = 'offline-report-overlay';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML = '<div class="offline-report-card">' + lines.join('') + '</div>';
+  modal.style.display = 'flex';
+}
+
+function closeOfflineReport() {
+  var modal = document.getElementById('offlineReportModal');
+  if (modal) modal.style.display = 'none';
 }
 
 // ===== SAVE / LOAD =====
@@ -2180,6 +2547,8 @@ function startGame() {
 
   // Start tutorial for new players
   if (!game.tutorialDone) {
+    game.money = 100; // Starting money for tutorial (buy first equipment)
+    renderAll();
     setTimeout(() => startTutorial(), 1000);
   }
 }

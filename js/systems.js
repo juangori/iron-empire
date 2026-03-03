@@ -1132,51 +1132,175 @@ function startTutorial() {
 }
 
 function showTutorialStep() {
-  const steps = TUTORIAL_STEPS;
+  var steps = TUTORIAL_STEPS;
   if (game.tutorialStep >= steps.length) {
     endTutorial();
     return;
   }
 
-  const step = steps[game.tutorialStep];
+  // Reset previous step's target z-index
+  _cleanupTutorialTarget();
+
+  var step = steps[game.tutorialStep];
 
   // Switch tab if needed
   if (step.tab) {
     switchTab(step.tab);
   }
 
-  const target = document.querySelector(step.target);
-  const overlay = document.getElementById('tutorialOverlay');
-  const tooltip = document.getElementById('tutorialTooltip');
+  // Small delay to let DOM update after tab switch
+  setTimeout(function() {
+    _positionTutorialStep(step);
+  }, 100);
+}
+
+var _tutorialActiveTarget = null;
+function _cleanupTutorialTarget() {
+  if (_tutorialActiveTarget) {
+    _tutorialActiveTarget.style.zIndex = '';
+    _tutorialActiveTarget = null;
+  }
+  var overlay = document.getElementById('tutorialOverlay');
+  if (overlay) overlay.style.pointerEvents = 'auto';
+}
+
+function _positionTutorialStep(step) {
+  var target = document.querySelector(step.target);
+  var overlay = document.getElementById('tutorialOverlay');
+  var tooltip = document.getElementById('tutorialTooltip');
+  var highlight = document.getElementById('tutorialHighlight');
+
+  // Ensure sidebar category is expanded if target is a sidebar item
+  if (target) {
+    var category = target.closest('.sidebar-category');
+    if (category) category.classList.remove('collapsed-cat');
+  }
 
   overlay.classList.remove('hidden');
   tooltip.style.display = 'block';
 
   // Position highlight
   if (target) {
-    const rect = target.getBoundingClientRect();
-    const highlight = document.getElementById('tutorialHighlight');
-    highlight.style.top = (rect.top - 4) + 'px';
-    highlight.style.left = (rect.left - 4) + 'px';
-    highlight.style.width = (rect.width + 8) + 'px';
-    highlight.style.height = (rect.height + 8) + 'px';
+    var rect = target.getBoundingClientRect();
+    var pad = 6;
+    highlight.style.top = (rect.top - pad) + 'px';
+    highlight.style.left = (rect.left - pad) + 'px';
+    highlight.style.width = (rect.width + pad * 2) + 'px';
+    highlight.style.height = (rect.height + pad * 2) + 'px';
     highlight.style.display = 'block';
 
-    // Position tooltip below or above target
-    const tooltipTop = rect.bottom + 16;
-    const tooltipLeft = Math.max(16, Math.min(rect.left, window.innerWidth - 380));
-    tooltip.style.top = (tooltipTop > window.innerHeight - 200 ? rect.top - 200 : tooltipTop) + 'px';
-    tooltip.style.left = tooltipLeft + 'px';
+    // Scroll target into view if needed
+    if (rect.top < 0 || rect.bottom > window.innerHeight) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Recalculate after scroll
+      setTimeout(function() {
+        var r2 = target.getBoundingClientRect();
+        highlight.style.top = (r2.top - pad) + 'px';
+        highlight.style.left = (r2.left - pad) + 'px';
+        highlight.style.width = (r2.width + pad * 2) + 'px';
+        highlight.style.height = (r2.height + pad * 2) + 'px';
+        _positionTooltipSmart(tooltip, r2);
+      }, 350);
+    }
+
+    _positionTooltipSmart(tooltip, rect);
+  } else {
+    // No target - center tooltip on screen
+    highlight.style.display = 'none';
+    tooltip.style.top = '50%';
+    tooltip.style.left = '50%';
+    tooltip.style.transform = 'translate(-50%, -50%)';
   }
 
+  // Build tooltip content
+  var isAction = step.action;
+  var actionHint = isAction ? '<div class="tutorial-action-hint">👆 Hacé clic en el área resaltada para continuar</div>' : '';
+  var nextBtn = isAction ? '' : '<button class="btn btn-small btn-buy" onclick="nextTutorialStep()">SIGUIENTE →</button>';
+
   tooltip.innerHTML =
-    '<div class="tutorial-step-indicator">Paso ' + (game.tutorialStep + 1) + ' de ' + steps.length + '</div>' +
+    '<div class="tutorial-step-indicator">Paso ' + (game.tutorialStep + 1) + ' de ' + TUTORIAL_STEPS.length + '</div>' +
     '<h4>' + step.title + '</h4>' +
     '<p>' + step.text + '</p>' +
+    actionHint +
     '<div class="tutorial-buttons">' +
       '<button class="btn btn-small btn-red" onclick="endTutorial()">SALTAR</button>' +
-      '<button class="btn btn-small btn-buy" onclick="nextTutorialStep()">SIGUIENTE →</button>' +
+      nextBtn +
     '</div>';
+
+  // If this step requires an action, let user interact with the highlighted area
+  if (isAction && target) {
+    if (step.actionCheck) {
+      // Complex action (e.g. buy equipment): let user click through highlight
+      highlight.style.pointerEvents = 'none';
+      highlight.style.cursor = '';
+      highlight.onclick = null;
+      // Raise target above overlay so user can interact
+      overlay.style.pointerEvents = 'none';
+      target.style.position = target.style.position || 'relative';
+      target.style.zIndex = '251';
+      _tutorialActiveTarget = target;
+      _waitForActionCheck(step.actionCheck);
+    } else {
+      // Simple action (e.g. click a tab): forward click to target
+      highlight.style.cursor = 'pointer';
+      highlight.style.pointerEvents = 'auto';
+      highlight.onclick = function(e) {
+        e.stopPropagation();
+        highlight.onclick = null;
+        highlight.style.cursor = '';
+        target.click();
+        setTimeout(function() { nextTutorialStep(); }, 300);
+      };
+    }
+  } else {
+    highlight.style.cursor = '';
+    highlight.onclick = null;
+    highlight.style.pointerEvents = 'none';
+    overlay.style.pointerEvents = 'auto';
+  }
+}
+
+function _waitForActionCheck(checkFn) {
+  if (game.tutorialDone) return;
+  if (checkFn()) {
+    nextTutorialStep();
+  } else {
+    setTimeout(function() { _waitForActionCheck(checkFn); }, 500);
+  }
+}
+
+function _positionTooltipSmart(tooltip, targetRect) {
+  tooltip.style.transform = '';
+  var tooltipW = 360;
+  var tooltipH = tooltip.offsetHeight || 200;
+  var margin = 16;
+  var vw = window.innerWidth;
+  var vh = window.innerHeight;
+
+  // Try below target
+  var top = targetRect.bottom + margin;
+  var left = Math.max(margin, Math.min(targetRect.left, vw - tooltipW - margin));
+
+  if (top + tooltipH > vh - margin) {
+    // Try above target
+    top = targetRect.top - tooltipH - margin;
+    if (top < margin) {
+      // Neither fits - position to the side
+      top = Math.max(margin, Math.min(targetRect.top, vh - tooltipH - margin));
+      if (targetRect.right + margin + tooltipW < vw) {
+        left = targetRect.right + margin;
+      } else if (targetRect.left - margin - tooltipW > 0) {
+        left = targetRect.left - tooltipW - margin;
+      } else {
+        // Last resort: center on screen
+        top = Math.max(margin, (vh - tooltipH) / 2);
+        left = Math.max(margin, (vw - tooltipW) / 2);
+      }
+    }
+  }
+
+  tooltip.style.top = top + 'px';
+  tooltip.style.left = left + 'px';
 }
 
 function nextTutorialStep() {
@@ -1185,6 +1309,15 @@ function nextTutorialStep() {
 }
 
 function endTutorial() {
+  // Clean up
+  _cleanupTutorialTarget();
+  var highlight = document.getElementById('tutorialHighlight');
+  if (highlight) {
+    highlight.onclick = null;
+    highlight.style.cursor = '';
+    highlight.style.pointerEvents = 'none';
+  }
+
   game.tutorialDone = true;
   document.getElementById('tutorialOverlay').classList.add('hidden');
   document.getElementById('tutorialHighlight').style.display = 'none';
@@ -2531,4 +2664,232 @@ function renderDecorationPanel() {
   html += '</div>';
 
   panel.innerHTML = html;
+}
+
+// ===== BALANCE PANEL (SimCity-style financial overview) =====
+function openBalancePanel() {
+  var modal = document.getElementById('balanceModal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'balanceModal';
+    modal.className = 'balance-overlay';
+    document.body.appendChild(modal);
+  }
+  renderBalancePanel();
+  modal.style.display = 'flex';
+}
+
+function closeBalancePanel() {
+  var modal = document.getElementById('balanceModal');
+  if (modal) modal.style.display = 'none';
+}
+
+function renderBalancePanel() {
+  var modal = document.getElementById('balanceModal');
+  if (!modal) return;
+
+  // ===== INCOME BREAKDOWN =====
+  var incomeItems = [];
+  var totalIncome = 0;
+
+  // Equipment income (per item)
+  EQUIPMENT.forEach(function(eq) {
+    var lvl = game.equipment[eq.id] ? game.equipment[eq.id].level : 0;
+    if (lvl <= 0) return;
+    if (isEquipmentBroken(eq.id)) {
+      incomeItems.push({ name: eq.icon + ' ' + eq.name + ' (LVL ' + lvl + ')', value: 0, note: '⚠️ Roto' });
+      return;
+    }
+    var base = eq.incomePerLevel * lvl;
+    incomeItems.push({ name: eq.icon + ' ' + eq.name + ' (LVL ' + lvl + ')', value: base });
+    totalIncome += base;
+  });
+
+  // Zone income
+  GYM_ZONES.forEach(function(z) {
+    if (game.zones[z.id] && z.incomeBonus > 0) {
+      incomeItems.push({ name: z.icon + ' ' + z.name, value: z.incomeBonus });
+      totalIncome += z.incomeBonus;
+    }
+  });
+
+  // Rival defeat bonuses
+  var rivalIncome = getRivalIncomeBonus();
+  if (rivalIncome > 0) {
+    incomeItems.push({ name: '🏪 Rivales derrotados', value: rivalIncome });
+    totalIncome += rivalIncome;
+  }
+
+  // Multipliers
+  var multipliers = [];
+
+  // Skill equipment income mult
+  var eqSkillMult = getSkillEffect('equipIncomeMult');
+  if (eqSkillMult > 1) multipliers.push({ name: '🔬 Mejora equipo', value: eqSkillMult });
+
+  // Staff income mult
+  var staffMult = 1;
+  STAFF.forEach(function(s) {
+    if (game.staff[s.id] && game.staff[s.id].hired && s.incomeMult) {
+      var eff = getStaffTotalEffect(s, 'incomeMult') * getSkillEffect('staffEffectMult');
+      staffMult += eff;
+      multipliers.push({ name: s.icon + ' ' + s.name, value: 1 + eff });
+    }
+  });
+
+  // Member bonus
+  var memberIncomeMult = getSkillEffect('memberIncomeMult');
+  var memberBonus = Math.min(3.0, 1 + game.members * 0.002) * memberIncomeMult;
+  if (memberBonus > 1) multipliers.push({ name: '👥 Bonus miembros (' + game.members + ')', value: memberBonus });
+
+  // Prestige
+  var prestigeMult = 1 + (game.prestigeStars * 0.25);
+  if (prestigeMult > 1) multipliers.push({ name: '🌟 Franquicia (x' + game.prestigeStars + ')', value: prestigeMult });
+
+  // Supplement
+  var suppEffects = getActiveSupplementEffects();
+  if (suppEffects.incomeMult > 1) multipliers.push({ name: '🧃 Suplementos (income)', value: suppEffects.incomeMult });
+  if (suppEffects.equipIncomeMult > 1) multipliers.push({ name: '🧃 Suplementos (equipo)', value: suppEffects.equipIncomeMult });
+
+  // Decoration
+  var decoIncome = getDecorationBonus('income');
+  if (decoIncome > 0) multipliers.push({ name: '🎨 Decoración', value: 1 + decoIncome });
+
+  // Final income
+  var finalIncome = getIncomePerSecond();
+
+  // ===== EXPENSE BREAKDOWN =====
+  var expenseItems = [];
+  var totalExpenses = 0;
+
+  // Staff salaries
+  STAFF.forEach(function(s) {
+    var state = game.staff[s.id];
+    if (!state || !state.hired) return;
+    var sal = getStaffSalaryAtLevel(s.salary, state.level || 1) / 600;
+    expenseItems.push({ name: s.icon + ' ' + s.name + ' (LVL ' + (state.level || 1) + ')', value: sal });
+    totalExpenses += sal;
+    if (state.extras) {
+      state.extras.forEach(function(ex, i) {
+        var exSal = getStaffSalaryAtLevel(s.salary, ex.level || 1) / 600;
+        expenseItems.push({ name: s.icon + ' ' + s.name + ' #' + (i + 2) + ' (LVL ' + (ex.level || 1) + ')', value: exSal });
+        totalExpenses += exSal;
+      });
+    }
+  });
+
+  // Operating costs
+  if (!game.ownProperty) {
+    var rent = OPERATING_COSTS.baseRent / 600;
+    expenseItems.push({ name: '🏠 Alquiler base', value: rent });
+    totalExpenses += rent;
+    var extraZones = 0;
+    GYM_ZONES.forEach(function(z) {
+      if (z.id !== 'ground_floor' && game.zones[z.id]) extraZones++;
+    });
+    if (extraZones > 0) {
+      var zoneRent = (extraZones * OPERATING_COSTS.rentPerExtraZone) / 600;
+      expenseItems.push({ name: '🏗️ Alquiler zonas (x' + extraZones + ')', value: zoneRent });
+      totalExpenses += zoneRent;
+    }
+  } else {
+    expenseItems.push({ name: '🏠 Propiedad comprada', value: 0, note: '✅ Sin alquiler' });
+  }
+
+  var totalEquipLevels = 0;
+  EQUIPMENT.forEach(function(eq) { totalEquipLevels += (game.equipment[eq.id] ? game.equipment[eq.id].level : 0); });
+  if (totalEquipLevels > 0) {
+    var utilities = (totalEquipLevels * OPERATING_COSTS.utilitiesPerEquipLevel) / 600;
+    expenseItems.push({ name: '⚡ Servicios (' + totalEquipLevels + ' lvls equipo)', value: utilities });
+    totalExpenses += utilities;
+  }
+
+  // Marketing campaign costs
+  if (typeof MARKETING_CAMPAIGNS !== 'undefined') {
+    MARKETING_CAMPAIGNS.forEach(function(mc) {
+      if (mc.type !== 'always_on') return;
+      var state = game.marketing[mc.id];
+      if (!state || !state.active) return;
+      var costPerTick = mc.costPerDay / 600;
+      if (game.staff.manager && game.staff.manager.hired && !isStaffSick('manager', 0)) costPerTick *= 0.8;
+      costPerTick *= getSkillEffect('campaignCostMult');
+      expenseItems.push({ name: mc.icon + ' ' + mc.name, value: costPerTick });
+      totalExpenses += costPerTick;
+    });
+  }
+
+  // ===== NET INCOME =====
+  var netIncome = finalIncome - totalExpenses;
+
+  // ===== BUILD HTML =====
+  var html = '<div class="balance-card">';
+  html += '<div class="balance-header">';
+  html += '<h3>📊 Balance Contable</h3>';
+  html += '<button class="btn btn-small btn-red" onclick="closeBalancePanel()">✕</button>';
+  html += '</div>';
+
+  // Income section
+  html += '<div class="balance-section">';
+  html += '<div class="balance-section-title income">💰 INGRESOS BASE /seg</div>';
+  incomeItems.forEach(function(item) {
+    html += '<div class="balance-row">';
+    html += '<span class="balance-label">' + item.name + '</span>';
+    if (item.note) {
+      html += '<span class="balance-value muted">' + item.note + '</span>';
+    } else {
+      html += '<span class="balance-value income">+' + fmtMoney(item.value) + '</span>';
+    }
+    html += '</div>';
+  });
+  html += '<div class="balance-subtotal income">Subtotal base: +' + fmtMoney(totalIncome) + '/s</div>';
+  html += '</div>';
+
+  // Multipliers section
+  if (multipliers.length > 0) {
+    html += '<div class="balance-section">';
+    html += '<div class="balance-section-title mult">✨ MULTIPLICADORES</div>';
+    multipliers.forEach(function(m) {
+      html += '<div class="balance-row">';
+      html += '<span class="balance-label">' + m.name + '</span>';
+      html += '<span class="balance-value mult">×' + m.value.toFixed(2) + '</span>';
+      html += '</div>';
+    });
+    html += '<div class="balance-subtotal income">Ingreso final: +' + fmtMoney(finalIncome) + '/s</div>';
+    html += '</div>';
+  }
+
+  // Expenses section
+  html += '<div class="balance-section">';
+  html += '<div class="balance-section-title expense">📉 GASTOS /seg</div>';
+  if (expenseItems.length === 0) {
+    html += '<div class="balance-row"><span class="balance-label muted">Sin gastos</span></div>';
+  }
+  expenseItems.forEach(function(item) {
+    html += '<div class="balance-row">';
+    html += '<span class="balance-label">' + item.name + '</span>';
+    if (item.note) {
+      html += '<span class="balance-value muted">' + item.note + '</span>';
+    } else {
+      html += '<span class="balance-value expense">-' + fmtMoney(item.value) + '</span>';
+    }
+    html += '</div>';
+  });
+  html += '<div class="balance-subtotal expense">Total gastos: -' + fmtMoney(totalExpenses) + '/s</div>';
+  html += '</div>';
+
+  // Net total
+  html += '<div class="balance-net ' + (netIncome >= 0 ? 'positive' : 'negative') + '">';
+  html += '<span>INGRESO NETO</span>';
+  html += '<span>' + (netIncome >= 0 ? '+' : '') + fmtMoney(netIncome) + '/s</span>';
+  html += '</div>';
+
+  // Daily projection
+  var dailyNet = netIncome * 600;
+  html += '<div class="balance-projection">';
+  html += '<span>Proyección por día de juego (10 min):</span>';
+  html += '<span class="' + (dailyNet >= 0 ? 'income' : 'expense') + '">' + (dailyNet >= 0 ? '+' : '') + fmtMoney(dailyNet) + '</span>';
+  html += '</div>';
+
+  html += '</div>';
+  modal.innerHTML = html;
 }

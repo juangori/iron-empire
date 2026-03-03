@@ -295,43 +295,21 @@ function updateUI() {
   // Stat boxes
   var el;
   el = document.getElementById('incomeBig');
-  if (el) el.textContent = fmtMoney(netIncome);
+  if (el) {
+    el.textContent = (netIncome >= 0 ? '+' : '') + fmtMoney(netIncome) + '/s';
+    el.style.color = netIncome >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+  el = document.getElementById('expensesBig');
+  if (el) {
+    var totalExpenses = salaries + opCosts + getCampaignCostsPerSecond();
+    el.textContent = '-' + fmtMoney(totalExpenses) + '/s';
+  }
   el = document.getElementById('membersBig');
-  if (el) el.textContent = fmt(game.members);
-  el = document.getElementById('capacityBig');
   if (el) el.textContent = game.members + ' / ' + game.maxMembers;
   el = document.getElementById('repBig');
-  if (el) el.textContent = fmt(game.reputation);
-
-  // Extra stat boxes
-  el = document.getElementById('salaryBig');
-  if (el) el.textContent = '-' + fmtMoney(getTotalStaffSalaryPerDay()) + '/día';
-  el = document.getElementById('opCostsBig');
-  if (el) {
-    var opDaily = getOperatingCostsPerDay();
-    el.textContent = '-' + fmtMoney(opDaily) + '/día';
-  }
-  el = document.getElementById('grossIncomeBig');
-  if (el) el.textContent = fmtMoney(income);
+  if (el) el.textContent = fmt(Math.floor(game.reputation));
   el = document.getElementById('totalEarnedBig');
   if (el) el.textContent = fmtMoney(game.totalMoneyEarned);
-  el = document.getElementById('staffCountBig');
-  if (el) {
-    var totalStaff = 0;
-    STAFF.forEach(function(s) {
-      if (game.staff[s.id]?.hired) {
-        totalStaff++;
-        if (game.staff[s.id].extras) totalStaff += game.staff[s.id].extras.length;
-      }
-    });
-    el.textContent = totalStaff;
-  }
-  el = document.getElementById('equipCountBig');
-  if (el) {
-    var totalEqLvl = 0;
-    EQUIPMENT.forEach(function(eq) { totalEqLvl += (game.equipment[eq.id]?.level || 0); });
-    el.textContent = totalEqLvl + ' niveles';
-  }
   el = document.getElementById('tierBig');
   if (el) el.textContent = getGymTier();
 

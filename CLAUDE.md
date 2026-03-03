@@ -37,7 +37,7 @@ CNAME               - Custom domain config
 - Game loop runs via `setInterval(gameTick, 1000)` - one tick per second
 - All rendering functions follow pattern: `renderXxx()` reads from `game` state and writes innerHTML
 - Save system: auto-save every 30 ticks to localStorage, cloud save every 60 ticks to Firestore
-- Offline earnings calculated on load (capped at 2 hours)
+- Offline progression calculated on load (capped at 8 hours): net income, timer completions (equipment, zones, staff, classes, champion), marketing campaigns, reputation, members. Summary modal on return.
 - Skills persist through prestige, zones do not
 - Equipment state: `{ level, brokenUntil, upgradingUntil }` — tracks breakdown and construction
 - Staff state: `{ hired, level, trainingUntil, sickUntil, extras: [] }` — tracks training and illness

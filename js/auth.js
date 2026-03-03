@@ -249,36 +249,16 @@ function playAsGuest() {
     checkDailyReset();
     renderAll();
 
-    // Offline earnings
-    const lastSave = localStorage.getItem('ironEmpireLastTick');
+    // Offline progression
+    var lastSave = localStorage.getItem('ironEmpireLastTick');
     if (lastSave) {
-      const elapsed = Math.floor((Date.now() - parseInt(lastSave)) / 1000);
-      if (elapsed > 5) {
-        const cappedTime = Math.min(elapsed, 7200);
-        const offlineIncome = getIncomePerSecond() * cappedTime;
-        if (offlineIncome > 0) {
-          game.money += offlineIncome;
-          game.totalMoneyEarned += offlineIncome;
-          addLog('💤 Ganaste <span class="money-log">' + fmtMoney(offlineIncome) + '</span> mientras estabas offline (' + fmtTime(cappedTime) + ')');
-          showToast('💤', 'Offline: +' + fmtMoney(offlineIncome));
-          updateUI();
-          saveGame();
-        }
-        // Champion offline recovery
-        if (game.champion && game.champion.recruited) {
-          var offlineMin = Math.floor(cappedTime / 60);
-          game.champion.energy = Math.min(CHAMPION_MAX_ENERGY, game.champion.energy + offlineMin * CHAMPION_ENERGY_REGEN);
-          // Complete training if it finished while offline
-          if (game.champion.trainingUntil && Date.now() >= game.champion.trainingUntil) {
-            var stat = game.champion.trainingStat;
-            if (stat) {
-              game.champion.stats[stat]++;
-              addLog('🏅 Campeón completó entrenamiento de <span class="highlight">' + (typeof CHAMPION_STAT_NAMES !== 'undefined' ? CHAMPION_STAT_NAMES[stat] : stat) + '</span> offline');
-            }
-            game.champion.trainingUntil = 0;
-            game.champion.trainingStat = null;
-          }
-        }
+      var elapsed = Math.floor((Date.now() - parseInt(lastSave)) / 1000);
+      var report = calculateOfflineProgress(elapsed);
+      if (report) {
+        updateUI();
+        renderAll();
+        saveGame();
+        showOfflineReport(report);
       }
     }
 
@@ -312,34 +292,16 @@ async function onAuthSuccess(user, isNewUser) {
       checkDailyReset();
       renderAll();
 
-      // Calculate offline earnings from cloud save
-      const lastSave = game._lastSaveTime || 0;
+      // Offline progression from cloud save
+      var lastSave = game._lastSaveTime || 0;
       if (lastSave) {
-        const elapsed = Math.floor((Date.now() - lastSave) / 1000);
-        if (elapsed > 5) {
-          const cappedTime = Math.min(elapsed, 7200);
-          const offlineIncome = getIncomePerSecond() * cappedTime;
-          if (offlineIncome > 0) {
-            game.money += offlineIncome;
-            game.totalMoneyEarned += offlineIncome;
-            addLog('💤 Ganaste <span class="money-log">' + fmtMoney(offlineIncome) + '</span> mientras estabas offline (' + fmtTime(cappedTime) + ')');
-            showToast('💤', 'Offline: +' + fmtMoney(offlineIncome));
-            updateUI();
-          }
-          // Champion offline recovery
-          if (game.champion && game.champion.recruited) {
-            var offlineMin = Math.floor(cappedTime / 60);
-            game.champion.energy = Math.min(CHAMPION_MAX_ENERGY, game.champion.energy + offlineMin * CHAMPION_ENERGY_REGEN);
-            if (game.champion.trainingUntil && Date.now() >= game.champion.trainingUntil) {
-              var stat = game.champion.trainingStat;
-              if (stat) {
-                game.champion.stats[stat]++;
-                addLog('🏅 Campeón completó entrenamiento de <span class="highlight">' + (typeof CHAMPION_STAT_NAMES !== 'undefined' ? CHAMPION_STAT_NAMES[stat] : stat) + '</span> offline');
-              }
-              game.champion.trainingUntil = 0;
-              game.champion.trainingStat = null;
-            }
-          }
+        var elapsed = Math.floor((Date.now() - lastSave) / 1000);
+        var report = calculateOfflineProgress(elapsed);
+        if (report) {
+          updateUI();
+          renderAll();
+          saveGame();
+          showOfflineReport(report);
         }
       }
 

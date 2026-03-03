@@ -2357,9 +2357,9 @@ body::before {
 .tutorial-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.5);
   z-index: 250;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .tutorial-overlay.hidden { display: none; }
@@ -2369,9 +2369,10 @@ body::before {
   z-index: 251;
   border: 2px solid var(--accent);
   border-radius: 12px;
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7), 0 0 30px var(--accent-glow);
-  pointer-events: none;
-  transition: all 0.5s ease;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45), 0 0 40px var(--accent-glow), inset 0 0 20px rgba(255, 215, 0, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  pointer-events: auto;
+  transition: all 0.4s ease;
 }
 
 .tutorial-tooltip {
@@ -2385,6 +2386,8 @@ body::before {
   width: 90vw;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
   pointer-events: auto;
+  overflow-y: auto;
+  max-height: 80vh;
 }
 
 .tutorial-tooltip h4 {
@@ -2412,6 +2415,234 @@ body::before {
   display: flex;
   gap: 10px;
   justify-content: flex-end;
+}
+
+/* ===== BALANCE PANEL ===== */
+.balance-btn {
+  margin: 12px auto 0;
+  display: block;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 13px;
+  padding: 8px 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.balance-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.balance-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.balance-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  max-width: 480px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+}
+
+.balance-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.balance-header h3 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  margin: 0;
+}
+
+.balance-section {
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.balance-section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 14px;
+  letter-spacing: 1.5px;
+  margin-bottom: 8px;
+}
+.balance-section-title.income { color: var(--green); }
+.balance-section-title.expense { color: var(--red); }
+.balance-section-title.mult { color: var(--cyan); }
+
+.balance-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+  font-size: 13px;
+}
+
+.balance-label { color: var(--text-dim); }
+.balance-label.muted { color: var(--text-muted); font-style: italic; }
+
+.balance-value { font-family: monospace; font-weight: 600; }
+.balance-value.income { color: var(--green); }
+.balance-value.expense { color: var(--red); }
+.balance-value.mult { color: var(--cyan); }
+.balance-value.muted { color: var(--text-muted); font-weight: normal; font-style: italic; }
+
+.balance-subtotal {
+  font-size: 13px;
+  font-weight: 700;
+  text-align: right;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+}
+.balance-subtotal.income { color: var(--green); }
+.balance-subtotal.expense { color: var(--red); }
+
+.balance-net {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 2px;
+  border-bottom: 1px solid var(--border);
+}
+.balance-net.positive { color: var(--green); }
+.balance-net.negative { color: var(--red); }
+
+.balance-projection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 24px 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.balance-projection .income { color: var(--green); font-weight: 600; }
+.balance-projection .expense { color: var(--red); font-weight: 600; }
+
+/* ===== OFFLINE REPORT MODAL ===== */
+.offline-report-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  z-index: 300;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.offline-report-card {
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: 16px;
+  max-width: 440px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px var(--accent-glow);
+}
+
+.offline-report-header {
+  text-align: center;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.offline-report-icon {
+  font-size: 48px;
+  margin-bottom: 8px;
+}
+
+.offline-report-header h3 {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px;
+  letter-spacing: 3px;
+  color: var(--accent);
+  margin: 0 0 4px;
+}
+
+.offline-report-time {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.offline-report-body {
+  padding: 16px 24px;
+}
+
+.offline-section {
+  margin-bottom: 16px;
+}
+
+.offline-section:last-child {
+  margin-bottom: 0;
+}
+
+.offline-section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px;
+  letter-spacing: 1px;
+  color: var(--text);
+  margin-bottom: 8px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+
+.offline-item {
+  font-size: 13px;
+  color: var(--text-dim);
+  padding: 3px 0;
+}
+
+.offline-item.positive { color: var(--green); }
+.offline-item.negative { color: var(--red); }
+.offline-item.net {
+  font-weight: bold;
+  font-size: 14px;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--border);
+}
+
+.offline-report-footer {
+  padding: 16px 24px 24px;
+  text-align: center;
+}
+
+.offline-report-footer .btn {
+  min-width: 160px;
+  font-size: 16px;
+  padding: 12px 32px;
+}
+
+.tutorial-action-hint {
+  font-size: 12px;
+  color: var(--accent);
+  text-align: center;
+  margin-top: 8px;
+  animation: tutorialPulse 2s ease-in-out infinite;
+}
+
+@keyframes tutorialPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
 }
 
 /* ===== SKILL TREE ===== */
