@@ -103,6 +103,9 @@ let game = {
     items: {}
   },
 
+  // Skill research timer (one at a time)
+  skillResearching: null, // { skillId, until }
+
   // Tab visit tracking (for reminders)
   tabLastVisited: {},
   // First-visit walkthrough tracking
@@ -719,6 +722,54 @@ function checkConstructionCompletion() {
         updateUI();
       }
     });
+  }
+}
+
+// ===== SKILL RESEARCH TIMER =====
+function getSkillResearchTime(cost) {
+  // Scale research time based on skill cost
+  // Cheap skills ($12K-$30K): 60-90s
+  // Mid skills ($125K-$250K): 3-5 min
+  // Expensive skills ($750K-$1.75M): 10-15 min
+  // Very expensive ($5M-$15M): 20-30 min
+  // Ultra ($40M-$75M): 45-60 min
+  if (cost <= 30000) return 60;
+  if (cost <= 200000) return 180;
+  if (cost <= 1000000) return 420;
+  if (cost <= 5000000) return 900;
+  if (cost <= 20000000) return 1800;
+  return 3600;
+}
+
+function checkSkillResearchCompletion() {
+  if (!game.skillResearching) return;
+  if (Date.now() >= game.skillResearching.until) {
+    var skillId = game.skillResearching.skillId;
+    game.skillResearching = null;
+
+    // Find skill info
+    var skillInfo = null;
+    var branchKey = null;
+    Object.entries(SKILL_TREE).forEach(function(entry) {
+      entry[1].skills.forEach(function(s) {
+        if (s.id === skillId) { skillInfo = s; branchKey = entry[0]; }
+      });
+    });
+
+    game.skills[skillId] = true;
+    game.stats.skillsResearched++;
+    var xpGain = 80;
+    game.xp += xpGain;
+    game.dailyTracking.xpEarned += xpGain;
+
+    if (skillInfo) {
+      addLog('🔬 Investigación completa: <span class="highlight">' + skillInfo.name + '</span> (' + SKILL_TREE[branchKey].name + ')');
+      showToast(skillInfo.icon, '¡Mejora lista: ' + skillInfo.name + '!');
+    }
+
+    updateMembers();
+    renderAll();
+    saveGame();
   }
 }
 
@@ -1999,6 +2050,7 @@ function gameTick() {
   checkTrainingCompletion();
   checkRepairCompletion();
   checkConstructionCompletion();
+  checkSkillResearchCompletion();
   checkEquipmentBreakdown();
   checkStaffIllness();
   checkChampionTraining();
@@ -2048,6 +2100,7 @@ function gameTick() {
     renderEquipment();
     renderExpansion();
     renderChampion();
+    renderSkillTree();
   }
 
   // Refresh gym scene every 10 ticks (people count may change)
@@ -2106,6 +2159,19 @@ function calculateOfflineProgress(elapsedSeconds) {
   game.money += totalMoney;
   if (totalMoney > 0) {
     game.totalMoneyEarned += totalMoney;
+  }
+
+  // 1b. Skill research completion
+  if (game.skillResearching && Date.now() >= game.skillResearching.until) {
+    var rsId = game.skillResearching.skillId;
+    game.skillResearching = null;
+    game.skills[rsId] = true;
+    game.stats.skillsResearched++;
+    var skillInfo = null;
+    Object.values(SKILL_TREE).forEach(function(branch) {
+      branch.skills.forEach(function(s) { if (s.id === rsId) skillInfo = s; });
+    });
+    if (skillInfo) report.skillResearched = skillInfo.name;
   }
 
   // 2. Equipment upgrade completion
@@ -2355,9 +2421,10 @@ function showOfflineReport(report) {
 
   // Construction & upgrades
   var constructions = [].concat(report.equipUpgraded, report.equipRepaired, report.zonesBuilt, report.staffTrained);
-  if (constructions.length > 0) {
+  if (constructions.length > 0 || report.skillResearched) {
     lines.push('<div class="offline-section">');
     lines.push('<div class="offline-section-title">🏗️ Completado</div>');
+    if (report.skillResearched) lines.push('<div class="offline-item">🔬 Investigación: ' + report.skillResearched + '</div>');
     report.equipUpgraded.forEach(function(e) { lines.push('<div class="offline-item">⬆️ ' + e + '</div>'); });
     report.equipRepaired.forEach(function(e) { lines.push('<div class="offline-item">🔧 ' + e + ' reparado</div>'); });
     report.zonesBuilt.forEach(function(e) { lines.push('<div class="offline-item">🏗️ ' + e + '</div>'); });

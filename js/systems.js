@@ -1557,26 +1557,34 @@ function researchSkill(skillId) {
   if (skill.requires && !game.skills[skill.requires]) return;
   if (game.money < skill.cost) return;
 
+  // Can't research if already researching something
+  if (game.skillResearching && Date.now() < game.skillResearching.until) {
+    showToast('❌', '¡Ya tenés una investigación en curso!');
+    return;
+  }
+
   game.money -= skill.cost;
-  game.skills[skillId] = true;
-  game.stats.skillsResearched++;
 
-  const xpGain = 80;
-  game.xp += xpGain;
-  game.dailyTracking.xpEarned += xpGain;
+  // Start research timer
+  var researchSeconds = getSkillResearchTime(skill.cost);
+  game.skillResearching = {
+    skillId: skillId,
+    until: Date.now() + researchSeconds * 1000
+  };
 
-  addLog('🔬 Investigaste <span class="highlight">' + skill.name + '</span> (' + SKILL_TREE[branchKey].name + ')');
-  showToast(skill.icon, '¡Mejora: ' + skill.name + '!');
+  addLog('🔬 Investigando <span class="highlight">' + skill.name + '</span>... (' + fmtTime(researchSeconds) + ')');
+  showToast(skill.icon, 'Investigando: ' + skill.name + ' (' + fmtTime(researchSeconds) + ')');
 
-  // Recalculate everything
-  updateMembers();
-  renderAll();
+  renderSkillTree();
   saveGame();
 }
 
 function renderSkillTree() {
   const container = document.getElementById('skillTreeContainer');
   if (!container) return;
+
+  var isResearching = game.skillResearching && Date.now() < game.skillResearching.until;
+  var researchingId = isResearching ? game.skillResearching.skillId : null;
 
   let html = '';
 
@@ -1593,25 +1601,37 @@ function renderSkillTree() {
       const reqMet = game.level >= skill.reqLevel;
       const depMet = !skill.requires || game.skills[skill.requires];
       const canAfford = game.money >= skill.cost;
-      const available = !owned && reqMet && depMet;
+      const thisResearching = researchingId === skill.id;
 
       let cls = 'skill-node';
       if (owned) cls += ' owned';
+      else if (thisResearching) cls += ' researching';
       else if (!reqMet || !depMet) cls += ' locked';
 
-      html += '<div class="' + cls + '" style="border-color:' + (owned ? branch.color : 'var(--border)') + ';">';
+      html += '<div class="' + cls + '" style="border-color:' + (owned ? branch.color : thisResearching ? 'var(--cyan)' : 'var(--border)') + ';">';
       html += '<div class="skill-node-icon">' + skill.icon + '</div>';
       html += '<div class="skill-node-name">' + skill.name + '</div>';
       html += '<div class="skill-node-desc">' + skill.desc + '</div>';
 
       if (owned) {
         html += '<div class="skill-node-status" style="color:var(--green);">✅ Investigado</div>';
+      } else if (thisResearching) {
+        var remaining = Math.max(0, Math.ceil((game.skillResearching.until - Date.now()) / 1000));
+        html += '<div class="skill-node-status" style="color:var(--cyan);">🔬 Investigando... ' + fmtTime(remaining) + '</div>';
+        var totalTime = getSkillResearchTime(skill.cost);
+        var elapsed = totalTime - remaining;
+        var pct = Math.min(100, Math.round((elapsed / totalTime) * 100));
+        html += '<div class="skill-progress-bar"><div class="skill-progress-fill" style="width:' + pct + '%;"></div></div>';
       } else if (!reqMet) {
         html += '<div class="skill-node-status">🔒 Nivel ' + skill.reqLevel + '</div>';
       } else if (!depMet) {
         html += '<div class="skill-node-status">🔒 Requiere: ' + branch.skills.find(s => s.id === skill.requires).name + '</div>';
+      } else if (isResearching) {
+        html += '<div class="skill-node-status" style="color:var(--text-muted);">⏳ Otra investigación en curso</div>';
+        html += '<div style="font-size:12px;color:var(--text-dim);margin-top:4px;">' + fmtMoney(skill.cost) + ' · ' + fmtTime(getSkillResearchTime(skill.cost)) + '</div>';
       } else {
-        html += '<button class="btn btn-buy btn-small" ' + (canAfford ? '' : 'disabled') + ' onclick="researchSkill(\'' + skill.id + '\')">🔬 INVESTIGAR — ' + fmtMoney(skill.cost) + '</button>';
+        var researchTime = getSkillResearchTime(skill.cost);
+        html += '<button class="btn btn-buy btn-small" ' + (canAfford ? '' : 'disabled') + ' onclick="researchSkill(\'' + skill.id + '\')">🔬 INVESTIGAR — ' + fmtMoney(skill.cost) + ' (' + fmtTime(researchTime) + ')</button>';
       }
 
       html += '</div>';
