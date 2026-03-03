@@ -1140,14 +1140,14 @@ function getTotalStaffSalaryPerDay() {
 // ===== OPERATING COSTS =====
 function getOperatingCostsPerDay() {
   let daily = 0;
-  // Rent (unless property owned)
+  // Rent (unless property owned) - scales with player level and zones
   if (!game.ownProperty) {
-    daily += OPERATING_COSTS.baseRent;
+    daily += OPERATING_COSTS.baseRent + (game.level * OPERATING_COSTS.rentPerLevel);
     let extraZones = 0;
     GYM_ZONES.forEach(function(z) {
       if (z.id !== 'ground_floor' && game.zones[z.id]) extraZones++;
     });
-    daily += extraZones * OPERATING_COSTS.rentPerExtraZone;
+    daily += extraZones * (OPERATING_COSTS.rentPerExtraZone + game.level * OPERATING_COSTS.rentZoneMultPerLevel);
   }
   // Utilities based on total equipment levels
   let totalEquipLevels = 0;
