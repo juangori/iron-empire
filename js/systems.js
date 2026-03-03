@@ -171,14 +171,16 @@ function claimMission(index) {
 
   mission.claimed = true;
   const prestigeMult = 1 + (game.prestigeStars * 0.25);
-  const moneyReward = Math.ceil(mission.rewards.money * prestigeMult);
+  const levelScale = 1 + (game.level - 1) * 0.5; // +50% per level
+  const moneyReward = Math.ceil(mission.rewards.money * prestigeMult * levelScale);
+  const xpReward = Math.ceil(mission.rewards.xp * (1 + (game.level - 1) * 0.2)); // +20% XP per level
 
   game.money += moneyReward;
   game.totalMoneyEarned += moneyReward;
-  game.xp += mission.rewards.xp;
+  game.xp += xpReward;
   game.stats.missionsCompleted++;
   game.dailyTracking.moneyEarned += moneyReward;
-  game.dailyTracking.xpEarned += mission.rewards.xp;
+  game.dailyTracking.xpEarned += xpReward;
 
   addLog('📋 Misión completada: <span class="highlight">' + mission.name + '</span> +<span class="money-log">' + fmtMoney(moneyReward) + '</span>');
   showToast('📋', '¡Misión: ' + mission.name + '!');
@@ -187,7 +189,7 @@ function claimMission(index) {
   // Check if all missions are claimed - bonus!
   const allClaimed = game.dailyMissions.missions.every(m => m.claimed);
   if (allClaimed) {
-    const bonusMoney = Math.ceil(1000 * prestigeMult);
+    const bonusMoney = Math.ceil(1000 * prestigeMult * levelScale);
     game.money += bonusMoney;
     game.totalMoneyEarned += bonusMoney;
     game.xp += 100;
@@ -233,8 +235,8 @@ function renderDailyMissions() {
           '<div class="mission-progress-text">' + fmt(m.current || 0) + ' / ' + fmt(m.target) + '</div>' +
         '</div>' +
         '<div class="mission-reward">' +
-          '<div class="mission-reward-text">💰 ' + fmtMoney(m.rewards.money) + '</div>' +
-          '<div class="mission-reward-text">✨ ' + m.rewards.xp + ' XP</div>' +
+          '<div class="mission-reward-text">💰 ' + fmtMoney(Math.ceil(m.rewards.money * (1 + (game.level - 1) * 0.5))) + '</div>' +
+          '<div class="mission-reward-text">✨ ' + Math.ceil(m.rewards.xp * (1 + (game.level - 1) * 0.2)) + ' XP</div>' +
           (m.completed && !m.claimed ?
             '<button class="btn btn-green btn-small" onclick="claimMission(' + i + ')">RECLAMAR</button>' :
             (m.claimed ? '<span style="color:var(--green);font-size:12px;">✅ Hecho</span>' : '')

@@ -305,7 +305,7 @@ function updateUI() {
     el.textContent = '-' + fmtMoney(totalExpenses) + '/s';
   }
   el = document.getElementById('membersBig');
-  if (el) el.textContent = game.members + ' / ' + game.maxMembers;
+  if (el) el.textContent = Math.floor(game.members) + ' / ' + Math.floor(game.maxMembers);
   el = document.getElementById('repBig');
   if (el) el.textContent = fmt(Math.floor(game.reputation));
   el = document.getElementById('totalEarnedBig');

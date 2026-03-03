@@ -269,21 +269,21 @@ function trainStaff(id, copyIdx) {
   var state = game.staff[id];
   if (!state || !state.hired) return;
 
-  // Check if any staff is already training
-  var anyTraining = false;
+  // Check concurrent training limit (max 2)
+  var trainingCount = 0;
   STAFF.forEach(function(st) {
     var st2 = game.staff[st.id];
     if (st2 && st2.hired) {
-      if (st2.trainingUntil && Date.now() < st2.trainingUntil) anyTraining = true;
+      if (st2.trainingUntil && Date.now() < st2.trainingUntil) trainingCount++;
       if (st2.extras) {
         st2.extras.forEach(function(ex) {
-          if (ex.trainingUntil && Date.now() < ex.trainingUntil) anyTraining = true;
+          if (ex.trainingUntil && Date.now() < ex.trainingUntil) trainingCount++;
         });
       }
     }
   });
-  if (anyTraining) {
-    showToast('❌', '¡Ya hay alguien entrenando!');
+  if (trainingCount >= 2) {
+    showToast('❌', '¡Ya hay 2 entrenamientos en curso!');
     return;
   }
 
@@ -1392,12 +1392,16 @@ function buyEquipment(id) {
     return;
   }
 
-  // Check concurrent upgrade limit
-  var activeUpgrades = getActiveEquipUpgrades();
-  var maxUpgrades = getMaxConcurrentUpgrades();
-  if (activeUpgrades >= maxUpgrades) {
-    showToast('❌', '¡Ya hay ' + activeUpgrades + ' mejora(s) en curso! Máx: ' + maxUpgrades);
-    return;
+  const isNew = state.level === 0;
+
+  // Concurrent upgrade limit only applies to upgrades, not new purchases
+  if (!isNew) {
+    var activeUpgrades = getActiveEquipUpgrades();
+    var maxUpgrades = getMaxConcurrentUpgrades();
+    if (activeUpgrades >= maxUpgrades) {
+      showToast('❌', '¡Ya hay ' + activeUpgrades + ' mejora(s) en curso! Máx: ' + maxUpgrades);
+      return;
+    }
   }
 
   const cost = getEquipCost(eq, state.level);
@@ -1406,7 +1410,6 @@ function buyEquipment(id) {
   game.money -= cost;
   if (!game.equipment[id]) game.equipment[id] = { level: 0, brokenUntil: 0, upgradingUntil: 0 };
 
-  const isNew = state.level === 0;
   const nextLevel = state.level + 1;
   const xpGain = 15 + nextLevel * 3;
   game.xp += xpGain;
