@@ -667,11 +667,11 @@ const TUTORIAL_STEPS = [
 
 // ===== OPERATING COSTS =====
 const OPERATING_COSTS = {
-  baseRent: 5000,              // per game day (600 ticks = 10 min real)
-  rentPerLevel: 1500,          // additional rent per player level per game day
-  rentPerExtraZone: 8000,      // additional rent per zone beyond ground floor
-  rentZoneMultPerLevel: 500,   // extra zone rent scales: zone_rent + (playerLevel * this)
-  utilitiesPerEquipLevel: 100, // utilities cost per total equipment level per game day
+  baseRent: 8000,              // per game day (600 ticks = 10 min real)
+  rentPerLevel: 2500,          // additional rent per player level per game day
+  rentPerExtraZone: 12000,     // additional rent per zone beyond ground floor
+  rentZoneMultPerLevel: 800,   // extra zone rent scales: zone_rent + (playerLevel * this)
+  utilitiesPerEquipLevel: 150, // utilities cost per total equipment level per game day
   propertyPrice: 8000000,      // one-time purchase to eliminate rent
   propertyReqLevel: 18,
 };
