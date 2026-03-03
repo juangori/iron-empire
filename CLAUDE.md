@@ -17,16 +17,16 @@ Live: https://ironempiregame.com (custom domain)
 ```
 index.html          - Main HTML structure, auth screen, account modal, loads all scripts + Firebase SDKs
 css/styles.css      - All styles (CSS variables, responsive, auth styles)
-js/data.js          - Game data: equipment, staff, competitions, achievements, classes, marketing, events,
-                      missions, tutorial, daily bonus, skill tree, zones, VIP members, supplements, rivals,
-                      champion, TAB_WALKTHROUGHS, WIKI_CONTENT, player titles, gym decoration
+js/data.js          - Game data: equipment, staff, competitions, achievements, classes, class instructors,
+                      marketing, events, missions, tutorial, daily bonus, skill tree, zones, VIP members,
+                      supplements, rivals, champion, TAB_WALKTHROUGHS, WIKI_CONTENT, player titles, gym decoration
 js/game.js          - Core engine: game state, save/load, tick loop, game actions, utility functions,
                       skill/zone calculations, chaos mechanics, construction timers, champion logic,
                       offline progression (calculateOfflineProgress + showOfflineReport)
 js/ui.js            - UI rendering: equipment, staff, competitions, achievements, log, updateUI
 js/systems.js       - Engagement: daily bonus, daily missions, random events, tutorial, tab walkthroughs,
-                      wiki, classes, marketing, skill tree, expansion, VIP members, supplements, rivals,
-                      champion, tab notifications, reminders, player profile, balance panel
+                      wiki, classes (+ instructor hire/upgrade), marketing, skill tree, expansion, VIP members,
+                      supplements, rivals, champion, tab notifications, reminders, player profile, balance panel
 js/auth.js          - Firebase auth: login/register (Google, Facebook, email/password), account settings,
                       cloud save, auth state management
 CNAME               - Custom domain config
@@ -34,7 +34,7 @@ CNAME               - Custom domain config
 
 ## Architecture Notes
 - Game state is a single global `game` object (defined in game.js)
-- Data definitions are global constants (EQUIPMENT, STAFF, SKILL_TREE, GYM_ZONES, VIP_MEMBERS, SUPPLEMENTS, RIVAL_GYMS, TAB_WALKTHROUGHS, WIKI_CONTENT, etc. in data.js)
+- Data definitions are global constants (EQUIPMENT, STAFF, CLASS_INSTRUCTORS, SKILL_TREE, GYM_ZONES, VIP_MEMBERS, SUPPLEMENTS, RIVAL_GYMS, TAB_WALKTHROUGHS, WIKI_CONTENT, etc. in data.js)
 - Game loop runs via `setInterval(gameTick, 1000)` - one tick per second
 - Game tick is paused during tutorial (`if (!game.tutorialDone) { updateUI(); return; }`)
 - All rendering functions follow pattern: `renderXxx()` reads from `game` state and writes innerHTML
@@ -45,6 +45,7 @@ CNAME               - Custom domain config
 - Staff state: `{ hired, level, trainingUntil, sickUntil, extras: [] }` — tracks training and illness
 - Zone building state: `game.zoneBuilding = { zoneId: timestamp }`
 - Champion state: `game.champion = { recruited, name, stats, level, xp, fatigue, equipment, trainingUntil, trainingStat, wins, losses }` — persists through prestige. No SVG, no energy system. Uses fatigue (not energy).
+- Instructor state: `game.instructors[classId] = { hired, level }` — one per class, resets on prestige
 - Tab tracking: `game.tabLastVisited = { tabId: timestamp }` for reminders; `game.tabsSeen = { tabId: true }` for first-visit walkthroughs
 
 ## Auth Flow
@@ -65,12 +66,12 @@ CNAME               - Custom domain config
 1. **Máquinas/Equipment** (12 items) - Buy/upgrade, each gives income/members/capacity. Level cap = player level. Can break down randomly.
 2. **Staff** (8 types) - Hire + train levels. Passive bonuses. Can get sick randomly. Multiple copies via extras.
 3. **Competitions** (6 tiers) - Unified in champion tab. Normal competitions before recruiting, 2x rewards with champion. Shared cooldowns.
-4. **Achievements** (61) - Auto-checked conditions, grant XP. Covers all systems.
+4. **Achievements** (64) - Auto-checked conditions, grant XP. Covers all systems.
 5. **Prestige/Franchise** - Reset for permanent income multiplier stars
 6. **Daily Bonus** - 7-day streak cycle with escalating rewards
 7. **Daily Missions** (3/day) - Random from pool of 8 types, bonus for all 3
 8. **Random Events** (every 5-10 min) - 28 events with player choices, costs scale with income
-9. **Gym Classes** (8 types) - Real-time duration + cooldown, costs money, requires staff, quality bonus from equip/staff levels
+9. **Gym Classes** (8 types) - Real-time duration + cooldown, costs money. Each class has a dedicated instructor that must be hired to unlock it. Instructor levels 1-5 boost income +20%/level. Instructors earn 15% commission on gross class income (no fixed salary). Quality bonus from equipment + instructor levels.
 10. **Marketing Campaigns** (10 total: 4 always-on + 6 burst) - Always-on: toggle on/off, continuous cost+member generation (Flyers, WhatsApp, Instagram, Google Ads). Burst: one-time with cooldown (YouTube, Radio, TV, Celebrity, Patrocinio, Gala). ROI insights for active campaigns.
 11. **Tutorial** - 16-step interactive walkthrough. Game tick paused during tutorial. Action steps force user to click (navigate tabs, buy first equipment). Smart tooltip positioning (below/above/side/center). Player starts with $100 for first purchase.
 12. **Skill Tree** (6 branches x 5 skills = 30) - Permanent upgrades, persist through prestige. Costs $2.5K-$15M, levels 3-25.
@@ -109,6 +110,8 @@ CNAME               - Custom domain config
 - Construction: equipment 20s*level, zones 3min-2h
 - Chaos: 0.3% equipment breakdown/30s, 0.5% staff illness/60s
 - Class costs scale +15%/level, rewards scale +20%/level with quality bonus
+- Instructor hire costs: $300 (yoga) to $25K (swimming), upgrade cost = hireCost * level * 2.5
+- Instructor commission: 15% of gross class income, deducted on completion
 - Champion fatigue recovery: `2 + floor(stamina * 0.5)` points per 30 ticks
 
 ## Skill Tree Branches (6)
