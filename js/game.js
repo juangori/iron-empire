@@ -16,6 +16,7 @@ let game = {
   competitions: {},
   achievements: {},
   classes: {},
+  instructors: {},
   marketing: {},
   log: [],
   tickCount: 0,
@@ -131,6 +132,8 @@ let game = {
     maxMembers: 0,
     maxStreak: 0,
     prestigeCount: 0,
+    instructorsHired: 0,
+    instructorUpgrades: 0,
   }
 };
 
@@ -1774,6 +1777,7 @@ function doPrestige() {
   game.staff = {};
   game.competitions = {};
   game.classes = {};
+  game.instructors = {};
   game.marketing = {};
   game.supplements = {};
   game.rivals = {};
@@ -1803,21 +1807,17 @@ function doPrestige() {
 }
 
 // ===== SESSION TIMER =====
-let sessionSeconds = 0;
-
-function updateSessionTimer() {
-  sessionSeconds++;
-  const el = document.getElementById('sessionTimeDisplay');
-  if (el) {
-    const h = Math.floor(sessionSeconds / 3600);
-    const m = Math.floor((sessionSeconds % 3600) / 60);
-    const s = sessionSeconds % 60;
-    if (h > 0) {
-      el.textContent = h + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
-    } else {
-      el.textContent = m + ':' + String(s).padStart(2, '0');
-    }
-  }
+function updateGameClock() {
+  var el = document.getElementById('gameDayDisplay');
+  if (!el) return;
+  var day = Math.floor(game.tickCount / 600) + 1;
+  var tickInDay = game.tickCount % 600;
+  // Map 600 ticks to 06:00–05:59 (24h cycle, gym opens at 6am)
+  var totalMinutes = Math.floor(tickInDay * 1440 / 600); // 0-1439 minutes in a 24h day
+  var hour = Math.floor((totalMinutes / 60 + 6) % 24); // offset to start at 6:00
+  var minute = totalMinutes % 60;
+  var timeStr = String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
+  el.textContent = 'Día ' + day + ' — ' + timeStr;
 }
 
 // ===== AUTO-MEMBER TICK =====
@@ -1867,19 +1867,23 @@ function classTick() {
       // Class finished
       game.classes[gc.id].collected = true;
       var reward = getClassReward(gc);
-      game.money += reward.income;
-      game.totalMoneyEarned += reward.income;
+      var commissionAmt = Math.ceil(reward.income * reward.commission);
+      var netIncome = reward.income - commissionAmt;
+      game.money += netIncome;
+      game.totalMoneyEarned += netIncome;
       game.xp += reward.xp;
       game.reputation += reward.rep;
       game.stats.classesCompleted++;
       game.dailyTracking.classesRun++;
-      game.dailyTracking.moneyEarned += reward.income;
+      game.dailyTracking.moneyEarned += netIncome;
       game.dailyTracking.xpEarned += reward.xp;
       game.dailyTracking.reputationGained += reward.rep;
 
-      addLog('🧘 Clase <span class="highlight">' + gc.name + '</span> completada! +<span class="money-log">' + fmtMoney(reward.income) + '</span>');
-      showToast(gc.icon, '¡Clase ' + gc.name + ': +' + fmtMoney(reward.income) + '!');
-      floatNumber('+' + fmtMoney(reward.income));
+      var logMsg = '🧘 Clase <span class="highlight">' + gc.name + '</span> completada! +<span class="money-log">' + fmtMoney(netIncome) + '</span>';
+      if (commissionAmt > 0) logMsg += ' <span style="color:var(--text-dim);">(comisión: -' + fmtMoney(commissionAmt) + ')</span>';
+      addLog(logMsg);
+      showToast(gc.icon, '¡Clase ' + gc.name + ': +' + fmtMoney(netIncome) + '!');
+      floatNumber('+' + fmtMoney(netIncome));
 
       checkAchievements();
       checkMissionProgress();
@@ -1991,7 +1995,7 @@ function gameTick() {
 
   game.tickCount++;
   game.stats.totalPlayTime++;
-  updateSessionTimer();
+  updateGameClock();
   checkTrainingCompletion();
   checkRepairCompletion();
   checkConstructionCompletion();
@@ -2172,22 +2176,24 @@ function calculateOfflineProgress(elapsedSeconds) {
     }
   });
 
-  // 6. Class completion
+  // 6. Class completion (with instructor commission)
   if (typeof GYM_CLASSES !== 'undefined') {
     GYM_CLASSES.forEach(function(gc) {
       var state = game.classes[gc.id];
       if (state && state.runningUntil && Date.now() >= state.runningUntil && !state.collected) {
         state.collected = true;
         var reward = getClassReward(gc);
-        game.money += reward.income;
-        game.totalMoneyEarned += reward.income;
+        var commissionAmt = Math.ceil(reward.income * reward.commission);
+        var netIncome = reward.income - commissionAmt;
+        game.money += netIncome;
+        game.totalMoneyEarned += netIncome;
         game.xp += reward.xp;
         game.reputation += reward.rep;
         game.stats.classesCompleted++;
-        report.classesCompleted.push(gc.name + ': +' + fmtMoney(reward.income));
+        report.classesCompleted.push(gc.name + ': +' + fmtMoney(netIncome) + (commissionAmt > 0 ? ' (comisión: -' + fmtMoney(commissionAmt) + ')' : ''));
         report.xp += reward.xp;
         report.reputation += reward.rep;
-        report.money += reward.income;
+        report.money += netIncome;
       }
     });
   }

@@ -124,17 +124,32 @@ const ACHIEVEMENTS = [
   { id: 'three_themes', name: 'Fashionista', icon: '🌈', desc: 'Desbloqueá 3 temas visuales', check: () => game.decoration && (game.decoration.unlockedThemes || []).length >= 3 },
   { id: 'set_title', name: 'Identificado', icon: '👤', desc: 'Elegí un título activo para tu perfil', check: () => game.profile && game.profile.activeTitle && game.profile.activeTitle !== 'principiante' },
   { id: 'iron_legend', name: 'Iron Legend', icon: '🔥', desc: 'Obtené el título Iron Legend', check: () => game.level >= 25 && game.totalMoneyEarned >= 10000000 && game.stats.championWins >= 50 },
+  // Instructors
+  { id: 'first_instructor', name: 'Primer Profe', icon: '👨‍🏫', desc: 'Contratá tu primer instructor de clase', check: () => Object.values(game.instructors).some(i => i.hired) },
+  { id: 'all_instructors', name: 'Plantel Completo', icon: '👨‍🏫', desc: 'Contratá los 8 instructores', check: () => typeof CLASS_INSTRUCTORS !== 'undefined' && CLASS_INSTRUCTORS.every(i => game.instructors[i.id]?.hired) },
+  { id: 'max_instructor', name: 'Profe Nivel 5', icon: '⭐', desc: 'Llevá a un instructor al nivel máximo', check: () => Object.values(game.instructors).some(i => i.hired && i.level >= 5) },
 ];
 
 const GYM_CLASSES = [
-  { id: 'yoga', name: 'Yoga', icon: '🧘', desc: 'Flexibilidad y paz mental.', duration: 120, income: 200, cost: 80, xp: 40, rep: 5, reqLevel: 2, cooldown: 600, reqStaff: 'trainer' },
-  { id: 'spinning', name: 'Spinning', icon: '🚴', desc: 'Cardio intenso sobre ruedas.', duration: 90, income: 300, cost: 130, xp: 50, rep: 8, reqLevel: 3, cooldown: 480, reqEquipment: 'treadmill', reqStaff: 'trainer' },
-  { id: 'pilates', name: 'Pilates', icon: '🤸', desc: 'Core y control corporal.', duration: 120, income: 350, cost: 150, xp: 45, rep: 7, reqLevel: 4, cooldown: 600, reqStaff: 'trainer' },
+  { id: 'yoga', name: 'Yoga', icon: '🧘', desc: 'Flexibilidad y paz mental.', duration: 120, income: 200, cost: 80, xp: 40, rep: 5, reqLevel: 2, cooldown: 600 },
+  { id: 'spinning', name: 'Spinning', icon: '🚴', desc: 'Cardio intenso sobre ruedas.', duration: 90, income: 300, cost: 130, xp: 50, rep: 8, reqLevel: 3, cooldown: 480, reqEquipment: 'treadmill' },
+  { id: 'pilates', name: 'Pilates', icon: '🤸', desc: 'Core y control corporal.', duration: 120, income: 350, cost: 150, xp: 45, rep: 7, reqLevel: 4, cooldown: 600 },
   { id: 'zumba', name: 'Zumba', icon: '💃', desc: 'Bailá y entrenate al mismo tiempo.', duration: 90, income: 350, cost: 140, xp: 45, rep: 10, reqLevel: 4, cooldown: 540 },
-  { id: 'hiit', name: 'HIIT', icon: '💥', desc: 'Intervalos de alta intensidad. Quemá todo.', duration: 60, income: 400, cost: 200, xp: 60, rep: 10, reqLevel: 5, cooldown: 360, reqStaff: 'trainer' },
-  { id: 'boxing_class', name: 'Boxeo Fitness', icon: '🥊', desc: 'Golpeá la bolsa, liberá stress.', duration: 75, income: 500, cost: 280, xp: 70, rep: 12, reqLevel: 7, cooldown: 500, reqEquipment: 'boxing', reqStaff: 'trainer' },
-  { id: 'crossfit_class', name: 'WOD CrossFit', icon: '🏋️', desc: 'Workout Of the Day. Intenso.', duration: 60, income: 600, cost: 350, xp: 80, rep: 15, reqLevel: 9, cooldown: 400, reqEquipment: 'crossfit', reqStaff: 'trainer' },
-  { id: 'swimming', name: 'Natación Guiada', icon: '🏊', desc: 'Técnica y resistencia en el agua.', duration: 90, income: 700, cost: 400, xp: 90, rep: 18, reqLevel: 11, cooldown: 600, reqEquipment: 'pool', reqStaff: 'physio' },
+  { id: 'hiit', name: 'HIIT', icon: '💥', desc: 'Intervalos de alta intensidad. Quemá todo.', duration: 60, income: 400, cost: 200, xp: 60, rep: 10, reqLevel: 5, cooldown: 360 },
+  { id: 'boxing_class', name: 'Boxeo Fitness', icon: '🥊', desc: 'Golpeá la bolsa, liberá stress.', duration: 75, income: 500, cost: 280, xp: 70, rep: 12, reqLevel: 7, cooldown: 500, reqEquipment: 'boxing' },
+  { id: 'crossfit_class', name: 'WOD CrossFit', icon: '🏋️', desc: 'Workout Of the Day. Intenso.', duration: 60, income: 600, cost: 350, xp: 80, rep: 15, reqLevel: 9, cooldown: 400, reqEquipment: 'crossfit' },
+  { id: 'swimming', name: 'Natación Guiada', icon: '🏊', desc: 'Técnica y resistencia en el agua.', duration: 90, income: 700, cost: 400, xp: 90, rep: 18, reqLevel: 11, cooldown: 600, reqEquipment: 'pool' },
+];
+
+const CLASS_INSTRUCTORS = [
+  { id: 'yoga',           name: 'Profe de Yoga',      icon: '🧘', hireCost: 300,   upgradeMult: 2.5, commission: 0.15, reqLevel: 2 },
+  { id: 'spinning',       name: 'Profe de Spinning',  icon: '🚴', hireCost: 600,   upgradeMult: 2.5, commission: 0.15, reqLevel: 3 },
+  { id: 'pilates',        name: 'Profe de Pilates',   icon: '🤸', hireCost: 1000,  upgradeMult: 2.5, commission: 0.15, reqLevel: 4 },
+  { id: 'zumba',          name: 'Profe de Zumba',     icon: '💃', hireCost: 1000,  upgradeMult: 2.5, commission: 0.15, reqLevel: 4 },
+  { id: 'hiit',           name: 'Profe de HIIT',      icon: '💥', hireCost: 2000,  upgradeMult: 2.5, commission: 0.15, reqLevel: 5 },
+  { id: 'boxing_class',   name: 'Profe de Boxeo',     icon: '🥊', hireCost: 5000,  upgradeMult: 2.5, commission: 0.15, reqLevel: 7 },
+  { id: 'crossfit_class', name: 'Profe de CrossFit',  icon: '🏋️', hireCost: 12000, upgradeMult: 2.5, commission: 0.15, reqLevel: 9 },
+  { id: 'swimming',       name: 'Profe de Natación',  icon: '🏊', hireCost: 25000, upgradeMult: 2.5, commission: 0.15, reqLevel: 11 },
 ];
 
 const MARKETING_CAMPAIGNS = [
@@ -647,7 +662,7 @@ const TUTORIAL_STEPS = [
   { target: '#tab-champion', title: 'Torneos y Campeón', text: 'Empezá por el Torneo de Barrio (80% de ganar). Más adelante, reclutá un campeón para ganar el doble.', tab: 'champion' },
 
   // Consejos finales
-  { target: '.gym-scene-container', title: '¡A Jugar!', text: 'El juego genera plata aunque cierres el navegador (hasta 2 horas). Entrá todos los días, hacé misiones, dictá clases y competí. ¡Construí tu Iron Empire!', tab: 'gym' },
+  { target: '.gym-scene-container', title: '¡A Jugar!', text: 'El juego sigue funcionando aunque cierres el navegador (hasta 8 horas). Entrá todos los días, hacé misiones, dictá clases y competí. ¡Construí tu Iron Empire!', tab: 'gym' },
 ];
 
 // ===== OPERATING COSTS =====
@@ -795,18 +810,18 @@ const TAB_WALKTHROUGHS = {
       '📚 Entrenás al staff para subir su nivel y potenciar sus efectos. El entrenamiento toma tiempo real.',
       '🤒 El staff puede enfermarse aleatoriamente y queda inactivo hasta recuperarse.',
       '➕ Podés contratar múltiples copias del mismo empleado para amplificar su efecto.',
-      '🧘 El Instructor es clave para las clases — sin él, no podés dictarlas.',
+      '💰 El Gerente reduce costos de todo y es clave en etapas avanzadas.',
     ],
   },
   classes: {
     icon: '🧘', title: 'Clases', wiki: 'classes',
-    intro: 'Las clases son actividades que dictás en tu gym para ganar plata y reputación. Cada clase toma tiempo y luego entra en cooldown.',
+    intro: 'Las clases son actividades que dictás en tu gym. Cada clase necesita un instructor propio que la desbloquea y mejora.',
     tips: [
-      '⏱️ Iniciá una clase y esperá a que termine — automáticamente te da la recompensa.',
-      '🎯 La calidad de la clase aumenta con el nivel de tu equipamiento y el nivel de tus instructores.',
-      '💸 Los costos de clase suben con tu nivel, pero también las recompensas.',
-      '🔄 Después de terminar, cada clase entra en cooldown antes de poder dictarse de nuevo.',
-      '👨‍🏫 Necesitás al menos un Instructor contratado para poder dar clases.',
+      '👨‍🏫 Contratá un instructor para desbloquear su clase. Sin instructor, la clase está bloqueada.',
+      '⬆️ Mejorá al instructor (nivel 1-5) para aumentar las ganancias de la clase (+20% por nivel).',
+      '💸 El instructor cobra una comisión (15%) de lo que genera la clase — no tiene sueldo fijo.',
+      '⏱️ Iniciá una clase → esperá a que termine → la recompensa es automática. Después entra en cooldown.',
+      '⭐ La calidad sube con el nivel del instructor y del equipamiento requerido.',
     ],
   },
   supplements: {
@@ -993,16 +1008,20 @@ const WIKI_CONTENT = [
   },
   {
     id: 'classes', icon: '🧘', title: 'Clases',
-    content: '<p>Las clases son actividades grupales que generan ingresos y reputación. Hay 8 tipos con distintas duraciones y recompensas.</p>' +
-      '<p><strong>Cómo funcionan:</strong></p>' +
-      '<ul><li>Iniciás una clase → esperás a que termine → recibís la recompensa automáticamente.</li>' +
-      '<li>Después entra en cooldown por el mismo tiempo antes de poder dictarla de nuevo.</li>' +
-      '<li>Cada clase tiene un costo de inicio que escala +15% por nivel del jugador sobre el requerido.</li>' +
-      '<li>La recompensa escala +20% por nivel sobre el requerido.</li></ul>' +
+    content: '<p>Las clases son actividades grupales que generan ingresos y reputación. Hay 8 tipos, cada una con su propio instructor.</p>' +
+      '<p><strong>Sistema de instructores:</strong></p>' +
+      '<ul><li>Cada clase tiene un instructor dedicado que debés contratar para desbloquearla.</li>' +
+      '<li>Los instructores tienen niveles del 1 al 5. Cada nivel aumenta las ganancias de la clase en +20%.</li>' +
+      '<li>El instructor cobra una comisión del 15% sobre las ganancias brutas de la clase (no tiene sueldo fijo).</li>' +
+      '<li>El costo de mejora del instructor sube con cada nivel.</li></ul>' +
+      '<p><strong>Cómo funcionan las clases:</strong></p>' +
+      '<ul><li>Iniciás una clase → esperás a que termine → recibís la recompensa automáticamente (menos la comisión).</li>' +
+      '<li>Después entra en cooldown antes de poder dictarla de nuevo.</li>' +
+      '<li>El costo de inicio escala +15% por nivel del jugador. La recompensa escala +20%.</li></ul>' +
       '<p><strong>Calidad de clase:</strong></p>' +
-      '<ul><li>Sube con el nivel promedio de tu equipamiento y el nivel de tus instructores.</li>' +
-      '<li>Mayor calidad = más socios y reputación ganados.</li></ul>' +
-      '<div class="wiki-tip-box">💡 Necesitás al menos un Instructor contratado. Cuanto más alto su nivel de entrenamiento, mejor la calidad de las clases.</div>',
+      '<ul><li>Sube con el nivel del instructor (+20%/niv) y del equipamiento requerido (+5%/niv).</li>' +
+      '<li>Mayor calidad = más ingresos por clase.</li></ul>' +
+      '<div class="wiki-tip-box">💡 Invertí en tus instructores — un instructor nivel 5 genera mucha más plata que uno nivel 1, y la comisión siempre es 15%.</div>',
   },
   {
     id: 'supplements', icon: '🧃', title: 'Suplementos',

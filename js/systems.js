@@ -362,29 +362,81 @@ function getClassCost(gc) {
   return Math.ceil(cost * levelScale);
 }
 
+function getInstructorUpgradeCost(inst, currentLevel) {
+  return Math.ceil(inst.hireCost * currentLevel * inst.upgradeMult);
+}
+
+function hireInstructor(classId) {
+  var inst = CLASS_INSTRUCTORS.find(function(i) { return i.id === classId; });
+  if (!inst) return;
+  if (game.level < inst.reqLevel) {
+    showToast('❌', '¡Necesitás nivel ' + inst.reqLevel + '!');
+    return;
+  }
+  if (game.instructors[classId]?.hired) return;
+  if (game.money < inst.hireCost) {
+    showToast('❌', '¡No tenés suficiente plata!');
+    return;
+  }
+  game.money -= inst.hireCost;
+  game.instructors[classId] = { hired: true, level: 1 };
+  game.stats.instructorsHired = (game.stats.instructorsHired || 0) + 1;
+  addLog('👨‍🏫 Contrataste a <span class="highlight">' + inst.name + '</span>! (-' + fmtMoney(inst.hireCost) + ')');
+  showToast(inst.icon, '¡' + inst.name + ' contratado!');
+  renderClasses();
+  checkAchievements();
+  saveGame();
+}
+
+function upgradeInstructor(classId) {
+  var inst = CLASS_INSTRUCTORS.find(function(i) { return i.id === classId; });
+  if (!inst) return;
+  var state = game.instructors[classId];
+  if (!state?.hired) return;
+  if (state.level >= 5) {
+    showToast('⚠️', '¡Ya está al máximo nivel!');
+    return;
+  }
+  var cost = getInstructorUpgradeCost(inst, state.level);
+  if (game.money < cost) {
+    showToast('❌', '¡No tenés suficiente plata!');
+    return;
+  }
+  game.money -= cost;
+  state.level++;
+  game.stats.instructorUpgrades = (game.stats.instructorUpgrades || 0) + 1;
+  addLog('👨‍🏫 <span class="highlight">' + inst.name + '</span> subió a nivel ' + state.level + '! (-' + fmtMoney(cost) + ')');
+  showToast('⬆️', inst.name + ' Nv.' + state.level);
+  renderClasses();
+  checkAchievements();
+  saveGame();
+}
+
 function getClassReward(gc) {
   var levelScale = 1 + (game.level - 1) * 0.2;
   var prestigeMult = 1 + (game.prestigeStars * 0.25);
   var classMult = getSkillEffect('classIncomeMult');
-  // Quality bonus: equipment level + staff level boost rewards
+  // Quality bonus: equipment level + instructor level boost rewards
   var qualityBonus = 1;
   if (gc.reqEquipment) {
     var eqLvl = game.equipment[gc.reqEquipment]?.level || 0;
     qualityBonus += eqLvl * 0.05; // +5% per equipment level
   }
-  if (gc.reqStaff) {
-    var staffState = game.staff[gc.reqStaff];
-    if (staffState?.hired) {
-      qualityBonus += (staffState.level || 1) * 0.1; // +10% per staff level
-    }
+  // Instructor level bonus: +20% per level
+  var instState = game.instructors[gc.id];
+  if (instState?.hired) {
+    qualityBonus += (instState.level || 1) * 0.2;
   }
   // Decoration class quality bonus
   qualityBonus += getDecorationBonus('classQuality');
+  var instData = CLASS_INSTRUCTORS.find(function(i) { return i.id === gc.id; });
+  var commissionRate = instData ? instData.commission : 0;
   return {
     income: Math.ceil(gc.income * levelScale * prestigeMult * classMult * qualityBonus),
-    xp: Math.ceil(gc.xp * levelScale * 0.5), // XP scales slower
+    xp: Math.ceil(gc.xp * levelScale * 0.5),
     rep: Math.ceil(gc.rep * levelScale * 0.5),
-    qualityBonus: qualityBonus
+    qualityBonus: qualityBonus,
+    commission: commissionRate
   };
 }
 
@@ -392,22 +444,19 @@ function startClass(id) {
   const gc = GYM_CLASSES.find(c => c.id === id);
   if (!gc) return;
 
+  // Check instructor hired
+  var instState = game.instructors[gc.id];
+  if (!instState?.hired) {
+    showToast('❌', '¡Necesitás contratar un instructor!');
+    return;
+  }
+
   // Check equipment requirement
   if (gc.reqEquipment) {
     var eqLevel = game.equipment[gc.reqEquipment]?.level || 0;
     if (eqLevel <= 0 || isEquipmentBroken(gc.reqEquipment)) {
       var eqData = EQUIPMENT.find(function(e) { return e.id === gc.reqEquipment; });
       showToast('❌', '¡Necesitás ' + (eqData ? eqData.name : gc.reqEquipment) + ' funcionando!');
-      return;
-    }
-  }
-
-  // Check staff requirement
-  if (gc.reqStaff) {
-    var staffState = game.staff[gc.reqStaff];
-    if (!staffState?.hired) {
-      var staffData = STAFF.find(function(s) { return s.id === gc.reqStaff; });
-      showToast('❌', '¡Necesitás ' + (staffData ? staffData.name : gc.reqStaff) + '!');
       return;
     }
   }
@@ -446,9 +495,11 @@ function renderClasses() {
 
   grid.innerHTML = GYM_CLASSES.map(gc => {
     const state = game.classes[gc.id] || {};
+    const inst = CLASS_INSTRUCTORS.find(function(i) { return i.id === gc.id; });
+    const instState = game.instructors[gc.id];
+    const hasInstructor = instState?.hired;
     const locked = game.level < gc.reqLevel;
     const missingEquip = gc.reqEquipment && ((game.equipment[gc.reqEquipment]?.level || 0) <= 0 || isEquipmentBroken(gc.reqEquipment));
-    const missingStaff = gc.reqStaff && !game.staff[gc.reqStaff]?.hired;
     const isRunning = state.runningUntil && Date.now() < state.runningUntil;
     const onCooldown = state.cooldownUntil && Date.now() < state.cooldownUntil;
 
@@ -459,35 +510,69 @@ function renderClasses() {
 
     var classCost = getClassCost(gc);
     var reward = getClassReward(gc);
+    var commissionAmt = Math.ceil(reward.income * reward.commission);
+    var netIncome = reward.income - commissionAmt;
     var canAfford = game.money >= classCost;
-    var profit = reward.income - classCost;
+    var profit = netIncome - classCost;
 
-    let timerText = '';
-    let btnHTML = '';
-    let reqHTML = '';
+    // --- Instructor section ---
+    var instructorHTML = '';
+    if (locked) {
+      // Don't show instructor for locked classes
+    } else if (!hasInstructor) {
+      var canHire = game.money >= inst.hireCost;
+      instructorHTML = '<div class="class-instructor-section no-instructor">' +
+        '<div class="instructor-label">👨‍🏫 ' + inst.name + '</div>' +
+        '<button class="btn btn-buy btn-small" ' + (canHire ? '' : 'disabled') + ' onclick="hireInstructor(\'' + gc.id + '\')">' +
+          'CONTRATAR — ' + fmtMoney(inst.hireCost) +
+        '</button>' +
+      '</div>';
+    } else {
+      var instLevel = instState.level || 1;
+      var stars = '';
+      for (var s = 0; s < 5; s++) stars += s < instLevel ? '★' : '☆';
+      var upgradeHTML = '';
+      if (instLevel < 5) {
+        var upgCost = getInstructorUpgradeCost(inst, instLevel);
+        var canUpgrade = game.money >= upgCost;
+        upgradeHTML = '<button class="btn btn-buy btn-small" ' + (canUpgrade ? '' : 'disabled') + ' onclick="upgradeInstructor(\'' + gc.id + '\')">' +
+          '⬆️ MEJORAR — ' + fmtMoney(upgCost) +
+        '</button>';
+      } else {
+        upgradeHTML = '<span class="instructor-maxed">MAX</span>';
+      }
+      instructorHTML = '<div class="class-instructor-section">' +
+        '<div class="instructor-info">' +
+          '<span class="instructor-label">👨‍🏫 ' + inst.name + '</span>' +
+          '<span class="instructor-stars">' + stars + '</span>' +
+        '</div>' +
+        '<div class="instructor-details">' +
+          '<span class="instructor-commission">Comisión: ' + Math.round(inst.commission * 100) + '% (-' + fmtMoney(commissionAmt) + ')</span>' +
+          upgradeHTML +
+        '</div>' +
+      '</div>';
+    }
 
-    // Requirements display
-    var reqs = [];
-    if (gc.reqEquipment) {
+    // --- Requirements display (equipment only) ---
+    var reqHTML = '';
+    if (gc.reqEquipment && !locked && hasInstructor) {
       var eqData = EQUIPMENT.find(function(e) { return e.id === gc.reqEquipment; });
       var eqName = eqData ? eqData.icon + ' ' + eqData.name : gc.reqEquipment;
       var hasEq = !missingEquip;
-      reqs.push('<span style="color:' + (hasEq ? 'var(--green)' : 'var(--red)') + ';">' + (hasEq ? '✅' : '❌') + ' ' + eqName + '</span>');
-    }
-    if (gc.reqStaff) {
-      var staffData = STAFF.find(function(s) { return s.id === gc.reqStaff; });
-      var staffName = staffData ? staffData.icon + ' ' + staffData.name : gc.reqStaff;
-      var hasStaff = !missingStaff;
-      reqs.push('<span style="color:' + (hasStaff ? 'var(--green)' : 'var(--red)') + ';">' + (hasStaff ? '✅' : '❌') + ' ' + staffName + '</span>');
-    }
-    if (reqs.length > 0 && !locked) {
-      reqHTML = '<div style="font-size:11px;margin:4px 0;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">' + reqs.join('') + '</div>';
+      reqHTML = '<div style="font-size:11px;margin:4px 0;text-align:center;">' +
+        '<span style="color:' + (hasEq ? 'var(--green)' : 'var(--red)') + ';">' + (hasEq ? '✅' : '❌') + ' ' + eqName + '</span>' +
+      '</div>';
     }
 
+    // --- Timer & Button ---
+    let timerText = '';
+    let btnHTML = '';
+
     if (locked) {
-      var reqParts = ['🔒 Requiere Nivel ' + gc.reqLevel];
-      btnHTML = '<div style="color:var(--text-muted);font-size:12px;">' + reqParts.join('<br>') + '</div>';
-    } else if (missingEquip || missingStaff) {
+      btnHTML = '<div style="color:var(--text-muted);font-size:12px;">🔒 Requiere Nivel ' + gc.reqLevel + '</div>';
+    } else if (!hasInstructor) {
+      btnHTML = '<div style="color:var(--text-muted);font-size:12px;">Contratá un instructor para desbloquear</div>';
+    } else if (missingEquip) {
       btnHTML = '<button class="btn btn-buy" disabled>🎯 INICIAR — ' + fmtMoney(classCost) + '</button>';
     } else if (isRunning) {
       const timeLeft = Math.ceil((state.runningUntil - Date.now()) / 1000);
@@ -501,26 +586,45 @@ function renderClasses() {
       btnHTML = '<button class="btn btn-buy" ' + (canAfford ? '' : 'disabled') + ' onclick="startClass(\'' + gc.id + '\')">🎯 INICIAR — ' + fmtMoney(classCost) + '</button>';
     }
 
-    // Quality indicator
+    // --- Quality indicator ---
     var qualityText = '';
-    if (!locked && reward.qualityBonus > 1) {
+    if (!locked && hasInstructor && reward.qualityBonus > 1) {
       var qPct = Math.round((reward.qualityBonus - 1) * 100);
-      qualityText = '<div style="font-size:11px;color:var(--accent);text-align:center;margin-top:2px;">⭐ Calidad +' + qPct + '% (equipo + staff)</div>';
+      qualityText = '<div style="font-size:11px;color:var(--accent);text-align:center;margin-top:2px;">⭐ Calidad +' + qPct + '% (equipo + instructor)</div>';
     }
 
+    // --- Stats (only show full stats when instructor hired) ---
+    var statsHTML = '';
+    if (!locked && hasInstructor) {
+      statsHTML = '<div class="class-stats">' +
+        '<div class="class-stat"><span style="color:var(--green);">💰 ' + fmtMoney(reward.income) + ' bruto</span></div>' +
+        (commissionAmt > 0 ? '<div class="class-stat"><span style="color:var(--orange);">👨‍🏫 -' + fmtMoney(commissionAmt) + ' comisión</span></div>' : '') +
+        (classCost > 0 ? '<div class="class-stat"><span style="color:var(--red);">💸 -' + fmtMoney(classCost) + ' costo</span></div>' : '') +
+        '<div class="class-stat"><span style="color:' + (profit > 0 ? 'var(--green)' : 'var(--red)') + ';">📊 ' + (profit >= 0 ? '+' : '') + fmtMoney(profit) + ' neto</span></div>' +
+        '<div class="class-stat"><span style="color:var(--cyan);">✨ +' + reward.xp + ' XP · ⭐ +' + reward.rep + ' rep</span></div>' +
+        '<div class="class-stat"><span style="color:var(--text-dim);">⏱️ ' + fmtTime(gc.duration) + ' · CD: ' + fmtTime(gc.cooldown) + '</span></div>' +
+      '</div>';
+    } else if (!locked) {
+      // Preview stats before hiring instructor
+      statsHTML = '<div class="class-stats" style="opacity:0.5;">' +
+        '<div class="class-stat"><span style="color:var(--text-dim);">💰 ' + fmtMoney(gc.income) + ' base</span></div>' +
+        '<div class="class-stat"><span style="color:var(--text-dim);">⏱️ ' + fmtTime(gc.duration) + ' · CD: ' + fmtTime(gc.cooldown) + '</span></div>' +
+      '</div>';
+    }
+
+    var cardClass = 'class-card';
+    if (locked) cardClass += ' locked';
+    if (isRunning) cardClass += ' running';
+    if (!locked && !hasInstructor) cardClass += ' no-instructor';
+
     return (
-      '<div class="class-card ' + (locked ? 'locked' : '') + ' ' + (isRunning ? 'running' : '') + '">' +
+      '<div class="' + cardClass + '">' +
         '<div class="class-icon">' + gc.icon + '</div>' +
         '<div class="class-name">' + gc.name + '</div>' +
         '<div class="class-desc">' + gc.desc + '</div>' +
+        instructorHTML +
         reqHTML +
-        '<div class="class-stats">' +
-          '<div class="class-stat"><span style="color:var(--green);">💰 ' + fmtMoney(reward.income) + '</span></div>' +
-          (classCost > 0 ? '<div class="class-stat"><span style="color:var(--red);">💸 -' + fmtMoney(classCost) + '</span></div>' : '') +
-          '<div class="class-stat"><span style="color:' + (profit > 0 ? 'var(--green)' : 'var(--red)') + ';">📊 ' + (profit >= 0 ? '+' : '') + fmtMoney(profit) + ' neto</span></div>' +
-          '<div class="class-stat"><span style="color:var(--cyan);">✨ +' + reward.xp + ' XP · ⭐ +' + reward.rep + ' rep</span></div>' +
-          '<div class="class-stat"><span style="color:var(--text-dim);">⏱️ ' + fmtTime(gc.duration) + ' · CD: ' + fmtTime(gc.cooldown) + '</span></div>' +
-        '</div>' +
+        statsHTML +
         qualityText +
         timerText +
         btnHTML +
@@ -2535,6 +2639,7 @@ function renderProfile() {
     { icon: '🏆', label: 'Competencias ganadas', value: game.stats.competitionsWon || 0 },
     { icon: '🏅', label: 'Champion wins', value: game.stats.championWins || 0 },
     { icon: '🧘', label: 'Clases completadas', value: game.stats.classesCompleted || 0 },
+    { icon: '👨‍🏫', label: 'Instructores contratados', value: game.stats.instructorsHired || 0 },
     { icon: '📢', label: 'Campañas lanzadas', value: game.stats.campaignsLaunched || 0 },
     { icon: '🧃', label: 'Suplementos usados', value: game.stats.supplementsBought || 0 },
     { icon: '🏪', label: 'Rivales superados', value: game.stats.rivalsDefeated || 0 },
@@ -2688,11 +2793,14 @@ function renderBalancePanel() {
   var modal = document.getElementById('balanceModal');
   if (!modal) return;
 
+  // All values in PER GAME DAY (600 ticks = 10 min real)
+  var D = 600; // ticks per game day
+
   // ===== INCOME BREAKDOWN =====
   var incomeItems = [];
-  var totalIncome = 0;
+  var totalBaseIncome = 0;
 
-  // Equipment income (per item)
+  // Equipment income
   EQUIPMENT.forEach(function(eq) {
     var lvl = game.equipment[eq.id] ? game.equipment[eq.id].level : 0;
     if (lvl <= 0) return;
@@ -2700,95 +2808,99 @@ function renderBalancePanel() {
       incomeItems.push({ name: eq.icon + ' ' + eq.name + ' (LVL ' + lvl + ')', value: 0, note: '⚠️ Roto' });
       return;
     }
-    var base = eq.incomePerLevel * lvl;
-    incomeItems.push({ name: eq.icon + ' ' + eq.name + ' (LVL ' + lvl + ')', value: base });
-    totalIncome += base;
+    var daily = eq.incomePerLevel * lvl * D;
+    incomeItems.push({ name: eq.icon + ' ' + eq.name + ' (LVL ' + lvl + ')', value: daily });
+    totalBaseIncome += daily;
   });
 
   // Zone income
   GYM_ZONES.forEach(function(z) {
     if (game.zones[z.id] && z.incomeBonus > 0) {
-      incomeItems.push({ name: z.icon + ' ' + z.name, value: z.incomeBonus });
-      totalIncome += z.incomeBonus;
+      var daily = z.incomeBonus * D;
+      incomeItems.push({ name: z.icon + ' ' + z.name, value: daily });
+      totalBaseIncome += daily;
     }
   });
 
   // Rival defeat bonuses
   var rivalIncome = getRivalIncomeBonus();
   if (rivalIncome > 0) {
-    incomeItems.push({ name: '🏪 Rivales derrotados', value: rivalIncome });
-    totalIncome += rivalIncome;
+    var daily = rivalIncome * D;
+    incomeItems.push({ name: '🏪 Rivales derrotados', value: daily });
+    totalBaseIncome += daily;
   }
 
-  // Multipliers
+  // ===== MULTIPLIERS =====
   var multipliers = [];
 
-  // Skill equipment income mult
   var eqSkillMult = getSkillEffect('equipIncomeMult');
   if (eqSkillMult > 1) multipliers.push({ name: '🔬 Mejora equipo', value: eqSkillMult });
 
-  // Staff income mult
-  var staffMult = 1;
   STAFF.forEach(function(s) {
     if (game.staff[s.id] && game.staff[s.id].hired && s.incomeMult) {
       var eff = getStaffTotalEffect(s, 'incomeMult') * getSkillEffect('staffEffectMult');
-      staffMult += eff;
       multipliers.push({ name: s.icon + ' ' + s.name, value: 1 + eff });
     }
   });
 
-  // Member bonus
+  if (hasSkill('st_synergy')) {
+    var hiredCount = 0;
+    STAFF.forEach(function(s) {
+      if (game.staff[s.id] && game.staff[s.id].hired) {
+        hiredCount++;
+        if (game.staff[s.id].extras) hiredCount += game.staff[s.id].extras.length;
+      }
+    });
+    var synergyBonus = hiredCount * SKILL_TREE.staff.skills.find(function(sk) { return sk.id === 'st_synergy'; }).effect.staffSynergyBonus;
+    if (synergyBonus > 0) multipliers.push({ name: '🤝 Sinergia staff (x' + hiredCount + ')', value: 1 + synergyBonus });
+  }
+
   var memberIncomeMult = getSkillEffect('memberIncomeMult');
   var memberBonus = Math.min(3.0, 1 + game.members * 0.002) * memberIncomeMult;
   if (memberBonus > 1) multipliers.push({ name: '👥 Bonus miembros (' + game.members + ')', value: memberBonus });
 
-  // Prestige
   var prestigeMult = 1 + (game.prestigeStars * 0.25);
   if (prestigeMult > 1) multipliers.push({ name: '🌟 Franquicia (x' + game.prestigeStars + ')', value: prestigeMult });
 
-  // Supplement
   var suppEffects = getActiveSupplementEffects();
   if (suppEffects.incomeMult > 1) multipliers.push({ name: '🧃 Suplementos (income)', value: suppEffects.incomeMult });
   if (suppEffects.equipIncomeMult > 1) multipliers.push({ name: '🧃 Suplementos (equipo)', value: suppEffects.equipIncomeMult });
 
-  // Decoration
   var decoIncome = getDecorationBonus('income');
   if (decoIncome > 0) multipliers.push({ name: '🎨 Decoración', value: 1 + decoIncome });
 
-  // Final income
-  var finalIncome = getIncomePerSecond();
+  var finalIncomeDaily = getIncomePerSecond() * D;
 
   // ===== EXPENSE BREAKDOWN =====
   var expenseItems = [];
   var totalExpenses = 0;
 
-  // Staff salaries
+  // Staff salaries (already per day)
   STAFF.forEach(function(s) {
     var state = game.staff[s.id];
     if (!state || !state.hired) return;
-    var sal = getStaffSalaryAtLevel(s.salary, state.level || 1) / 600;
+    var sal = getStaffSalaryAtLevel(s.salary, state.level || 1);
     expenseItems.push({ name: s.icon + ' ' + s.name + ' (LVL ' + (state.level || 1) + ')', value: sal });
     totalExpenses += sal;
     if (state.extras) {
       state.extras.forEach(function(ex, i) {
-        var exSal = getStaffSalaryAtLevel(s.salary, ex.level || 1) / 600;
+        var exSal = getStaffSalaryAtLevel(s.salary, ex.level || 1);
         expenseItems.push({ name: s.icon + ' ' + s.name + ' #' + (i + 2) + ' (LVL ' + (ex.level || 1) + ')', value: exSal });
         totalExpenses += exSal;
       });
     }
   });
 
-  // Operating costs
+  // Operating costs (already per day)
   if (!game.ownProperty) {
-    var rent = OPERATING_COSTS.baseRent / 600;
-    expenseItems.push({ name: '🏠 Alquiler base', value: rent });
-    totalExpenses += rent;
+    expenseItems.push({ name: '🏠 Alquiler base', value: OPERATING_COSTS.baseRent });
+    totalExpenses += OPERATING_COSTS.baseRent;
     var extraZones = 0;
     GYM_ZONES.forEach(function(z) {
       if (z.id !== 'ground_floor' && game.zones[z.id]) extraZones++;
     });
     if (extraZones > 0) {
-      var zoneRent = (extraZones * OPERATING_COSTS.rentPerExtraZone) / 600;
+      var zoneRent = extraZones * OPERATING_COSTS.rentPerExtraZone;
       expenseItems.push({ name: '🏗️ Alquiler zonas (x' + extraZones + ')', value: zoneRent });
       totalExpenses += zoneRent;
     }
@@ -2799,38 +2911,45 @@ function renderBalancePanel() {
   var totalEquipLevels = 0;
   EQUIPMENT.forEach(function(eq) { totalEquipLevels += (game.equipment[eq.id] ? game.equipment[eq.id].level : 0); });
   if (totalEquipLevels > 0) {
-    var utilities = (totalEquipLevels * OPERATING_COSTS.utilitiesPerEquipLevel) / 600;
+    var utilities = totalEquipLevels * OPERATING_COSTS.utilitiesPerEquipLevel;
     expenseItems.push({ name: '⚡ Servicios (' + totalEquipLevels + ' lvls equipo)', value: utilities });
     totalExpenses += utilities;
   }
 
-  // Marketing campaign costs
+  // Marketing campaign costs (convert to per day)
   if (typeof MARKETING_CAMPAIGNS !== 'undefined') {
     MARKETING_CAMPAIGNS.forEach(function(mc) {
       if (mc.type !== 'always_on') return;
       var state = game.marketing[mc.id];
       if (!state || !state.active) return;
-      var costPerTick = mc.costPerDay / 600;
-      if (game.staff.manager && game.staff.manager.hired && !isStaffSick('manager', 0)) costPerTick *= 0.8;
-      costPerTick *= getSkillEffect('campaignCostMult');
-      expenseItems.push({ name: mc.icon + ' ' + mc.name, value: costPerTick });
-      totalExpenses += costPerTick;
+      var costDaily = mc.costPerDay;
+      if (game.staff.manager && game.staff.manager.hired && !isStaffSick('manager', 0)) costDaily *= 0.8;
+      costDaily *= getSkillEffect('campaignCostMult');
+      expenseItems.push({ name: mc.icon + ' ' + mc.name, value: costDaily });
+      totalExpenses += costDaily;
     });
   }
 
-  // ===== NET INCOME =====
-  var netIncome = finalIncome - totalExpenses;
+  // ===== NET =====
+  var netDaily = finalIncomeDaily - totalExpenses;
+  var netPerSec = netDaily / D;
 
   // ===== BUILD HTML =====
   var html = '<div class="balance-card">';
   html += '<div class="balance-header">';
   html += '<h3>📊 Balance Contable</h3>';
+  html += '<div class="balance-header-right">';
+  html += '<span class="balance-period">por día de juego (10 min)</span>';
   html += '<button class="btn btn-small btn-red" onclick="closeBalancePanel()">✕</button>';
+  html += '</div>';
   html += '</div>';
 
   // Income section
   html += '<div class="balance-section">';
-  html += '<div class="balance-section-title income">💰 INGRESOS BASE /seg</div>';
+  html += '<div class="balance-section-title income">💰 INGRESOS BASE</div>';
+  if (incomeItems.length === 0) {
+    html += '<div class="balance-row"><span class="balance-label muted">Sin equipamiento</span></div>';
+  }
   incomeItems.forEach(function(item) {
     html += '<div class="balance-row">';
     html += '<span class="balance-label">' + item.name + '</span>';
@@ -2841,7 +2960,7 @@ function renderBalancePanel() {
     }
     html += '</div>';
   });
-  html += '<div class="balance-subtotal income">Subtotal base: +' + fmtMoney(totalIncome) + '/s</div>';
+  html += '<div class="balance-subtotal income">Subtotal: +' + fmtMoney(totalBaseIncome) + '/día</div>';
   html += '</div>';
 
   // Multipliers section
@@ -2854,13 +2973,13 @@ function renderBalancePanel() {
       html += '<span class="balance-value mult">×' + m.value.toFixed(2) + '</span>';
       html += '</div>';
     });
-    html += '<div class="balance-subtotal income">Ingreso final: +' + fmtMoney(finalIncome) + '/s</div>';
+    html += '<div class="balance-subtotal income">Ingreso final: +' + fmtMoney(finalIncomeDaily) + '/día</div>';
     html += '</div>';
   }
 
   // Expenses section
   html += '<div class="balance-section">';
-  html += '<div class="balance-section-title expense">📉 GASTOS /seg</div>';
+  html += '<div class="balance-section-title expense">📉 GASTOS</div>';
   if (expenseItems.length === 0) {
     html += '<div class="balance-row"><span class="balance-label muted">Sin gastos</span></div>';
   }
@@ -2874,20 +2993,19 @@ function renderBalancePanel() {
     }
     html += '</div>';
   });
-  html += '<div class="balance-subtotal expense">Total gastos: -' + fmtMoney(totalExpenses) + '/s</div>';
+  html += '<div class="balance-subtotal expense">Total gastos: -' + fmtMoney(totalExpenses) + '/día</div>';
   html += '</div>';
 
   // Net total
-  html += '<div class="balance-net ' + (netIncome >= 0 ? 'positive' : 'negative') + '">';
-  html += '<span>INGRESO NETO</span>';
-  html += '<span>' + (netIncome >= 0 ? '+' : '') + fmtMoney(netIncome) + '/s</span>';
+  html += '<div class="balance-net ' + (netDaily >= 0 ? 'positive' : 'negative') + '">';
+  html += '<span>BALANCE NETO /DÍA</span>';
+  html += '<span>' + (netDaily >= 0 ? '+' : '') + fmtMoney(netDaily) + '</span>';
   html += '</div>';
 
-  // Daily projection
-  var dailyNet = netIncome * 600;
+  // Per second
   html += '<div class="balance-projection">';
-  html += '<span>Proyección por día de juego (10 min):</span>';
-  html += '<span class="' + (dailyNet >= 0 ? 'income' : 'expense') + '">' + (dailyNet >= 0 ? '+' : '') + fmtMoney(dailyNet) + '</span>';
+  html += '<span>Equivalente por segundo:</span>';
+  html += '<span class="' + (netPerSec >= 0 ? 'income' : 'expense') + '">' + (netPerSec >= 0 ? '+' : '') + fmtMoney(netPerSec) + '/s</span>';
   html += '</div>';
 
   html += '</div>';

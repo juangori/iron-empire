@@ -1802,6 +1802,69 @@ body::before {
   margin-bottom: 8px;
 }
 
+/* Class card: no instructor state */
+.class-card.no-instructor {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+/* Instructor section inside class card */
+.class-instructor-section {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin: 8px 0;
+  text-align: center;
+}
+
+.class-instructor-section.no-instructor {
+  border-style: dashed;
+  border-color: var(--text-muted);
+}
+
+.instructor-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.instructor-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-light);
+}
+
+.instructor-stars {
+  font-size: 14px;
+  color: var(--yellow, #fbbf24);
+  letter-spacing: 1px;
+}
+
+.instructor-details {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.instructor-commission {
+  font-size: 11px;
+  color: var(--orange, #f97316);
+}
+
+.instructor-maxed {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  background: rgba(16, 185, 129, 0.15);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
 /* ===== RANDOM EVENT POPUP ===== */
 .event-overlay {
   position: fixed;
@@ -2467,6 +2530,20 @@ body::before {
   letter-spacing: 2px;
   color: var(--accent);
   margin: 0;
+}
+
+.balance-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.balance-period {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-dark);
+  padding: 4px 10px;
+  border-radius: 8px;
 }
 
 .balance-section {
