@@ -2660,6 +2660,13 @@ body::before {
   color: var(--text-muted);
 }
 
+.offline-report-rate {
+  font-size: 12px;
+  color: var(--orange, #f97316);
+  margin-top: 6px;
+  font-style: italic;
+}
+
 .offline-report-body {
   padding: 16px 24px;
 }

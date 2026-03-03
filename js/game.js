@@ -2092,13 +2092,17 @@ function calculateOfflineProgress(elapsedSeconds) {
   };
 
   // 1. Net income (income - salaries - operating costs)
+  // Offline penalty: only earn 10% of income when away
+  var OFFLINE_INCOME_RATE = 0.10;
   var income = getIncomePerSecond();
   var salaries = getStaffSalaryPerSecond();
   var opCosts = getOperatingCostsPerSecond();
   var netIncome = income - salaries - opCosts;
-  var totalMoney = netIncome * capped;
-  report.money = Math.max(0, income * capped);
+  var fullMoney = netIncome * capped;
+  var totalMoney = fullMoney * OFFLINE_INCOME_RATE;
+  report.money = Math.max(0, income * capped * OFFLINE_INCOME_RATE);
   report.expenses = (salaries + opCosts) * capped;
+  report.offlineRate = OFFLINE_INCOME_RATE;
   game.money += totalMoney;
   if (totalMoney > 0) {
     game.totalMoneyEarned += totalMoney;
@@ -2210,15 +2214,16 @@ function calculateOfflineProgress(elapsedSeconds) {
       costPerTick *= getSkillEffect('campaignCostMult');
       var totalCampaignCost = costPerTick * capped;
 
+      // Campaigns still cost full price but generate reduced results offline
       if (game.money >= totalCampaignCost) {
         game.money -= totalCampaignCost;
         state.totalSpent = (state.totalSpent || 0) + totalCampaignCost;
         report.campaignCosts += totalCampaignCost;
 
-        // Members generated
+        // Members generated (reduced offline)
         var membersPerTick = mc.membersPerDay / 600;
         membersPerTick *= getSkillEffect('campaignMembersMult');
-        var totalNewMembers = Math.floor(membersPerTick * capped);
+        var totalNewMembers = Math.floor(membersPerTick * capped * OFFLINE_INCOME_RATE);
         var added = Math.min(totalNewMembers, Math.max(0, game.maxMembers - game.members));
         if (added > 0) {
           game.members += added;
@@ -2227,10 +2232,10 @@ function calculateOfflineProgress(elapsedSeconds) {
           report.campaignMembers += added;
         }
 
-        // Rep generated
+        // Rep generated (reduced offline)
         var repPerTick = mc.repPerDay / 600;
         repPerTick *= getSkillEffect('campaignRepMult');
-        var totalRep = repPerTick * capped;
+        var totalRep = repPerTick * capped * OFFLINE_INCOME_RATE;
         game.reputation += totalRep;
         report.campaignRep += totalRep;
       } else {
@@ -2257,7 +2262,7 @@ function calculateOfflineProgress(elapsedSeconds) {
     });
   }
 
-  // 9. Reputation from members (passive)
+  // 9. Reputation from members (passive) - reduced offline
   var repGain = game.members * 0.02 * getSkillEffect('memberRepMult');
   STAFF.forEach(function(s) {
     if (game.staff[s.id] && game.staff[s.id].hired && s.repMult) {
@@ -2265,11 +2270,11 @@ function calculateOfflineProgress(elapsedSeconds) {
     }
   });
   repGain *= (1 + getDecorationBonus('reputation'));
-  var totalRep = repGain * capped;
+  var totalRep = repGain * capped * OFFLINE_INCOME_RATE;
   game.reputation += totalRep;
   report.reputation += totalRep;
 
-  // 10. Auto-members from staff (every 25 ticks)
+  // 10. Auto-members from staff (every 25 ticks) - reduced offline
   var autoMemberCycles = Math.floor(capped / 25);
   if (autoMemberCycles > 0) {
     var autoAdd = 0;
@@ -2279,7 +2284,7 @@ function calculateOfflineProgress(elapsedSeconds) {
       }
     });
     autoAdd = Math.ceil(autoAdd * getSkillEffect('autoMembersMult'));
-    var totalAutoMembers = autoAdd * autoMemberCycles;
+    var totalAutoMembers = Math.floor(autoAdd * autoMemberCycles * OFFLINE_INCOME_RATE);
     var added = Math.min(totalAutoMembers, Math.max(0, game.maxMembers - game.members));
     if (added > 0) {
       game.members += added;
@@ -2330,6 +2335,9 @@ function showOfflineReport(report) {
   lines.push('<div class="offline-report-icon">💤</div>');
   lines.push('<h3>Mientras no estabas...</h3>');
   lines.push('<div class="offline-report-time">' + fmtTime(report.elapsed) + ' offline</div>');
+  if (report.offlineRate && report.offlineRate < 1) {
+    lines.push('<div class="offline-report-rate">📉 Tu gym generó el ' + Math.round(report.offlineRate * 100) + '% de sus ganancias sin vos al mando</div>');
+  }
   lines.push('</div>');
 
   lines.push('<div class="offline-report-body">');
