@@ -100,6 +100,7 @@ CNAME               - Custom domain config
 - Operating costs: base rent ($250/day) + zone rent ($300/zone/day) + utilities ($20/equip level/day)
 - Property purchase ($8M, lvl 18) eliminates rent
 - Equipment level capped at player level
+- Equipment baseCost scales exponentially by tier: $50 (dumbbells) → $200 → $600 → $1.5K → $4K → $10K → $25K → $75K → $180K → $450K → $1.2M → $3.5M (spa). costMult also increases for higher tiers (1.85→2.5).
 - Event costs scale: `max(levelScale, income * 0.5)` — scales with actual income/s
 - Supplement costs scale: +15% per level above requirement
 - Rival costs scale: +20% per level above requirement
