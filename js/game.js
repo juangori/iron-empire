@@ -11,6 +11,9 @@ let game = {
   xp: 0,
   xpToNext: 100,
   prestigeStars: 0,
+  branches: {},
+  activeBranch: null,
+  branchCount: 0,
   equipment: {},
   staff: {},
   competitions: {},
@@ -139,6 +142,133 @@ let game = {
     instructorUpgrades: 0,
   }
 };
+
+// ===== BRANCH SYSTEM =====
+const BRANCH_PROPERTIES = [
+  'gymName', 'money', 'totalMoneyEarned', 'members', 'maxMembers', 'reputation',
+  'level', 'xp', 'xpToNext', 'equipment', 'staff', 'competitions',
+  'classes', 'instructors', 'marketing', 'supplements', 'rivals',
+  'zones', 'zoneBuilding', 'ownProperty', 'vipMembers', 'lastVipTime',
+  'nextVipIn', 'lastEventTime', 'nextEventIn', 'log', 'tickCount',
+  'dailyTracking', 'decoration'
+];
+
+function extractBranchData() {
+  var data = {};
+  BRANCH_PROPERTIES.forEach(function(key) {
+    var val = game[key];
+    if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+      data[key] = JSON.parse(JSON.stringify(val));
+    } else if (Array.isArray(val)) {
+      data[key] = JSON.parse(JSON.stringify(val));
+    } else {
+      data[key] = val;
+    }
+  });
+  if (game.activeBranch && game.branches[game.activeBranch]) {
+    data.neighborhoodId = game.branches[game.activeBranch].neighborhoodId;
+  }
+  return data;
+}
+
+function applyBranchToGame(branchData) {
+  BRANCH_PROPERTIES.forEach(function(key) {
+    if (branchData.hasOwnProperty(key)) {
+      game[key] = branchData[key];
+    }
+  });
+}
+
+function switchBranch(branchId) {
+  if (branchId === game.activeBranch) return;
+  if (!game.branches[branchId]) return;
+  // Save current branch
+  if (game.activeBranch) {
+    game.branches[game.activeBranch] = extractBranchData();
+  }
+  // Load target branch
+  applyBranchToGame(game.branches[branchId]);
+  game.activeBranch = branchId;
+  var hood = getNeighborhoodForBranch(branchId);
+  showToast('📍', '¡Cambiaste a ' + (hood ? hood.name : 'sucursal') + '!');
+  renderAll();
+  updateUI();
+}
+
+function getNeighborhoodForBranch(branchId) {
+  var branch = branchId === game.activeBranch ? extractBranchData() : game.branches[branchId];
+  if (!branch) return NEIGHBORHOODS[0];
+  return NEIGHBORHOODS.find(function(n) { return n.id === branch.neighborhoodId; }) || NEIGHBORHOODS[0];
+}
+
+function getActiveNeighborhood() {
+  if (!game.activeBranch || !game.branches[game.activeBranch]) return NEIGHBORHOODS[0];
+  var nId = game.branches[game.activeBranch].neighborhoodId;
+  return NEIGHBORHOODS.find(function(n) { return n.id === nId; }) || NEIGHBORHOODS[0];
+}
+
+function getBranchPassiveIncome(branchId) {
+  var branch = game.branches[branchId];
+  if (!branch) return 0;
+  var base = 0;
+  EQUIPMENT.forEach(function(eq) {
+    var lvl = branch.equipment[eq.id]?.level || 0;
+    base += eq.incomePerLevel * lvl;
+  });
+  var zoneIncome = 0;
+  GYM_ZONES.forEach(function(z) {
+    if (branch.zones && branch.zones[z.id]) zoneIncome += z.incomeBonus;
+  });
+  var prestigeMult = 1 + (game.prestigeStars * 0.25);
+  return (base + zoneIncome) * prestigeMult * 0.5; // 50% of active rate
+}
+
+function getTotalEmpireIncomePerSecond() {
+  var total = getIncomePerSecond(); // active branch full income
+  Object.keys(game.branches).forEach(function(id) {
+    if (id === game.activeBranch) return;
+    total += getBranchPassiveIncome(id);
+  });
+  return total;
+}
+
+function getDefaultBranchState() {
+  return {
+    gymName: 'Mi Gimnasio',
+    money: 0,
+    totalMoneyEarned: 0,
+    members: 0,
+    maxMembers: 10,
+    reputation: 0,
+    level: 1,
+    xp: 0,
+    xpToNext: 100,
+    equipment: {},
+    staff: {},
+    competitions: {},
+    classes: {},
+    instructors: {},
+    marketing: {},
+    supplements: {},
+    rivals: {},
+    zones: { ground_floor: true },
+    zoneBuilding: {},
+    ownProperty: false,
+    vipMembers: [],
+    lastVipTime: 0,
+    nextVipIn: 300,
+    lastEventTime: 0,
+    nextEventIn: 180,
+    log: [],
+    tickCount: 0,
+    dailyTracking: {
+      moneyEarned: 0, equipmentBought: 0, competitionsWon: 0,
+      reputationGained: 0, classesRun: 0, campaignsLaunched: 0,
+      xpEarned: 0, eventsHandled: 0, supplementsBought: 0,
+    },
+    decoration: { theme: 'classic', unlockedThemes: ['classic'], items: {} }
+  };
+}
 
 // ===== UTILITY FUNCTIONS =====
 function fmt(n) {
@@ -1206,6 +1336,9 @@ function getOperatingCostsPerDay() {
     totalEquipLevels += (game.equipment[eq.id]?.level || 0);
   });
   daily += totalEquipLevels * OPERATING_COSTS.utilitiesPerEquipLevel;
+  // Neighborhood rent multiplier
+  var hood = typeof getActiveNeighborhood === 'function' ? getActiveNeighborhood() : null;
+  if (hood) daily *= hood.rentMult;
   return daily;
 }
 
@@ -1293,7 +1426,20 @@ function getMaxMembers() {
   cap *= getSkillEffect('capacityMult');
   // Decoration capacity bonus
   cap += getDecorationBonus('capacity');
+  // Neighborhood max members cap
+  var hood = typeof getActiveNeighborhood === 'function' ? getActiveNeighborhood() : null;
+  if (hood && hood.maxMembersCap) {
+    cap = Math.min(cap, hood.maxMembersCap + getZoneCapacityBonus());
+  }
   return Math.floor(cap);
+}
+
+function getZoneCapacityBonus() {
+  var bonus = 0;
+  GYM_ZONES.forEach(function(z) {
+    if (z.id !== 'ground_floor' && game.zones[z.id]) bonus += z.capacityBonus;
+  });
+  return bonus;
 }
 
 function getMembersAttracted() {
@@ -1805,59 +1951,25 @@ function equipChampion(eqId) {
 
 // ===== PRESTIGE =====
 function getPrestigeStars() {
-  if (game.totalMoneyEarned < 2000000) return 0;
-  return Math.floor(Math.sqrt(game.totalMoneyEarned / 2000000));
+  // Sum totalMoneyEarned across ALL branches
+  var totalEarned = 0;
+  if (game.branches && Object.keys(game.branches).length > 0) {
+    // Sync active branch first
+    if (game.activeBranch && game.branches[game.activeBranch]) {
+      game.branches[game.activeBranch].totalMoneyEarned = game.totalMoneyEarned;
+    }
+    Object.values(game.branches).forEach(function(b) { totalEarned += (b.totalMoneyEarned || 0); });
+  } else {
+    totalEarned = game.totalMoneyEarned;
+  }
+  if (totalEarned < 2000000) return 0;
+  return Math.floor(Math.sqrt(totalEarned / 2000000));
 }
 
 function doPrestige() {
-  const stars = getPrestigeStars();
-  if (stars <= 0) {
-    showToast('❌', 'Necesitás más ingresos para abrir una franquicia');
-    return;
-  }
-
-  if (!confirm('¿Abrir franquicia? Ganás ' + stars + ' ⭐ pero se reinicia todo (excepto estrellas, logros y stats).')) return;
-
-  game.prestigeStars += stars;
-  game.stats.prestigeCount = (game.stats.prestigeCount || 0) + 1;
-  game.money = 0;
-  game.totalMoneyEarned = 0;
-  game.members = 0;
-  game.reputation = 0;
-  game.level = 1;
-  game.xp = 0;
-  game.xpToNext = 100;
-  game.equipment = {};
-  game.staff = {};
-  game.competitions = {};
-  game.classes = {};
-  game.instructors = {};
-  game.marketing = {};
-  game.supplements = {};
-  game.rivals = {};
-  game.zones = { ground_floor: true };
-  game.ownProperty = false;
-  game.vipMembers = [];
-  // Skills persist through prestige!
-  // Themes persist through prestige! Decorations reset.
-  if (game.decoration) {
-    game.decoration.items = {};
-  }
-  // Champion persists through prestige! Reset fatigue.
-  if (game.champion && game.champion.recruited) {
-    game.champion.fatigue = 0;
-    game.champion.trainingUntil = 0;
-    game.champion.trainingStat = null;
-  }
-  game.log = [];
-
-  addLog('🌟 ¡Abriste una nueva franquicia! +' + stars + ' estrellas');
-  showToast('🌟', '¡Franquicia! +' + stars + ' estrellas');
-
-  renderAll();
-  updateUI();
-  checkAchievements();
-  saveGame();
+  // Redirect to city map — old prestige is replaced by branch system
+  switchTab('prestige');
+  showToast('🏙️', 'Abrí una nueva sucursal desde el mapa de ciudad');
 }
 
 // ===== SESSION TIMER =====
@@ -1887,6 +1999,9 @@ function autoMemberTick() {
       }
     });
     autoAdd = Math.ceil(autoAdd * getSkillEffect('autoMembersMult'));
+    // Neighborhood member multiplier
+    var hood = typeof getActiveNeighborhood === 'function' ? getActiveNeighborhood() : null;
+    if (hood) autoAdd = Math.ceil(autoAdd * hood.memberMult);
     if (autoAdd > 0 && game.members < game.maxMembers) {
       const prev = game.members;
       game.members = Math.min(game.members + autoAdd, game.maxMembers);
@@ -2077,6 +2192,18 @@ function gameTick() {
     checkMissionProgress();
   }
 
+  // Passive income for inactive branches (every 10 ticks)
+  if (game.tickCount % 10 === 0 && game.branches) {
+    Object.keys(game.branches).forEach(function(id) {
+      if (id === game.activeBranch) return;
+      var passiveIncome = getBranchPassiveIncome(id);
+      if (passiveIncome > 0) {
+        game.branches[id].money = (game.branches[id].money || 0) + passiveIncome * 10;
+        game.branches[id].totalMoneyEarned = (game.branches[id].totalMoneyEarned || 0) + passiveIncome * 10;
+      }
+    });
+  }
+
   // Supplement tolerance decay: once per game day (600 ticks)
   if (game.tickCount % 600 === 0) {
     supplementToleranceDecay();
@@ -2154,9 +2281,8 @@ function calculateOfflineProgress(elapsedSeconds) {
   var salaries = getStaffSalaryPerSecond();
   var opCosts = getOperatingCostsPerSecond();
   var netIncome = income - salaries - opCosts;
-  var fullMoney = netIncome * capped;
-  var totalMoney = fullMoney * OFFLINE_INCOME_RATE;
-  report.money = Math.max(0, income * capped * OFFLINE_INCOME_RATE);
+  var totalMoney = Math.max(0, netIncome * capped * OFFLINE_INCOME_RATE);
+  report.money = totalMoney;
   report.expenses = (salaries + opCosts) * capped;
   report.offlineRate = OFFLINE_INCOME_RATE;
   game.money += totalMoney;
@@ -2387,10 +2513,25 @@ function calculateOfflineProgress(elapsedSeconds) {
 
   // 12. Supplement expiry (just let them expire naturally, no special handling needed)
 
-  // 13. Level up check
+  // 13. Passive income for inactive branches during offline time
+  report.inactiveBranchIncome = 0;
+  if (game.branches) {
+    Object.keys(game.branches).forEach(function(id) {
+      if (id === game.activeBranch) return;
+      var passiveIncome = getBranchPassiveIncome(id);
+      var passiveMoney = Math.max(0, passiveIncome * capped * OFFLINE_INCOME_RATE);
+      if (passiveMoney > 0) {
+        game.branches[id].money = (game.branches[id].money || 0) + passiveMoney;
+        game.branches[id].totalMoneyEarned = (game.branches[id].totalMoneyEarned || 0) + passiveMoney;
+        report.inactiveBranchIncome += passiveMoney;
+      }
+    });
+  }
+
+  // 14. Level up check
   checkLevelUp();
 
-  // 14. Update members count
+  // 15. Update members count
   updateMembers();
 
   return report;
@@ -2464,6 +2605,14 @@ function showOfflineReport(report) {
     lines.push('</div>');
   }
 
+  // Inactive branches
+  if (report.inactiveBranchIncome > 0) {
+    lines.push('<div class="offline-section">');
+    lines.push('<div class="offline-section-title">🏙️ Otras Sucursales</div>');
+    lines.push('<div class="offline-item positive">Ingresos pasivos: +' + fmtMoney(report.inactiveBranchIncome) + '</div>');
+    lines.push('</div>');
+  }
+
   // Champion
   if (report.championTrained || report.championFatigue > 0) {
     lines.push('<div class="offline-section">');
@@ -2499,6 +2648,10 @@ function closeOfflineReport() {
 // ===== SAVE / LOAD =====
 function saveGame() {
   try {
+    // Sync active branch data before saving
+    if (game.activeBranch) {
+      game.branches[game.activeBranch] = extractBranchData();
+    }
     localStorage.setItem('ironEmpireSave', JSON.stringify(game));
     localStorage.setItem('ironEmpireLastTick', Date.now().toString());
   } catch (e) { /* silently fail */ }
@@ -2511,6 +2664,14 @@ function loadGame() {
       const data = JSON.parse(saved);
       // Deep merge preserving new default properties
       game = deepMerge(game, data);
+      // Migration: old save without branches
+      if (!game.activeBranch) {
+        game.activeBranch = 'branch_0';
+        game.branchCount = 1;
+        game.branches = {};
+        game.branches.branch_0 = extractBranchData();
+        game.branches.branch_0.neighborhoodId = 'palermo';
+      }
       return true;
     }
   } catch (e) { /* silently fail */ }
@@ -2615,6 +2776,15 @@ function startGame() {
   game.gymName = name;
   game.started = true;
 
+  // Initialize branch system for new games
+  if (!game.activeBranch) {
+    game.activeBranch = 'branch_0';
+    game.branchCount = 1;
+    game.branches = {};
+    game.branches.branch_0 = extractBranchData();
+    game.branches.branch_0.neighborhoodId = 'palermo';
+  }
+
   document.getElementById('nameModal').classList.add('hidden');
 
   addLog('🏋️ ¡<span class="highlight">' + game.gymName + '</span> abrió sus puertas!');
@@ -2667,7 +2837,7 @@ function switchTab(tabId) {
   }
 
   // Tab-specific actions
-  if (tabId === 'prestige') renderLeaderboard();
+  if (tabId === 'prestige') { renderCityMap(); renderLeaderboard(); }
   if (tabId === 'wiki') renderWiki();
   if (tabId === 'achievements') {
     game._lastSeenAchievementCount = ACHIEVEMENTS.filter(function(a) { return game.achievements[a.id]; }).length;

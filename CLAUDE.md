@@ -18,15 +18,17 @@ Live: https://ironempiregame.com (custom domain)
 index.html          - Main HTML structure, auth screen, account modal, loads all scripts + Firebase SDKs
 css/styles.css      - All styles (CSS variables, responsive, auth styles)
 js/data.js          - Game data: equipment, staff, competitions, achievements, classes, class instructors,
-                      marketing, events, missions, tutorial, daily bonus, skill tree, zones, VIP members,
-                      supplements, rivals, champion, TAB_WALKTHROUGHS, WIKI_CONTENT, player titles, gym decoration
+                      marketing, events, missions, tutorial, daily bonus, skill tree, zones, neighborhoods,
+                      VIP members, supplements, rivals, champion, TAB_WALKTHROUGHS, WIKI_CONTENT, player titles, gym decoration
 js/game.js          - Core engine: game state, save/load, tick loop, game actions, utility functions,
                       skill/zone calculations, chaos mechanics, construction timers, champion logic,
+                      branch system (BRANCH_PROPERTIES, extract/apply/switch), franchise stars,
                       offline progression (calculateOfflineProgress + showOfflineReport)
 js/ui.js            - UI rendering: equipment, staff, competitions, achievements, log, updateUI
 js/systems.js       - Engagement: daily bonus, daily missions, random events, tutorial, tab walkthroughs,
                       wiki, classes (+ instructor hire/upgrade), marketing, skill tree, expansion, VIP members,
-                      supplements, rivals, champion, tab notifications, reminders, player profile, balance panel
+                      supplements, rivals, champion, tab notifications, reminders, player profile, balance panel,
+                      city map (renderCityMap, openNewBranchModal, confirmNewBranch)
 js/auth.js          - Firebase auth: login/register (Google, Facebook, email/password), account settings,
                       cloud save, auth state management
 CNAME               - Custom domain config
@@ -34,18 +36,20 @@ CNAME               - Custom domain config
 
 ## Architecture Notes
 - Game state is a single global `game` object (defined in game.js)
-- Data definitions are global constants (EQUIPMENT, STAFF, CLASS_INSTRUCTORS, SKILL_TREE, GYM_ZONES, VIP_MEMBERS, SUPPLEMENTS, RIVAL_GYMS, TAB_WALKTHROUGHS, WIKI_CONTENT, etc. in data.js)
+- Data definitions are global constants (EQUIPMENT, STAFF, CLASS_INSTRUCTORS, SKILL_TREE, GYM_ZONES, NEIGHBORHOODS, VIP_MEMBERS, SUPPLEMENTS, RIVAL_GYMS, TAB_WALKTHROUGHS, WIKI_CONTENT, etc. in data.js)
 - Game loop runs via `setInterval(gameTick, 1000)` - one tick per second
 - Game tick is paused during tutorial (`if (!game.tutorialDone) { updateUI(); return; }`)
 - All rendering functions follow pattern: `renderXxx()` reads from `game` state and writes innerHTML
 - Save system: auto-save every 30 ticks to localStorage, cloud save every 60 ticks to Firestore
 - Offline progression: `calculateOfflineProgress()` in game.js, capped at 8 hours. Calculates net income (income - salaries - op costs), completes all timers (equipment upgrades/repairs, zones, staff training, classes, champion training), processes marketing campaigns (always-on costs + members + rep, burst completion), passive rep from members, auto-members from staff, champion fatigue recovery. Shows `showOfflineReport()` modal with full breakdown on return.
-- Skills persist through prestige, zones do not
-- Equipment state: `{ level, brokenUntil, upgradingUntil }` — tracks breakdown and construction
-- Staff state: `{ hired, level, trainingUntil, sickUntil, extras: [] }` — tracks training and illness
-- Zone building state: `game.zoneBuilding = { zoneId: timestamp }`
-- Champion state: `game.champion = { recruited, name, stats, level, xp, fatigue, equipment, trainingUntil, trainingStat, wins, losses }` — persists through prestige. No SVG, no energy system. Uses fatigue (not energy).
-- Instructor state: `game.instructors[classId] = { hired, level }` — one per class, resets on prestige
+- **Branch system**: Multi-gym franchise replaces old destructive prestige. Uses "Active Branch Swap" pattern: `game.equipment = game.branches[id].equipment` via JS object references. All existing functions work unchanged — they read from `game.*` which points to the active branch's data. `BRANCH_PROPERTIES` defines which fields are per-branch. `extractBranchData()` / `applyBranchToGame()` / `switchBranch()` manage state swaps. Old saves auto-migrate on load.
+- Branch state: `game.branches = { branch_0: { ...branchProps, neighborhoodId } }`, `game.activeBranch = 'branch_0'`
+- Skills, champion, achievements, stats persist globally (not per-branch)
+- Equipment state: `{ level, brokenUntil, upgradingUntil }` — tracks breakdown and construction (per-branch)
+- Staff state: `{ hired, level, trainingUntil, sickUntil, extras: [] }` — tracks training and illness (per-branch)
+- Zone building state: `game.zoneBuilding = { zoneId: timestamp }` (per-branch)
+- Champion state: `game.champion = { recruited, name, stats, level, xp, fatigue, equipment, trainingUntil, trainingStat, wins, losses }` — global, persists across branches. No SVG, no energy system. Uses fatigue (not energy).
+- Instructor state: `game.instructors[classId] = { hired, level }` — one per class, per-branch
 - Tab tracking: `game.tabLastVisited = { tabId: timestamp }` for reminders; `game.tabsSeen = { tabId: true }` for first-visit walkthroughs
 
 ## Auth Flow
@@ -66,8 +70,8 @@ CNAME               - Custom domain config
 1. **Máquinas/Equipment** (12 items) - Buy/upgrade, each gives income/members/capacity. Level cap = player level. Can break down randomly.
 2. **Staff** (8 types) - Hire + train levels. Passive bonuses. Can get sick randomly. Multiple copies via extras.
 3. **Competitions** (6 tiers) - Unified in champion tab. Normal competitions before recruiting, 2x rewards with champion. Shared cooldowns.
-4. **Achievements** (64) - Auto-checked conditions, grant XP. Covers all systems.
-5. **Prestige/Franchise** - Reset for permanent income multiplier stars
+4. **Achievements** (76) - Auto-checked conditions, grant XP. Covers all systems.
+5. **City/Franchise** (6 neighborhoods) - Open new gym branches in Buenos Aires neighborhoods (Palermo, La Boca, Caballito, Belgrano, Recoleta, San Telmo). Each has unique multipliers (rent, members, VIP, member cap). Never lose progress — old gyms keep earning passively. Franchise stars based on empire total earnings.
 6. **Daily Bonus** - 7-day streak cycle with escalating rewards
 7. **Daily Missions** (3/day) - Random from pool of 8 types, bonus for all 3
 8. **Random Events** (every 5-10 min) - 28 events with player choices, costs scale with income
@@ -114,6 +118,10 @@ CNAME               - Custom domain config
 - Instructor hire costs: $300 (yoga) to $25K (swimming), upgrade cost = hireCost * level * 2.5
 - Instructor commission: 15% of gross class income, deducted on completion
 - Champion fatigue recovery: `2 + floor(stamina * 0.5)` points per 30 ticks
+- Neighborhood unlock costs: $0 (Palermo) → $500K (La Boca) → $800K (Caballito) → $1.5M (Belgrano) → $3M (Recoleta) → $5M (San Telmo)
+- Neighborhood rent multipliers: 0.6 (La Boca) to 1.8 (Recoleta)
+- Inactive branch income: 50% of active rate, no chaos events
+- Franchise stars: `floor(sqrt(empireTotalEarned / 2000000))`, each star = +25% income mult
 
 ## Skill Tree Branches (6)
 1. **Equipment** (🔧) - Cost reduction, income boost, capacity, mastery, breakdown resistance
@@ -140,7 +148,7 @@ CNAME               - Custom domain config
 | Competencia | champion | 🏆 Competencias |
 | Competencia | rivals | 🏪 Rivales |
 | Competencia | vip | ⭐ VIP |
-| Sistema | prestige | 🌟 Prestigio |
+| Sistema | prestige | 🏙️ Ciudad |
 | Sistema | settings | ⚙️ Opciones |
 | Sistema | wiki | 📖 Wiki |
 

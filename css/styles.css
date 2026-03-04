@@ -1956,40 +1956,160 @@ body::before {
 }
 
 /* ===== PRESTIGE ===== */
-.prestige-section {
-  text-align: center;
-  padding: 40px 20px;
+/* ===== CITY MAP / FRANCHISE ===== */
+.city-header {
+  margin-bottom: 20px;
 }
-
-.prestige-icon { font-size: 64px; margin-bottom: 16px; }
-
-.prestige-title {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 32px;
-  letter-spacing: 3px;
-  color: var(--accent);
-  margin-bottom: 8px;
+.empire-stats {
+  margin-top: 8px;
 }
-
-.prestige-desc {
-  color: var(--text-dim);
-  max-width: 500px;
-  margin: 0 auto 24px;
-  line-height: 1.6;
+.empire-stat-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
 }
+.empire-stat {
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+.empire-stat-icon { margin-right: 4px; }
 
-.prestige-bonus {
-  font-size: 24px;
-  font-family: 'Barlow Condensed', sans-serif;
-  font-weight: 700;
-  color: var(--purple);
+.city-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
   margin-bottom: 24px;
 }
-
-.prestige-stars {
-  font-size: 14px;
+.city-cell {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  transition: border-color 0.2s, opacity 0.2s;
+}
+.city-cell.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(255, 183, 77, 0.15);
+}
+.city-cell.locked {
+  opacity: 0.5;
+}
+.city-cell.has-gym {
+  background: var(--bg-dark);
+}
+.city-cell-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.city-cell-icon { font-size: 24px; }
+.city-cell-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 1px;
+  color: var(--text);
+}
+.city-active-badge {
+  background: var(--accent);
+  color: var(--bg-dark);
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: auto;
+  letter-spacing: 1px;
+}
+.city-cell-desc {
+  color: var(--text-dim);
+  font-size: 12px;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+.city-cell-traits {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.city-cell-traits span {
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: default;
+}
+.city-cell-gym {
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-top: 6px;
+}
+.city-gym-name {
+  font-weight: 700;
   color: var(--accent);
-  margin-bottom: 16px;
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+.city-gym-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.city-gym-stats span { white-space: nowrap; }
+.city-btn {
+  width: 100%;
+  font-size: 13px;
+  padding: 8px;
+}
+.city-active-label {
+  text-align: center;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px;
+}
+.city-cell-locked {
+  text-align: center;
+  padding: 16px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.city-cell-unlock {
+  margin-top: 8px;
+}
+.branch-indicator {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255,183,77,0.1);
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+.branch-indicator:hover {
+  background: rgba(255,183,77,0.2);
+}
+
+@media (max-width: 900px) {
+  .city-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 600px) {
+  .city-grid { grid-template-columns: 1fr; }
+  .empire-stat-row { gap: 8px; }
+  .empire-stat { font-size: 12px; padding: 6px 10px; }
 }
 
 /* ===== LOG / TICKER ===== */

@@ -330,17 +330,18 @@ function updateUI() {
   var memberCountEl = document.querySelector('.gym-member-count span');
   if (memberCountEl) memberCountEl.textContent = game.members;
 
-  // Prestige
-  el = document.getElementById('currentStars');
+  // Prestige stars (recalculate)
+  var newStars = getPrestigeStars();
+  if (newStars > game.prestigeStars) game.prestigeStars = newStars;
+
+  // Branch indicator in header
+  el = document.getElementById('branchIndicator');
   if (el) {
-    var starsText = '';
-    for (var i = 0; i < Math.min(game.prestigeStars, 20); i++) starsText += '⭐';
-    el.textContent = 'Estrellas actuales: ' + starsText + ' ' + game.prestigeStars;
+    var hood = typeof getActiveNeighborhood === 'function' ? getActiveNeighborhood() : null;
+    if (hood) {
+      el.textContent = '📍 ' + hood.name;
+    }
   }
-  el = document.getElementById('prestigeBonus');
-  if (el) el.textContent = 'Multiplicador actual: x' + (1 + game.prestigeStars * 0.25).toFixed(2);
-  el = document.getElementById('starsToGain');
-  if (el) el.textContent = getPrestigeStars();
 
   // Tab notifications
   updateTabNotifications();

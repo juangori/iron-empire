@@ -54,7 +54,9 @@ const ACHIEVEMENTS = [
   { id: 'level_5', name: 'Nivel 5', icon: '📈', desc: 'Llegá al nivel 5', check: () => game.level >= 5 },
   { id: 'level_10', name: 'Nivel 10', icon: '🚀', desc: 'Llegá al nivel 10', check: () => game.level >= 10 },
   { id: 'level_20', name: 'Nivel 20', icon: '🏔️', desc: 'Llegá al nivel 20', check: () => game.level >= 20 },
-  { id: 'first_prestige', name: 'Franquicia', icon: '🌟', desc: 'Hacé tu primer prestige', check: () => game.prestigeStars > 0 },
+  { id: 'first_prestige', name: 'Primera Sucursal', icon: '🏙️', desc: 'Abrí tu segunda sucursal', check: () => Object.keys(game.branches).length >= 2 },
+  { id: 'three_branches', name: 'Cadena', icon: '🏢', desc: 'Tené 3 sucursales activas', check: () => Object.keys(game.branches).length >= 3 },
+  { id: 'all_neighborhoods', name: 'Rey de Buenos Aires', icon: '👑', desc: 'Tené un gym en cada barrio', check: () => Object.keys(game.branches).length >= 6 },
   { id: 'rep_100', name: 'Conocido', icon: '📣', desc: 'Llegá a 100 de reputación', check: () => game.reputation >= 100 },
   { id: 'rep_1000', name: 'Famoso', icon: '🌟', desc: 'Llegá a 1000 de reputación', check: () => game.reputation >= 1000 },
   { id: 'first_class', name: 'Profe', icon: '🧘', desc: 'Dictá tu primera clase', check: () => game.stats.classesCompleted >= 1 },
@@ -608,6 +610,16 @@ const GYM_ZONES = [
   { id: 'arena', name: 'Arena de Competición', icon: '🏟️', desc: 'Arena propia para competencias y eventos. +rep masivo.', cost: 15000000, capacityBonus: 40, incomeBonus: 80, reqLevel: 19, buildTime: 7200 },
 ];
 
+// ===== NEIGHBORHOODS (City Map) =====
+const NEIGHBORHOODS = [
+  { id: 'palermo',    name: 'Palermo',    icon: '🌳', desc: 'Zona trendy con alta demanda fitness',          unlockCost: 0,       reqLevel: 1,  rentMult: 1.0, memberMult: 1.0, vipChanceMult: 1.0, maxMembersCap: 500 },
+  { id: 'la_boca',    name: 'La Boca',    icon: '⚽', desc: 'Zona popular, todo cuesta menos pero gana menos', unlockCost: 500000,  reqLevel: 3,  rentMult: 0.6, memberMult: 1.3, vipChanceMult: 0.5, maxMembersCap: 700 },
+  { id: 'caballito',  name: 'Caballito',  icon: '🏙️', desc: 'Centro geográfico, alquiler accesible',          unlockCost: 800000,  reqLevel: 5,  rentMult: 0.8, memberMult: 1.1, vipChanceMult: 0.8, maxMembersCap: 550 },
+  { id: 'belgrano',   name: 'Belgrano',   icon: '🏘️', desc: 'Zona familiar, crecimiento estable',             unlockCost: 1500000, reqLevel: 8,  rentMult: 1.3, memberMult: 1.2, vipChanceMult: 1.0, maxMembersCap: 600 },
+  { id: 'recoleta',   name: 'Recoleta',   icon: '🏛️', desc: 'Barrio premium, miembros VIP frecuentes',        unlockCost: 3000000, reqLevel: 12, rentMult: 1.8, memberMult: 0.8, vipChanceMult: 2.0, maxMembersCap: 400 },
+  { id: 'san_telmo',  name: 'San Telmo',  icon: '🎭', desc: 'Barrio bohemio, reputación se gana rápido',     unlockCost: 5000000, reqLevel: 15, rentMult: 1.5, memberMult: 0.9, vipChanceMult: 1.5, maxMembersCap: 450 },
+];
+
 // ===== VIP MEMBERS =====
 const VIP_MEMBERS = [
   { id: 'bodybuilder', name: 'Fisicoculturista Pro', icon: '💪', request: 'Necesito Squat Rack y Prensa de Piernas', requires: ['squat_rack', 'leg_press'], reward: { money: 1500, rep: 30, xp: 80 }, stayDuration: 600 },
@@ -746,8 +758,8 @@ const PLAYER_TITLES = [
   { id: 'entrenador', name: 'Entrenador', icon: '💪', desc: 'Nivel 10', check: () => game.level >= 10 },
   { id: 'empresario', name: 'Empresario', icon: '🏢', desc: 'Ganá $500K total', check: () => game.totalMoneyEarned >= 500000 },
   { id: 'magnate', name: 'Magnate', icon: '👑', desc: 'Ganá $5M total', check: () => game.totalMoneyEarned >= 5000000 },
-  { id: 'franquiciado', name: 'Franquiciado', icon: '🌟', desc: 'Hacé 1 prestige', check: () => (game.stats.prestigeCount || 0) >= 1 },
-  { id: 'franquicia_estrella', name: 'Franquicia Estrella', icon: '⭐', desc: 'Hacé 3 prestiges', check: () => (game.stats.prestigeCount || 0) >= 3 },
+  { id: 'franquiciado', name: 'Franquiciado', icon: '🏙️', desc: 'Abrí 2 sucursales', check: () => Object.keys(game.branches).length >= 2 },
+  { id: 'franquicia_estrella', name: 'Magnate', icon: '👑', desc: 'Abrí 4 sucursales', check: () => Object.keys(game.branches).length >= 4 },
   { id: 'campeon_invicto', name: 'Campeón Invicto', icon: '🏆', desc: '20 champion wins', check: () => game.stats.championWins >= 20 },
   { id: 'completista', name: 'Completista', icon: '🎖️', desc: '40 achievements', check: () => Object.values(game.achievements).filter(Boolean).length >= 40 },
   { id: 'perfeccionista', name: 'Perfeccionista', icon: '💎', desc: 'Todos los achievements', check: () => Object.values(game.achievements).filter(Boolean).length >= ACHIEVEMENTS.length },
@@ -935,14 +947,14 @@ const TAB_WALKTHROUGHS = {
     ],
   },
   prestige: {
-    icon: '🌟', title: 'Prestigio / Franquicia', wiki: 'prestige',
-    intro: '⚠️ El prestige reinicia tu progreso a cambio de un multiplicador permanente de ingresos. Es una decisión grande — leé esto antes.',
+    icon: '🏙️', title: 'Ciudad / Franquicia', wiki: 'prestige',
+    intro: 'Desde acá podés abrir nuevas sucursales en distintos barrios de Buenos Aires. ¡Tu imperio crece sin perder nada!',
     tips: [
-      '🔄 QUÉ SE RESETEA: plata, socios, reputación, equipamiento, staff, zonas, misiones, eventos, suplementos activos.',
-      '💎 QUÉ PERSISTE: nivel de jugador, XP, árbol de habilidades, campeón, logros, estadísticas, títulos.',
-      '⭐ RECOMPENSA: cada prestige agrega una estrella de franquicia que multiplica tus ingresos de forma permanente.',
-      '📈 El multiplicador aumenta con cada prestige — la segunda vez crece más rápido gracias al árbol de habilidades.',
-      '🏆 El leaderboard global muestra el ranking por plata total ganada — el prestige lo impulsa fuerte.',
+      '🏙️ Abrí nuevas sucursales en distintos barrios — cada uno tiene multiplicadores únicos de alquiler, miembros y VIPs.',
+      '💰 Tus gyms viejos siguen generando ingresos pasivos (50% de la tasa activa) mientras gestionás otro.',
+      '⭐ Las estrellas de franquicia se calculan por los ingresos TOTALES de todo tu imperio — nunca bajan.',
+      '📍 Cambiá entre sucursales desde el mapa o tocando el indicador de barrio en el header.',
+      '🏆 El leaderboard global muestra el ranking por ingresos totales del imperio.',
     ],
   },
 };
@@ -958,7 +970,7 @@ const WIKI_CONTENT = [
       '<li>Usá <strong>marketing</strong> para atraer socios.</li>' +
       '<li>Completá <strong>misiones diarias</strong> y <strong>logros</strong> para ganar XP y subir de nivel.</li>' +
       '<li>Expandite con <strong>nuevas zonas</strong> e invertí en el <strong>árbol de habilidades</strong>.</li>' +
-      '<li>Cuando tengas suficiente, hacé <strong>prestige</strong> para un multiplicador permanente.</li></ul>' +
+      '<li>Cuando tengas suficiente, abrí <strong>nuevas sucursales</strong> en otros barrios para expandir tu imperio.</li></ul>' +
       '<div class="wiki-tip-box">💡 <strong>Tip de inicio:</strong> Completá el tutorial, luego comprá la Cinta de Correr y contratá un Recepcionista. Eso te da la base para crecer.</div>',
   },
   {
@@ -1181,21 +1193,21 @@ const WIKI_CONTENT = [
       '<div class="wiki-tip-box">💡 Los eventos no se pueden ignorar — el overlay bloquea el juego hasta que tomes una decisión. Leé las opciones con calma antes de elegir.</div>',
   },
   {
-    id: 'prestige', icon: '🌟', title: 'Prestigio / Franquicia',
-    content: '<p>El prestige es el sistema de meta-progresión. Cuando tu gym llega a cierto nivel, podés "resetear" para obtener un multiplicador permanente de ingresos.</p>' +
-      '<p><strong>⚠️ QUÉ SE RESETEA al hacer prestige:</strong></p>' +
-      '<ul><li>Plata, socios, reputación</li>' +
-      '<li>Todo el equipamiento y staff</li>' +
-      '<li>Todas las zonas construidas</li>' +
-      '<li>Suplementos activos, campañas, misiones en curso</li></ul>' +
-      '<p><strong>💎 QUÉ PERSISTE (nunca se pierde):</strong></p>' +
-      '<ul><li>Nivel de jugador y XP total</li>' +
-      '<li>Todo el árbol de habilidades</li>' +
-      '<li>El campeón y sus stats</li>' +
-      '<li>Todos los logros desbloqueados</li>' +
-      '<li>Estadísticas de carrera y títulos</li></ul>' +
-      '<p><strong>⭐ La recompensa:</strong> cada prestige agrega una Estrella de Franquicia que multiplica todos tus ingresos de forma permanente. La segunda vuelta es mucho más rápida.</p>' +
-      '<div class="wiki-tip-box">⚠️ No hagas prestige demasiado pronto. Esperá a tener el árbol de habilidades bien desarrollado para que el nuevo ciclo arranque con ventaja.</div>',
+    id: 'prestige', icon: '🏙️', title: 'Ciudad / Franquicia',
+    content: '<p>El sistema de franquicia te permite abrir múltiples sucursales en distintos barrios de Buenos Aires. ¡Nunca perdés nada!</p>' +
+      '<p><strong>🏙️ Cómo funciona:</strong></p>' +
+      '<ul><li>Desde la pestaña "Ciudad" ves el mapa con 6 barrios de Buenos Aires.</li>' +
+      '<li>Cada barrio tiene multiplicadores únicos: alquiler, miembros, chance de VIP, y cap de miembros.</li>' +
+      '<li>Abrí una sucursal nueva pagando el costo del barrio. Tu gym anterior sigue funcionando.</li>' +
+      '<li>Cambiá entre sucursales desde el mapa para gestionarlas.</li></ul>' +
+      '<p><strong>💰 Ingresos pasivos:</strong></p>' +
+      '<ul><li>Las sucursales que no estás gestionando generan el 50% de sus ingresos automáticamente.</li>' +
+      '<li>No hay eventos negativos (roturas, enfermedades) en gyms inactivos.</li></ul>' +
+      '<p><strong>⭐ Estrellas de franquicia:</strong></p>' +
+      '<ul><li>Se calculan por la plata total ganada en TODO el imperio.</li>' +
+      '<li>Cada estrella da +25% de multiplicador de ingresos permanente.</li>' +
+      '<li>Las estrellas nunca bajan — solo crecen.</li></ul>' +
+      '<div class="wiki-tip-box">Elegí barrios estratégicamente. La Boca tiene alquiler bajo pero cap de VIPs limitado. Recoleta tiene alquiler caro pero muchos VIPs premium.</div>',
   },
   {
     id: 'economy', icon: '💰', title: 'Economía & Balance',

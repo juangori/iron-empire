@@ -478,12 +478,23 @@ async function saveCloudSave() {
     });
 
     // Sync leaderboard
+    // Empire total money earned (across all branches)
+    var empireTotalEarned = 0;
+    if (game.branches && Object.keys(game.branches).length > 0) {
+      if (game.activeBranch && game.branches[game.activeBranch]) {
+        game.branches[game.activeBranch].totalMoneyEarned = game.totalMoneyEarned;
+      }
+      Object.values(game.branches).forEach(function(b) { empireTotalEarned += (b.totalMoneyEarned || 0); });
+    } else {
+      empireTotalEarned = game.totalMoneyEarned;
+    }
     await db.collection('leaderboard').doc(currentUser.uid).set({
       username: currentUser.displayName || 'Anónimo',
       gymName: game.gymName,
-      totalMoneyEarned: game.totalMoneyEarned,
+      totalMoneyEarned: empireTotalEarned,
       level: game.level,
       prestigeStars: game.prestigeStars,
+      branches: Object.keys(game.branches).length,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
     });
   } catch (err) {
@@ -540,11 +551,18 @@ async function fetchLeaderboard(forceRefresh) {
 }
 
 async function fetchMyRank() {
-  if (!currentUser || !game.totalMoneyEarned) return null;
+  if (!currentUser) return null;
+  var empireTotalEarned = 0;
+  if (game.branches && Object.keys(game.branches).length > 0) {
+    Object.values(game.branches).forEach(function(b) { empireTotalEarned += (b.totalMoneyEarned || 0); });
+  } else {
+    empireTotalEarned = game.totalMoneyEarned;
+  }
+  if (!empireTotalEarned) return null;
 
   try {
     var snapshot = await db.collection('leaderboard')
-      .where('totalMoneyEarned', '>', game.totalMoneyEarned)
+      .where('totalMoneyEarned', '>', empireTotalEarned)
       .get();
     return snapshot.size + 1;
   } catch (err) {

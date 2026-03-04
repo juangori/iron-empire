@@ -184,6 +184,7 @@
       <span class="logo-icon">🏋️</span>
       <span>IRON EMPIRE</span>
     </div>
+    <span class="branch-indicator" id="branchIndicator" onclick="switchTab('prestige')" title="Ver mapa de ciudad"></span>
     <button class="header-settings-btn" onclick="openAccountSettings()" title="Configuración de cuenta">⚙️</button>
     <div class="stats-bar">
       <div class="stat-pill money" title="Dinero disponible para gastar">
@@ -301,7 +302,7 @@
           <span class="cat-arrow">▾</span>
         </button>
         <div class="sidebar-category-items">
-          <button class="sidebar-item" data-tab="prestige"><span class="item-icon">🌟</span><span class="item-label">Prestigio</span></button>
+          <button class="sidebar-item" data-tab="prestige"><span class="item-icon">🏙️</span><span class="item-label">Ciudad</span></button>
           <button class="sidebar-item" data-tab="settings"><span class="item-icon">⚙️</span><span class="item-label">Opciones</span></button>
           <button class="sidebar-item" data-tab="wiki" onclick="switchTab('wiki')"><span class="item-icon">📖</span><span class="item-label">Wiki</span></button>
         </div>
@@ -438,7 +439,7 @@
   <!-- SKILLS TAB -->
   <div class="tab-content" id="tab-skills">
     <div class="section-title">🔬 Árbol de Mejoras</div>
-    <p class="section-subtitle">Investigá mejoras permanentes para tu gym. Las mejoras persisten incluso después del prestige.</p>
+    <p class="section-subtitle">Investigá mejoras permanentes para tu gym. Las mejoras aplican a todas tus sucursales.</p>
     <div id="skillTreeContainer"></div>
   </div>
 
@@ -461,29 +462,17 @@
     <div id="profileContainer"></div>
   </div>
 
-  <!-- PRESTIGE TAB -->
+  <!-- CITY / FRANCHISE TAB -->
   <div class="tab-content" id="tab-prestige">
-    <div class="prestige-section">
-      <div class="prestige-icon">🌟</div>
-      <div class="prestige-title">FRANQUICIA</div>
-      <div class="prestige-desc">
-        Reiniciá tu gimnasio y abrí una nueva sucursal. Ganás estrellas de franquicia que multiplican TODOS tus ingresos permanentemente.
-      </div>
-      <div class="prestige-stars" id="currentStars">Estrellas actuales: ⭐ 0</div>
-      <div class="prestige-bonus" id="prestigeBonus">Multiplicador actual: x1.00</div>
-      <div style="margin-bottom:16px;">
-        <span style="color:var(--text-dim);">Estrellas que ganarías ahora: </span>
-        <span style="color:var(--accent);font-weight:700;font-size:20px;" id="starsToGain">0</span>
-      </div>
-      <button class="btn btn-purple" style="max-width:300px;margin:0 auto;font-size:16px;padding:14px;" id="prestigeBtn" onclick="doPrestige()">
-        🌟 ABRIR FRANQUICIA
-      </button>
-      <p style="color:var(--text-muted);font-size:12px;margin-top:12px;">Necesitás al menos $2,000,000 ganados en total</p>
+    <div class="city-header">
+      <div class="section-title">🏙️ Tu Imperio</div>
+      <div class="empire-stats" id="empireStats"></div>
     </div>
+    <div class="city-grid" id="cityGrid"></div>
 
     <div class="leaderboard-section">
       <div class="section-title">🏆 Ranking Global</div>
-      <p class="section-subtitle">Los mejores gimnasios del mundo. Tu progreso se sincroniza automáticamente.</p>
+      <p class="section-subtitle">Los mejores imperios del mundo. Tu progreso se sincroniza automáticamente.</p>
       <div id="leaderboardContainer"></div>
     </div>
   </div>
