@@ -153,7 +153,7 @@ const BRANCH_PROPERTIES = [
   'dailyTracking', 'decoration'
 ];
 
-function extractBranchData() {
+function extractBranchData(neighborhoodId) {
   var data = {};
   BRANCH_PROPERTIES.forEach(function(key) {
     var val = game[key];
@@ -165,7 +165,10 @@ function extractBranchData() {
       data[key] = val;
     }
   });
-  if (game.activeBranch && game.branches[game.activeBranch]) {
+  // Preserve neighborhoodId: use explicit param > existing branch data > fallback
+  if (neighborhoodId) {
+    data.neighborhoodId = neighborhoodId;
+  } else if (game.activeBranch && game.branches[game.activeBranch] && game.branches[game.activeBranch].neighborhoodId) {
     data.neighborhoodId = game.branches[game.activeBranch].neighborhoodId;
   }
   return data;
@@ -182,9 +185,10 @@ function applyBranchToGame(branchData) {
 function switchBranch(branchId) {
   if (branchId === game.activeBranch) return;
   if (!game.branches[branchId]) return;
-  // Save current branch
-  if (game.activeBranch) {
-    game.branches[game.activeBranch] = extractBranchData();
+  // Save current branch (preserve its neighborhoodId)
+  if (game.activeBranch && game.branches[game.activeBranch]) {
+    var oldHood = game.branches[game.activeBranch].neighborhoodId;
+    game.branches[game.activeBranch] = extractBranchData(oldHood);
   }
   // Load target branch
   applyBranchToGame(game.branches[branchId]);
@@ -196,8 +200,8 @@ function switchBranch(branchId) {
 }
 
 function getNeighborhoodForBranch(branchId) {
-  var branch = branchId === game.activeBranch ? extractBranchData() : game.branches[branchId];
-  if (!branch) return NEIGHBORHOODS[0];
+  var branch = game.branches[branchId];
+  if (!branch || !branch.neighborhoodId) return NEIGHBORHOODS[0];
   return NEIGHBORHOODS.find(function(n) { return n.id === branch.neighborhoodId; }) || NEIGHBORHOODS[0];
 }
 
@@ -2409,8 +2413,9 @@ function calculateOfflineProgress(elapsedSeconds) {
       costPerTick *= getSkillEffect('campaignCostMult');
       var totalCampaignCost = costPerTick * capped;
 
-      // Campaigns still cost full price but generate reduced results offline
-      if (game.money >= totalCampaignCost) {
+      // Campaigns cost is capped so they never make money go negative
+      totalCampaignCost = Math.min(totalCampaignCost, Math.max(0, game.money));
+      if (totalCampaignCost > 0) {
         game.money -= totalCampaignCost;
         state.totalSpent = (state.totalSpent || 0) + totalCampaignCost;
         report.campaignCosts += totalCampaignCost;
@@ -2648,9 +2653,10 @@ function closeOfflineReport() {
 // ===== SAVE / LOAD =====
 function saveGame() {
   try {
-    // Sync active branch data before saving
-    if (game.activeBranch) {
-      game.branches[game.activeBranch] = extractBranchData();
+    // Sync active branch data before saving (preserve neighborhoodId)
+    if (game.activeBranch && game.branches[game.activeBranch]) {
+      var activeHood = game.branches[game.activeBranch].neighborhoodId;
+      game.branches[game.activeBranch] = extractBranchData(activeHood);
     }
     localStorage.setItem('ironEmpireSave', JSON.stringify(game));
     localStorage.setItem('ironEmpireLastTick', Date.now().toString());

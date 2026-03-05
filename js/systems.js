@@ -1142,6 +1142,12 @@ function renderCityMap() {
   var gridEl = document.getElementById('cityGrid');
   if (!gridEl) return;
 
+  // Sync active branch data before rendering
+  if (game.activeBranch && game.branches[game.activeBranch]) {
+    var activeHood = game.branches[game.activeBranch].neighborhoodId;
+    game.branches[game.activeBranch] = extractBranchData(activeHood);
+  }
+
   // Empire stats bar
   var branchCount = Object.keys(game.branches).length;
   var starsText = '';
@@ -1162,8 +1168,14 @@ function renderCityMap() {
   var branchByHood = {};
   Object.keys(game.branches).forEach(function(bId) {
     var b = game.branches[bId];
-    var nId = b.neighborhoodId || 'palermo';
-    branchByHood[nId] = { branchId: bId, data: b };
+    if (!b.neighborhoodId) {
+      // Fix orphaned branch — assign first available neighborhood
+      var usedHoods = {};
+      Object.values(game.branches).forEach(function(ob) { if (ob.neighborhoodId) usedHoods[ob.neighborhoodId] = true; });
+      var freeHood = NEIGHBORHOODS.find(function(n) { return !usedHoods[n.id]; });
+      b.neighborhoodId = freeHood ? freeHood.id : 'palermo';
+    }
+    branchByHood[b.neighborhoodId] = { branchId: bId, data: b };
   });
 
   var html = '';
@@ -1323,8 +1335,9 @@ function confirmNewBranch(neighborhoodId) {
   var modal = document.getElementById('newBranchModal');
   if (modal) modal.remove();
 
-  // Save current branch before switching
-  game.branches[game.activeBranch] = extractBranchData();
+  // Save current branch before switching (preserve its neighborhoodId)
+  var oldHood = game.branches[game.activeBranch].neighborhoodId;
+  game.branches[game.activeBranch] = extractBranchData(oldHood);
 
   // Switch to new branch
   applyBranchToGame(newBranch);
