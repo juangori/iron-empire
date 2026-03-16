@@ -2387,7 +2387,7 @@ var TAB_REMINDER_CONFIG = {
     minAbsence: 300,
     check: function() {
       if (!game.champion.recruited) return game.level >= 5 && game.money >= 5000;
-      return game.champion.energy >= 50 && (!game.champion.trainingUntil || Date.now() >= game.champion.trainingUntil);
+      return game.champion.fatigue < CHAMPION_FATIGUE_THRESHOLD && (!game.champion.trainingUntil || Date.now() >= game.champion.trainingUntil);
     }
   },
   expansion: {

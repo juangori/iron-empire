@@ -570,6 +570,7 @@ function normalizeChampionData() {
   if (!game.champion.wins) game.champion.wins = 0;
   if (!game.champion.losses) game.champion.losses = 0;
   if (!game.stats.championWins) game.stats.championWins = 0;
+  if (!game.stats.championLosses) game.stats.championLosses = 0;
   if (!game.stats.championCompetitions) game.stats.championCompetitions = 0;
   if (!game.stats.championTrainings) game.stats.championTrainings = 0;
 }
@@ -586,6 +587,9 @@ function normalizeProfileData() {
   if (!game.stats.prestigeCount) game.stats.prestigeCount = 0;
   if (!game.tabLastVisited) game.tabLastVisited = {};
   if (!game.tabsSeen) game.tabsSeen = {};
+  if (game.skillResearching && (!game.skillResearching.skillId || !game.skillResearching.until)) {
+    game.skillResearching = null;
+  }
 }
 
 // ===== PROFILE & TITLES =====
@@ -1905,6 +1909,7 @@ function championCompete(compId) {
     game.dailyTracking.xpEarned += consolationXp;
     state.losses++;
     game.champion.losses++;
+    game.stats.championLosses++;
 
     addLog('🏅 Derrota en <span class="highlight">' + c.name + '</span>. ¡A seguir entrenando!');
     showToast('😤', 'Derrota en ' + c.name);
