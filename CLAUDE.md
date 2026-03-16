@@ -166,6 +166,12 @@ CNAME               - Custom domain config
 - Use gh CLI for GitHub operations (installed at "C:\Program Files\GitHub CLI\gh.exe")
 - PATH needs: `export PATH="$PATH:/c/Program Files/GitHub CLI"`
 
+## Cache Busting
+- Script tags in index.html use `?v=XX` query string (e.g. `js/game.js?v=24`)
+- Increment the version number on every deploy that changes JS/CSS so browsers don't serve stale files
+- Current version: **v=24**
+- Update all 5 script tags together (data, game, ui, systems, auth)
+
 ## Planned Improvements (by priority)
 ### Phase 4 - Social & Meta
 - Training programs (assign routines to members)
