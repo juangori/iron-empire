@@ -2430,17 +2430,134 @@ body::before {
   100% { transform: translateY(-3px); }
 }
 
-/* Ambient light effects per tier */
-.gym-scene-container.tier-garage { }
-.gym-scene-container.tier-barrio .gym-wall { background: linear-gradient(180deg, #1c1c30, #18182c); }
-.gym-scene-container.tier-comercial .gym-wall { background: linear-gradient(180deg, #1e1e34, #1a1a30); }
-.gym-scene-container.tier-comercial .gym-wall::before { width: 120px; }
-.gym-scene-container.tier-premium .gym-wall { background: linear-gradient(180deg, #201e38, #1c1a34); }
-.gym-scene-container.tier-premium .gym-wall::before { width: 180px; box-shadow: 0 0 20px var(--accent-glow); }
-.gym-scene-container.tier-elite .gym-wall { background: linear-gradient(180deg, #241e3c, #1e1a36); }
-.gym-scene-container.tier-elite .gym-wall::before { width: 240px; box-shadow: 0 0 30px var(--accent-glow); }
-.gym-scene-container.tier-imperio .gym-wall { background: linear-gradient(180deg, #2a1e40, #221a3a); }
-.gym-scene-container.tier-imperio .gym-wall::before { width: 300px; height: 4px; box-shadow: 0 0 40px var(--accent-glow), 0 0 80px var(--accent-glow); }
+/* ===== TIER VISUAL PROGRESSION ===== */
+
+/* GARAGE — raw concrete, dim yellow bulb */
+.gym-scene-container.tier-garage { border-color: #2a2a1a; }
+.gym-scene-container.tier-garage .gym-wall {
+  background: linear-gradient(180deg, #111110 0%, #0f0f0e 100%);
+  border-bottom: 2px solid #2a2a1a;
+}
+.gym-scene-container.tier-garage .gym-wall::before { display: none; }
+.gym-scene-container.tier-garage .gym-wall::after { display: none; }
+.gym-scene-container.tier-garage .gym-floor {
+  background: repeating-linear-gradient(90deg, #111 0px, #111 48px, #131312 48px, #131312 50px),
+              linear-gradient(180deg, #141410, #101010);
+}
+.gym-scene-container.tier-garage .gym-name-display { color: #b0a060; text-shadow: none; }
+
+/* BARRIO — warmer, basic white paint, simple light strip */
+.gym-scene-container.tier-barrio { border-color: #2e2a1a; }
+.gym-scene-container.tier-barrio .gym-wall {
+  background: linear-gradient(180deg, #1a1a14 0%, #161610 100%);
+  border-bottom: 2px solid #3a3420;
+}
+.gym-scene-container.tier-barrio .gym-wall::before {
+  width: 80px; background: rgba(255,220,100,0.5);
+  box-shadow: 0 0 10px rgba(255,220,100,0.3);
+}
+.gym-scene-container.tier-barrio .gym-floor {
+  background: repeating-linear-gradient(90deg, #14140e 0px, #14140e 48px, #191910 48px, #191910 50px),
+              linear-gradient(180deg, #16160e, #121208);
+}
+.gym-scene-container.tier-barrio .gym-name-display { color: #d4b840; text-shadow: 0 0 20px rgba(212,184,64,0.3); }
+
+/* COMERCIAL — blue-tinted walls, longer neon strip, reflective floor */
+.gym-scene-container.tier-comercial { border-color: #1a2240; }
+.gym-scene-container.tier-comercial .gym-wall {
+  background: linear-gradient(180deg, #141828 0%, #101420 100%);
+  border-bottom: 2px solid #20284a;
+}
+.gym-scene-container.tier-comercial .gym-wall::before {
+  width: 160px; background: rgba(180,200,255,0.6);
+  box-shadow: 0 0 16px rgba(150,180,255,0.4);
+}
+.gym-scene-container.tier-comercial .gym-wall::after {
+  height: 45%; border: 1px solid rgba(150,180,255,0.1);
+  background: linear-gradient(180deg, rgba(150,180,255,0.04), transparent);
+}
+.gym-scene-container.tier-comercial .gym-floor {
+  background: repeating-linear-gradient(90deg, #10141e 0px, #10141e 48px, #141828 48px, #141828 50px),
+              linear-gradient(180deg, #121620, #0e1018);
+}
+.gym-scene-container.tier-comercial .gym-name-display { color: var(--accent); text-shadow: 0 0 30px var(--accent-glow); }
+
+/* PREMIUM — accent amber glow, polished floor, side wall lights */
+.gym-scene-container.tier-premium { border-color: rgba(245,158,11,0.25); box-shadow: 0 0 20px rgba(245,158,11,0.06); }
+.gym-scene-container.tier-premium .gym-wall {
+  background: linear-gradient(180deg, #1e1a10 0%, #1a1608 100%);
+  border-bottom: 2px solid rgba(245,158,11,0.3);
+}
+.gym-scene-container.tier-premium .gym-wall::before {
+  width: 220px; height: 4px; background: var(--accent);
+  box-shadow: 0 0 20px var(--accent-glow), 0 0 40px var(--accent-glow);
+}
+.gym-scene-container.tier-premium .gym-wall::after {
+  height: 48%; border: 1px solid rgba(245,158,11,0.15);
+  background: linear-gradient(180deg, rgba(245,158,11,0.05), transparent);
+}
+.gym-scene-container.tier-premium .gym-floor {
+  background: repeating-linear-gradient(90deg, #1a1608 0px, #1a1608 48px, #221e0e 48px, #221e0e 50px),
+              linear-gradient(180deg, #1e1a0c, #161408);
+}
+.gym-scene-container.tier-premium .gym-name-display { color: var(--accent); font-size: 34px; text-shadow: 0 0 40px var(--accent-glow); }
+
+/* ELITE — purple/violet theme, multiple lights, glossy floor */
+.gym-scene-container.tier-elite { border-color: rgba(168,85,247,0.35); box-shadow: 0 0 30px rgba(168,85,247,0.08); }
+.gym-scene-container.tier-elite .gym-wall {
+  background: linear-gradient(180deg, #1a0e2a 0%, #14082a 100%);
+  border-bottom: 2px solid rgba(168,85,247,0.4);
+}
+.gym-scene-container.tier-elite .gym-wall::before {
+  width: 260px; height: 4px; background: #a855f7;
+  box-shadow: 0 0 30px #a855f777, 0 0 60px #a855f744;
+}
+.gym-scene-container.tier-elite .gym-wall::after {
+  height: 50%; border: 1px solid rgba(168,85,247,0.2);
+  background: linear-gradient(180deg, rgba(168,85,247,0.07), transparent);
+}
+.gym-scene-container.tier-elite .gym-floor {
+  background: repeating-linear-gradient(90deg, #120818 0px, #120818 48px, #180e20 48px, #180e20 50px),
+              linear-gradient(180deg, #160c1e, #0e0814);
+}
+.gym-scene-container.tier-elite .gym-name-display { color: #c084fc; font-size: 34px; text-shadow: 0 0 40px #a855f777; }
+
+/* IMPERIO — gold empire, full scene shimmer, everything glows */
+.gym-scene-container.tier-imperio {
+  border-color: rgba(245,158,11,0.5);
+  box-shadow: 0 0 40px rgba(245,158,11,0.12), inset 0 0 40px rgba(245,158,11,0.03);
+}
+.gym-scene-container.tier-imperio .gym-wall {
+  background: linear-gradient(180deg, #22180a 0%, #1c1006 100%);
+  border-bottom: 2px solid rgba(245,158,11,0.5);
+}
+.gym-scene-container.tier-imperio .gym-wall::before {
+  width: 100%; height: 5px; background: linear-gradient(90deg, transparent, var(--accent), #ffd700, var(--accent), transparent);
+  box-shadow: 0 0 40px var(--accent-glow), 0 0 80px var(--accent-glow);
+  animation: imperioShimmer 3s ease-in-out infinite;
+}
+.gym-scene-container.tier-imperio .gym-wall::after {
+  height: 55%; left: 5%; width: 90%;
+  border: 1px solid rgba(245,158,11,0.2);
+  background: linear-gradient(180deg, rgba(245,158,11,0.08), transparent);
+}
+.gym-scene-container.tier-imperio .gym-floor {
+  background: repeating-linear-gradient(90deg, #1e1406 0px, #1e1406 48px, #2a1c0a 48px, #2a1c0a 50px),
+              linear-gradient(180deg, #221808, #181004);
+}
+.gym-scene-container.tier-imperio .gym-name-display {
+  font-size: 36px; color: #ffd700;
+  text-shadow: 0 0 20px rgba(255,215,0,0.8), 0 0 60px rgba(245,158,11,0.5);
+  animation: imperioNameGlow 2s ease-in-out infinite alternate;
+}
+@keyframes imperioShimmer {
+  0%, 100% { opacity: 0.8; }
+  50%       { opacity: 1; box-shadow: 0 0 60px var(--accent-glow), 0 0 120px var(--accent-glow); }
+}
+@keyframes imperioNameGlow {
+  from { text-shadow: 0 0 20px rgba(255,215,0,0.6), 0 0 40px rgba(245,158,11,0.4); }
+  to   { text-shadow: 0 0 30px rgba(255,215,0,0.9), 0 0 80px rgba(245,158,11,0.6); }
+}
 
 /* Member count indicator */
 .gym-member-count {

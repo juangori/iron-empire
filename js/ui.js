@@ -307,6 +307,7 @@ function checkAchievements() {
 // ===== UPDATE UI =====
 var _prevStats = {};
 var _prevNetIncome = null;
+var _prevTier = null;
 
 function _pulseStatBox(id) {
   var box = document.getElementById(id);
@@ -397,8 +398,15 @@ function updateUI() {
   // Gym visual
   el = document.getElementById('gymNameBanner');
   if (el) el.textContent = game.gymName.toUpperCase();
+  var currentTier = getGymTier();
   el = document.getElementById('gymTier');
-  if (el) el.textContent = getGymTier();
+  if (el) el.textContent = currentTier;
+  // Detect tier-up
+  if (_prevTier && _prevTier !== currentTier) {
+    showToast('🏆', '¡Nuevo nivel de gym: ' + currentTier + '!');
+    addLog('🏆 ¡Tu gym ascendió a <span class="highlight">' + currentTier + '</span>!', 'critical');
+  }
+  _prevTier = currentTier;
 
   // Update gym scene people count (lightweight, full render on renderAll)
   var memberCountEl = document.querySelector('.gym-member-count span');
@@ -432,12 +440,12 @@ function renderGymScene() {
   // --- Tier class ---
   var tier = getGymTier();
   container.className = 'gym-scene-container';
-  if (tier.indexOf('Garage') >= 0) container.classList.add('tier-garage');
-  else if (tier.indexOf('Barrio') >= 0) container.classList.add('tier-barrio');
-  else if (tier.indexOf('Comercial') >= 0) container.classList.add('tier-comercial');
-  else if (tier.indexOf('Premium') >= 0) container.classList.add('tier-premium');
-  else if (tier.indexOf('Elite') >= 0) container.classList.add('tier-elite');
-  else container.classList.add('tier-imperio');
+  if      (tier.indexOf('Garage') >= 0)                                               container.classList.add('tier-garage');
+  else if (tier.indexOf('Principiante') >= 0 || tier.indexOf('Crecimiento') >= 0)    container.classList.add('tier-barrio');
+  else if (tier.indexOf('Establecido') >= 0  || tier.indexOf('Profesional') >= 0)    container.classList.add('tier-comercial');
+  else if (tier.indexOf('VIP') >= 0          || tier.indexOf('Premium') >= 0)        container.classList.add('tier-premium');
+  else if (tier.indexOf('Elite') >= 0)                                                container.classList.add('tier-elite');
+  else                                                                                container.classList.add('tier-imperio');
 
   // --- Equipment layer ---
   var equipLayer = document.getElementById('gymEquipLayer');
