@@ -5,12 +5,12 @@ const STAFF_EXTRA_UNLOCK = { 2: 12, 3: 20 }; // 2nd copy at player level 12, 3rd
 
 const EQUIPMENT = [
   { id: 'dumbbells', name: 'Mancuernas', icon: '🏋️', desc: 'El básico de todo gym. Atraen principiantes.', baseCost: 50, costMult: 1.85, incomePerLevel: 0.4, membersPerLevel: 2, capacityPerLevel: 0, reqLevel: 1 },
-  { id: 'bench', name: 'Banco Plano', icon: '🪑', desc: 'Press de banca, el rey de los ejercicios.', baseCost: 200, costMult: 1.9, incomePerLevel: 1.0, membersPerLevel: 3, capacityPerLevel: 2, reqLevel: 1 },
-  { id: 'squat_rack', name: 'Squat Rack', icon: '🔩', desc: 'Para los que no saltean leg day.', baseCost: 600, costMult: 1.95, incomePerLevel: 2.0, membersPerLevel: 4, capacityPerLevel: 3, reqLevel: 2 },
-  { id: 'treadmill', name: 'Cinta de Correr', icon: '🏃', desc: 'Cardio warriors love this.', baseCost: 1500, costMult: 1.95, incomePerLevel: 1.6, membersPerLevel: 5, capacityPerLevel: 3, reqLevel: 3 },
-  { id: 'cables', name: 'Polea / Cables', icon: '⚙️', desc: 'Versatilidad total. Mil ejercicios.', baseCost: 4000, costMult: 2.0, incomePerLevel: 3.2, membersPerLevel: 5, capacityPerLevel: 4, reqLevel: 4 },
-  { id: 'leg_press', name: 'Prensa de Piernas', icon: '🦵', desc: 'Para empujar peso de verdad.', baseCost: 10000, costMult: 2.05, incomePerLevel: 4.5, membersPerLevel: 6, capacityPerLevel: 4, reqLevel: 5 },
-  { id: 'smith', name: 'Smith Machine', icon: '🔧', desc: 'Guiada y segura. Ideal para entrenar solo.', baseCost: 25000, costMult: 2.1, incomePerLevel: 7.0, membersPerLevel: 7, capacityPerLevel: 5, reqLevel: 7 },
+  { id: 'bench', name: 'Banco Plano', icon: '🏋️‍♀️', desc: 'Press de banca, el rey de los ejercicios.', baseCost: 200, costMult: 1.9, incomePerLevel: 1.0, membersPerLevel: 3, capacityPerLevel: 2, reqLevel: 1 },
+  { id: 'squat_rack', name: 'Squat Rack', icon: '🔱', desc: 'Para los que no saltean leg day.', baseCost: 600, costMult: 1.95, incomePerLevel: 2.0, membersPerLevel: 4, capacityPerLevel: 3, reqLevel: 2 },
+  { id: 'treadmill', name: 'Cinta de Correr', icon: '🏃‍♂️', desc: 'Cardio warriors love this.', baseCost: 1500, costMult: 1.95, incomePerLevel: 1.6, membersPerLevel: 5, capacityPerLevel: 3, reqLevel: 3 },
+  { id: 'cables', name: 'Polea / Cables', icon: '🔗', desc: 'Versatilidad total. Mil ejercicios.', baseCost: 4000, costMult: 2.0, incomePerLevel: 3.2, membersPerLevel: 5, capacityPerLevel: 4, reqLevel: 4 },
+  { id: 'leg_press', name: 'Prensa de Piernas', icon: '💺', desc: 'Para empujar peso de verdad.', baseCost: 10000, costMult: 2.05, incomePerLevel: 4.5, membersPerLevel: 6, capacityPerLevel: 4, reqLevel: 5 },
+  { id: 'smith', name: 'Smith Machine', icon: '⚒️', desc: 'Guiada y segura. Ideal para entrenar solo.', baseCost: 25000, costMult: 2.1, incomePerLevel: 7.0, membersPerLevel: 7, capacityPerLevel: 5, reqLevel: 7 },
   { id: 'pool', name: 'Pileta de Natación', icon: '🏊', desc: 'El upgrade premium. Cambia todo.', baseCost: 75000, costMult: 2.25, incomePerLevel: 16, membersPerLevel: 15, capacityPerLevel: 10, reqLevel: 9 },
   { id: 'sauna', name: 'Sauna', icon: '🧖', desc: 'Relax post-entreno. Atrae membresías premium.', baseCost: 180000, costMult: 2.3, incomePerLevel: 22, membersPerLevel: 12, capacityPerLevel: 5, reqLevel: 11 },
   { id: 'crossfit', name: 'Zona CrossFit', icon: '🤸', desc: 'Box jumps, rope climbs, WODs. La fiebre CrossFit.', baseCost: 450000, costMult: 2.35, incomePerLevel: 32, membersPerLevel: 20, capacityPerLevel: 15, reqLevel: 13 },

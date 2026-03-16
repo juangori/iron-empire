@@ -2223,7 +2223,7 @@ body::before {
 .gym-scene {
   position: relative;
   width: 100%;
-  height: 220px;
+  height: 260px;
   overflow: hidden;
 }
 
@@ -2295,6 +2295,48 @@ body::before {
 
 .gym-equip-item:hover {
   transform: scale(1.2);
+}
+
+/* Size variants based on level */
+.gym-equip-item.lg {
+  font-size: 34px;
+}
+.gym-equip-item.xl {
+  font-size: 42px;
+}
+
+/* Broken equipment — red glow + subtle shake */
+.gym-equip-item.is-broken {
+  filter: drop-shadow(0 0 6px #ef4444) grayscale(40%);
+  animation: equipBroken 0.5s ease-in-out infinite alternate;
+}
+@keyframes equipBroken {
+  from { transform: translateX(-1px) rotate(-2deg); }
+  to   { transform: translateX(1px) rotate(2deg); }
+}
+
+/* Upgrading equipment — cyan pulse */
+.gym-equip-item.is-upgrading {
+  filter: drop-shadow(0 0 8px #06b6d4);
+  animation: equipUpgrading 1.4s ease-in-out infinite alternate;
+}
+@keyframes equipUpgrading {
+  from { filter: drop-shadow(0 0 4px #06b6d4); transform: scale(1); }
+  to   { filter: drop-shadow(0 0 14px #06b6d4); transform: scale(1.08); }
+}
+
+/* Empty gym state */
+.gym-empty-state {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: var(--text-dim);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  pointer-events: none;
+  z-index: 3;
 }
 
 .gym-equip-item .equip-lvl {
@@ -2419,8 +2461,10 @@ body::before {
 }
 
 @media (max-width: 768px) {
-  .gym-scene { height: 180px; }
+  .gym-scene { height: 200px; }
   .gym-equip-item { font-size: 22px; }
+  .gym-equip-item.lg { font-size: 26px; }
+  .gym-equip-item.xl { font-size: 32px; }
   .gym-person { font-size: 16px; }
   .gym-name-display { font-size: 26px; }
 }
@@ -4313,3 +4357,27 @@ body::before {
   margin-top: 4px;
 }
 
+
+/* ===== FLOATING INCOME NUMBERS ===== */
+.float-income {
+  position: fixed;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--green);
+  pointer-events: none;
+  z-index: 9999;
+  white-space: nowrap;
+  text-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+  animation: floatUp 1.4s ease-out forwards;
+}
+.float-income.negative {
+  color: var(--red);
+  text-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+@keyframes floatUp {
+  0%   { opacity: 0; transform: translateY(0) scale(0.8); }
+  15%  { opacity: 1; transform: translateY(-4px) scale(1); }
+  70%  { opacity: 1; transform: translateY(-22px) scale(1); }
+  100% { opacity: 0; transform: translateY(-36px) scale(0.9); }
+}

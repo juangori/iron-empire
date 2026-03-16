@@ -2180,6 +2180,7 @@ function gameTick() {
   game.money += netIncome;
   if (netIncome > 0) game.totalMoneyEarned += netIncome;
   game.dailyTracking.moneyEarned += Math.max(0, netIncome);
+  if (netIncome !== 0) showFloatingIncome(netIncome);
 
   game.tickCount++;
   game.stats.totalPlayTime++;

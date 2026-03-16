@@ -372,37 +372,54 @@ function renderGymScene() {
       return (game.equipment[eq.id]?.level || 0) > 0;
     });
 
-    // Pre-defined positions for equipment (spread across the scene)
-    var positions = [
-      { left: '8%',  top: '42%' },   // dumbbells
-      { left: '22%', top: '38%' },   // bench
-      { left: '38%', top: '44%' },   // squat rack
-      { left: '54%', top: '40%' },   // treadmill
-      { left: '70%', top: '42%' },   // cables
-      { left: '84%', top: '38%' },   // leg press
-      { left: '14%', top: '60%' },   // smith
-      { left: '32%', top: '62%' },   // pool
-      { left: '50%', top: '58%' },   // sauna
-      { left: '68%', top: '62%' },   // crossfit
-      { left: '82%', top: '60%' },   // boxing
-      { left: '50%', top: '22%' },   // spa (on wall)
-    ];
+    // Empty state
+    if (ownedEquip.length === 0) {
+      equipLayer.innerHTML = '<div class="gym-empty-state">Comprá tu primera máquina<br>para ver el gym cobrar vida 🏋️</div>';
+    } else {
+      // Pre-defined positions for equipment (spread across the scene)
+      var positions = [
+        { left: '6%',  top: '44%' },   // dumbbells
+        { left: '19%', top: '40%' },   // bench
+        { left: '34%', top: '46%' },   // squat rack
+        { left: '52%', top: '42%' },   // treadmill
+        { left: '68%', top: '44%' },   // cables
+        { left: '83%', top: '40%' },   // leg press
+        { left: '12%', top: '60%' },   // smith
+        { left: '30%', top: '63%' },   // pool
+        { left: '50%', top: '60%' },   // sauna
+        { left: '67%', top: '63%' },   // crossfit
+        { left: '84%', top: '60%' },   // boxing
+        { left: '50%', top: '18%' },   // spa (on wall)
+      ];
 
-    equipLayer.innerHTML = ownedEquip.map(function(eq) {
-      var idx = EQUIPMENT.indexOf(eq);
-      var pos = positions[idx] || { left: '50%', top: '50%' };
-      var lvl = game.equipment[eq.id].level;
-      return '<div class="gym-equip-item" style="left:' + pos.left + ';top:' + pos.top + ';" title="' + eq.name + ' LVL ' + lvl + '">' +
-        eq.icon + '<span class="equip-lvl">' + lvl + '</span></div>';
-    }).join('');
+      equipLayer.innerHTML = ownedEquip.map(function(eq) {
+        var idx = EQUIPMENT.indexOf(eq);
+        var pos = positions[idx] || { left: (5 + idx * 8) + '%', top: '50%' };
+        var lvl = game.equipment[eq.id].level;
+        var state = game.equipment[eq.id];
+
+        // Size class based on level
+        var sizeClass = lvl >= 10 ? ' xl' : lvl >= 5 ? ' lg' : '';
+
+        // State class
+        var stateClass = '';
+        if (state.brokenUntil && Date.now() < state.brokenUntil) {
+          stateClass = ' is-broken';
+        } else if (state.upgradingUntil && Date.now() < state.upgradingUntil) {
+          stateClass = ' is-upgrading';
+        }
+
+        return '<div class="gym-equip-item' + sizeClass + stateClass + '" style="left:' + pos.left + ';top:' + pos.top + ';" title="' + eq.name + ' Nv.' + lvl + (stateClass === ' is-broken' ? ' — ROTO' : stateClass === ' is-upgrading' ? ' — MEJORANDO' : '') + '">' +
+          eq.icon + '<span class="equip-lvl">' + lvl + '</span></div>';
+      }).join('');
+    }
   }
 
   // --- People layer ---
   var peopleLayer = document.getElementById('gymPeopleLayer');
   if (peopleLayer) {
-    // Show people proportional to members (max ~15 visible)
-    var visiblePeople = Math.min(Math.floor(game.members / 5) + 1, 15);
-    if (game.members <= 0) visiblePeople = 0;
+    // Show people proportional to members (max 18 visible)
+    var visiblePeople = game.members <= 0 ? 0 : Math.min(Math.floor(game.members / 3) + 2, 18);
 
     // Regenerate seeds only when count changes
     if (_gymScenePeopleSeeds.length !== visiblePeople) {
@@ -478,4 +495,29 @@ function renderGymScene() {
 function _randomPersonEmoji() {
   var people = ['🧑','👨','👩','🧔','👱','🏃','🚶','💪','🧘','🤸'];
   return people[Math.floor(Math.random() * people.length)];
+}
+
+// ===== FLOATING INCOME =====
+var _lastFloatTab = null;
+function showFloatingIncome(amount) {
+  // Only show when gym tab is visible
+  var gymTab = document.getElementById('tab-gym');
+  if (!gymTab || !gymTab.classList.contains('active')) return;
+
+  // Anchor to the income stat box
+  var anchor = document.getElementById('incomeBig');
+  if (!anchor) return;
+
+  var el = document.createElement('div');
+  el.className = 'float-income' + (amount < 0 ? ' negative' : '');
+  el.textContent = (amount >= 0 ? '+' : '') + fmtMoney(amount);
+
+  // Position near the income box with slight random spread
+  var rect = anchor.getBoundingClientRect();
+  el.style.left = (rect.left + rect.width / 2 - 30 + (Math.random() * 40 - 20)) + 'px';
+  el.style.top = (rect.top + window.scrollY - 10) + 'px';
+
+  document.body.appendChild(el);
+  // Remove after animation ends
+  setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 1400);
 }
