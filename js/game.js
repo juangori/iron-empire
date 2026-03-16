@@ -2666,6 +2666,7 @@ function closeOfflineReport() {
 }
 
 // ===== SAVE / LOAD =====
+var _lastCloudSaveTime = 0;
 function saveGame() {
   try {
     // Sync active branch data before saving (preserve neighborhoodId)
@@ -2676,6 +2677,12 @@ function saveGame() {
     localStorage.setItem('ironEmpireSave', JSON.stringify(game));
     localStorage.setItem('ironEmpireLastTick', Date.now().toString());
   } catch (e) { /* silently fail */ }
+  // Also trigger cloud save if logged in (throttled to once every 30s)
+  var now = Date.now();
+  if (now - _lastCloudSaveTime > 30000 && typeof saveCloudSave === 'function' && typeof currentUser !== 'undefined' && currentUser) {
+    _lastCloudSaveTime = now;
+    saveCloudSave();
+  }
 }
 
 function loadGame() {
