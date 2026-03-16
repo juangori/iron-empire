@@ -1687,18 +1687,23 @@ function addXp(amount) {
 }
 
 function checkLevelUp() {
+  var leveled = false;
   while (game.xp >= game.xpToNext) {
     game.xp -= game.xpToNext;
     game.level++;
     game.xpToNext = Math.ceil(100 * Math.pow(1.55, game.level - 1));
     addLog('🎉 ¡Subiste al <span class="highlight">Nivel ' + game.level + '</span>!');
     showToast('🎉', '¡Nivel ' + game.level + '!');
+    leveled = true;
+  }
+  if (leveled) {
     renderEquipment();
     renderStaff();
     renderClasses();
     renderMarketing();
     renderSupplements();
     renderRivals();
+    saveGame(); // Save immediately so level-up survives a page reload
   }
 }
 
