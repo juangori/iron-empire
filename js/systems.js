@@ -63,7 +63,7 @@ function claimDailyBonus() {
   game.dailyBonus.lastClaim = getDateString();
   game.dailyBonus.claimedToday = true;
 
-  addLog('🎁 Bonus diario (día ' + game.dailyBonus.streak + '): +<span class="money-log">' + fmtMoney(moneyReward) + '</span> +' + reward.xp + ' XP');
+  addLog('🎁 Bonus diario (día ' + game.dailyBonus.streak + '): +<span class="money-log">' + fmtMoney(moneyReward) + '</span> +' + reward.xp + ' XP', 'important');
   showToast('🎁', '¡Bonus día ' + game.dailyBonus.streak + '! +' + fmtMoney(moneyReward));
   floatNumber('+' + fmtMoney(moneyReward));
 
@@ -182,7 +182,7 @@ function claimMission(index) {
   game.dailyTracking.moneyEarned += moneyReward;
   game.dailyTracking.xpEarned += xpReward;
 
-  addLog('📋 Misión completada: <span class="highlight">' + mission.name + '</span> +<span class="money-log">' + fmtMoney(moneyReward) + '</span>');
+  addLog('📋 Misión completada: <span class="highlight">' + mission.name + '</span> +<span class="money-log">' + fmtMoney(moneyReward) + '</span>', 'important');
   showToast('📋', '¡Misión: ' + mission.name + '!');
   floatNumber('+' + fmtMoney(moneyReward));
 
@@ -193,7 +193,7 @@ function claimMission(index) {
     game.money += bonusMoney;
     game.totalMoneyEarned += bonusMoney;
     addXp(100);
-    addLog('⭐ ¡Todas las misiones del día completadas! BONUS: +<span class="money-log">' + fmtMoney(bonusMoney) + '</span> +100 XP');
+    addLog('⭐ ¡Todas las misiones del día completadas! BONUS: +<span class="money-log">' + fmtMoney(bonusMoney) + '</span> +100 XP', 'critical');
     showToast('⭐', '¡Todas las misiones completas! BONUS');
     floatNumber('+' + fmtMoney(bonusMoney), 'var(--purple)');
   }
@@ -1343,7 +1343,7 @@ function confirmNewBranch(neighborhoodId) {
   applyBranchToGame(newBranch);
   game.activeBranch = newId;
 
-  addLog('🏙️ ¡Abriste <span class="highlight">' + gymName + '</span> en ' + hood.name + '!');
+  addLog('🏙️ ¡Abriste <span class="highlight">' + gymName + '</span> en ' + hood.name + '!', 'critical');
   showToast('🏙️', '¡Nueva sucursal en ' + hood.name + '!');
 
   renderAll();
@@ -2047,7 +2047,7 @@ function checkVipExpiry() {
   expired.forEach(v => {
     const vipDef = VIP_MEMBERS.find(vd => vd.id === v.id);
     if (vipDef) {
-      addLog('😔 VIP <span class="highlight">' + vipDef.name + '</span> se fue... no cumplías sus requisitos.');
+      addLog('😔 VIP <span class="highlight">' + vipDef.name + '</span> se fue... no cumplías sus requisitos.', 'critical');
     }
   });
 
@@ -2110,7 +2110,7 @@ function acceptVip(vipId) {
   game.dailyTracking.reputationGained += vipDef.reward.rep;
   game.dailyTracking.xpEarned += vipDef.reward.xp;
 
-  addLog('⭐ VIP <span class="highlight">' + vipDef.name + '</span> aceptado! +<span class="money-log">' + fmtMoney(moneyReward) + '</span> +' + vipDef.reward.rep + '⭐');
+  addLog('⭐ VIP <span class="highlight">' + vipDef.name + '</span> aceptado! +<span class="money-log">' + fmtMoney(moneyReward) + '</span> +' + vipDef.reward.rep + '⭐', 'important');
   showToast(vipDef.icon, '¡VIP ' + vipDef.name + ' se unió!');
   floatNumber('+' + fmtMoney(moneyReward));
 

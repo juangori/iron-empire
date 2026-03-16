@@ -1,11 +1,36 @@
 // ===== IRON EMPIRE - UI RENDERING =====
 
 // ===== RENDER LOG =====
+var _logFilter = 'all';
+
+function setLogFilter(f) {
+  _logFilter = f;
+  // Update active button
+  document.querySelectorAll('.log-filter-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.filter === f);
+  });
+  renderLog();
+}
+
 function renderLog() {
   const container = document.getElementById('logContainer');
   if (!container) return;
-  container.innerHTML = game.log.map(function(l) {
-    return '<div class="log-entry"><span class="time">' + l.time + '</span>' + l.msg + '</div>';
+
+  var entries = game.log;
+  if (_logFilter === 'important') {
+    entries = entries.filter(function(l) { return l.level === 'important' || l.level === 'critical'; });
+  } else if (_logFilter === 'critical') {
+    entries = entries.filter(function(l) { return l.level === 'critical'; });
+  }
+
+  if (entries.length === 0) {
+    container.innerHTML = '<div class="log-empty">No hay eventos de este tipo aún.</div>';
+    return;
+  }
+
+  container.innerHTML = entries.map(function(l) {
+    var lvlClass = l.level === 'critical' ? ' log-critical' : l.level === 'important' ? ' log-important' : '';
+    return '<div class="log-entry' + lvlClass + '"><span class="time">' + l.time + '</span>' + l.msg + '</div>';
   }).join('');
 }
 
@@ -271,7 +296,7 @@ function checkAchievements() {
     if (!game.achievements[a.id] && a.check()) {
       game.achievements[a.id] = true;
       showToast(a.icon, '¡Logro: ' + a.name + '!');
-      addLog('🎖️ Logro desbloqueado: <span class="highlight">' + a.name + '</span>');
+      addLog('🎖️ Logro desbloqueado: <span class="highlight">' + a.name + '</span>', 'important');
       addXp(50);
       game.dailyTracking.xpEarned += 50;
     }
@@ -280,6 +305,19 @@ function checkAchievements() {
 }
 
 // ===== UPDATE UI =====
+var _prevStats = {};
+var _prevNetIncome = null;
+
+function _pulseStatBox(id) {
+  var box = document.getElementById(id);
+  if (!box) return;
+  var parent = box.closest('.stat-box');
+  if (!parent) return;
+  parent.classList.remove('stat-pulse');
+  void parent.offsetWidth; // reflow to restart animation
+  parent.classList.add('stat-pulse');
+}
+
 function updateUI() {
   const income = getIncomePerSecond();
   const salaries = getStaffSalaryPerSecond();
@@ -292,22 +330,58 @@ function updateUI() {
   document.getElementById('repDisplay').textContent = fmt(game.reputation);
   document.getElementById('incomeDisplay').textContent = fmtMoney(netIncome) + '/s';
 
+  // Income trend indicator
+  var trendHTML = '';
+  if (_prevNetIncome !== null) {
+    var diff = netIncome - _prevNetIncome;
+    if (Math.abs(diff) > 0.05) {
+      trendHTML = diff > 0
+        ? ' <span class="income-trend up">▲</span>'
+        : ' <span class="income-trend down">▼</span>';
+    }
+  }
+  _prevNetIncome = netIncome;
+
   // Stat boxes
   var el;
   el = document.getElementById('incomeBig');
   if (el) {
-    el.textContent = (netIncome >= 0 ? '+' : '') + fmtMoney(netIncome) + '/s';
-    el.style.color = netIncome >= 0 ? 'var(--green)' : 'var(--red)';
+    var newIncomeText = (netIncome >= 0 ? '+' : '') + fmtMoney(netIncome) + '/s';
+    if (_prevStats.income !== newIncomeText) {
+      el.innerHTML = newIncomeText + trendHTML;
+      el.style.color = netIncome >= 0 ? 'var(--green)' : 'var(--red)';
+      if (_prevStats.income !== undefined) _pulseStatBox('incomeBig');
+      _prevStats.income = newIncomeText;
+    }
   }
   el = document.getElementById('expensesBig');
   if (el) {
     var totalExpenses = salaries + opCosts + getCampaignCostsPerSecond();
-    el.textContent = '-' + fmtMoney(totalExpenses) + '/s';
+    var newExpText = '-' + fmtMoney(totalExpenses) + '/s';
+    if (_prevStats.expenses !== newExpText) {
+      el.textContent = newExpText;
+      if (_prevStats.expenses !== undefined) _pulseStatBox('expensesBig');
+      _prevStats.expenses = newExpText;
+    }
   }
   el = document.getElementById('membersBig');
-  if (el) el.textContent = Math.floor(game.members) + ' / ' + Math.floor(game.maxMembers);
+  if (el) {
+    var newMembText = Math.floor(game.members) + ' / ' + Math.floor(game.maxMembers);
+    if (_prevStats.members !== newMembText) {
+      el.textContent = newMembText;
+      if (_prevStats.members !== undefined) _pulseStatBox('membersBig');
+      _prevStats.members = newMembText;
+    }
+  }
   el = document.getElementById('repBig');
-  if (el) el.textContent = fmt(Math.floor(game.reputation));
+  if (el) {
+    var newRepText = fmt(Math.floor(game.reputation));
+    if (_prevStats.rep !== newRepText) {
+      el.textContent = newRepText;
+      if (_prevStats.rep !== undefined) _pulseStatBox('repBig');
+      _prevStats.rep = newRepText;
+    }
+  }
   el = document.getElementById('totalEarnedBig');
   if (el) el.textContent = fmtMoney(game.totalMoneyEarned);
   el = document.getElementById('tierBig');

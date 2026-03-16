@@ -490,7 +490,7 @@ function checkTrainingCompletion() {
       var xpGain = 25 * state.level;
       addXp(xpGain);
       game.dailyTracking.xpEarned += xpGain;
-      addLog('🎓 <span class="highlight">' + s.name + '</span> subió a LVL ' + state.level + '!');
+      addLog('🎓 <span class="highlight">' + s.name + '</span> subió a LVL ' + state.level + '!', 'important');
       showToast('🎓', s.name + ' → LVL ' + state.level + '!');
       renderStaff();
     }
@@ -765,7 +765,7 @@ function checkEquipmentBreakdown() {
       state.brokenUntil = -1; // broken, waiting for repair
       game.stats.equipBreakdowns++;
       var repairCost = getRepairCost(eq, state.level);
-      addLog('⚠️ <span class="highlight">' + eq.name + '</span> se rompió! Reparación: ' + fmtMoney(repairCost));
+      addLog('⚠️ <span class="highlight">' + eq.name + '</span> se rompió! Reparación: ' + fmtMoney(repairCost), 'critical');
       showToast('⚠️', '¡' + eq.name + ' se rompió!');
       renderEquipment();
     }
@@ -779,7 +779,7 @@ function checkRepairCompletion() {
     if (state.brokenUntil > 0 && Date.now() >= state.brokenUntil) {
       state.brokenUntil = 0;
       game.stats.equipRepaired++;
-      addLog('✅ <span class="highlight">' + eq.name + '</span> reparado y funcionando!');
+      addLog('✅ <span class="highlight">' + eq.name + '</span> reparado y funcionando!', 'important');
       showToast('✅', eq.name + ' reparado!');
       renderEquipment();
       updateUI();
@@ -834,7 +834,7 @@ function checkConstructionCompletion() {
     if (state.upgradingUntil > 0 && Date.now() >= state.upgradingUntil) {
       state.upgradingUntil = 0;
       state.level++;
-      addLog('🏗️ <span class="highlight">' + eq.name + '</span> mejorado a nivel ' + state.level + '!');
+      addLog('🏗️ <span class="highlight">' + eq.name + '</span> mejorado a nivel ' + state.level + '!', 'important');
       showToast('⬆️', eq.name + ' — Nivel ' + state.level + '!');
       updateMembers();
       renderEquipment();
@@ -851,7 +851,7 @@ function checkConstructionCompletion() {
         var zone = GYM_ZONES.find(function(z) { return z.id === zId; });
         if (zone) {
           game.stats.zonesUnlocked++;
-          addLog('🏗️ ¡Construcción terminada: <span class="highlight">' + zone.name + '</span>! ' + zone.icon);
+          addLog('🏗️ ¡Construcción terminada: <span class="highlight">' + zone.name + '</span>! ' + zone.icon, 'important');
           showToast(zone.icon, '¡' + zone.name + ' lista!');
           floatNumber('+' + zone.capacityBonus + ' capacidad', 'var(--accent)');
         }
@@ -901,7 +901,7 @@ function checkSkillResearchCompletion() {
     game.dailyTracking.xpEarned += xpGain;
 
     if (skillInfo) {
-      addLog('🔬 Investigación completa: <span class="highlight">' + skillInfo.name + '</span> (' + SKILL_TREE[branchKey].name + ')');
+      addLog('🔬 Investigación completa: <span class="highlight">' + skillInfo.name + '</span> (' + SKILL_TREE[branchKey].name + ')', 'important');
       showToast(skillInfo.icon, '¡Mejora lista: ' + skillInfo.name + '!');
     }
 
@@ -989,7 +989,7 @@ function checkStaffIllness() {
         state.sickUntil = Date.now() + sickDuration * 1000;
         game.stats.staffIllnesses++;
         var healCost = getHealCost(s, state.level || 1);
-        addLog('🤒 <span class="highlight">' + s.name + '</span> se enfermó! Curar: ' + fmtMoney(healCost));
+        addLog('🤒 <span class="highlight">' + s.name + '</span> se enfermó! Curar: ' + fmtMoney(healCost), 'critical');
         showToast('🤒', s.name + ' se enfermó!');
         renderStaff();
       }
@@ -1485,10 +1485,11 @@ function getGymTier() {
 }
 
 // ===== LOGGING =====
-function addLog(msg) {
+// level: 'critical' | 'important' | 'normal' (default)
+function addLog(msg, level) {
   const now = new Date();
   const time = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
-  game.log.unshift({ time, msg });
+  game.log.unshift({ time, msg, level: level || 'normal' });
   if (game.log.length > 80) game.log.pop();
   renderLog();
 }
@@ -1655,7 +1656,7 @@ function enterCompetition(id) {
     game.dailyTracking.moneyEarned += reward;
     game.dailyTracking.reputationGained += c.repReward;
     game.dailyTracking.xpEarned += c.xpReward;
-    addLog('🏆 ¡VICTORIA en <span class="highlight">' + c.name + '</span>! +<span class="money-log">' + fmtMoney(reward) + '</span> +' + c.repReward + '⭐');
+    addLog('🏆 ¡VICTORIA en <span class="highlight">' + c.name + '</span>! +<span class="money-log">' + fmtMoney(reward) + '</span> +' + c.repReward + '⭐', 'important');
     showToast('🏆', '¡Victoria en ' + c.name + '!');
     floatNumber('+' + fmtMoney(reward));
   } else {
@@ -1696,7 +1697,7 @@ function checkLevelUp() {
     game.xp -= game.xpToNext;
     game.level++;
     game.xpToNext = Math.ceil(100 * Math.pow(1.55, game.level - 1));
-    addLog('🎉 ¡Subiste al <span class="highlight">Nivel ' + game.level + '</span>!');
+    addLog('🎉 ¡Subiste al <span class="highlight">Nivel ' + game.level + '</span>!', 'critical');
     showToast('🎉', '¡Nivel ' + game.level + '!');
     leveled = true;
   }
@@ -1900,7 +1901,7 @@ function championCompete(compId) {
     game.dailyTracking.reputationGained += repGain;
     game.dailyTracking.xpEarned += xpGain;
 
-    addLog('🏅 ¡VICTORIA en <span class="highlight">' + c.name + '</span>! +<span class="money-log">' + fmtMoney(reward) + '</span> +' + repGain + '⭐');
+    addLog('🏅 ¡VICTORIA en <span class="highlight">' + c.name + '</span>! +<span class="money-log">' + fmtMoney(reward) + '</span> +' + repGain + '⭐', 'important');
     showToast('🏅', '¡Victoria en ' + c.name + '!');
     floatNumber('+' + fmtMoney(reward));
   } else {
@@ -1930,7 +1931,7 @@ function checkChampionLevelUp() {
   while (game.champion.xp >= xpNeeded) {
     game.champion.xp -= xpNeeded;
     game.champion.level++;
-    addLog('🏅 ¡Campeón subió a <span class="highlight">Nivel ' + game.champion.level + '</span>!');
+    addLog('🏅 ¡Campeón subió a <span class="highlight">Nivel ' + game.champion.level + '</span>!', 'important');
     showToast('🏅', '¡Campeón Nivel ' + game.champion.level + '!');
     xpNeeded = getChampionXpToNext();
   }
