@@ -54,7 +54,7 @@ function claimDailyBonus() {
 
   game.money += moneyReward;
   game.totalMoneyEarned += moneyReward;
-  game.xp += reward.xp;
+  addXp(reward.xp);
   game.dailyTracking.moneyEarned += moneyReward;
   game.dailyTracking.xpEarned += reward.xp;
 
@@ -177,7 +177,7 @@ function claimMission(index) {
 
   game.money += moneyReward;
   game.totalMoneyEarned += moneyReward;
-  game.xp += xpReward;
+  addXp(xpReward);
   game.stats.missionsCompleted++;
   game.dailyTracking.moneyEarned += moneyReward;
   game.dailyTracking.xpEarned += xpReward;
@@ -192,7 +192,7 @@ function claimMission(index) {
     const bonusMoney = Math.ceil(1000 * prestigeMult * levelScale);
     game.money += bonusMoney;
     game.totalMoneyEarned += bonusMoney;
-    game.xp += 100;
+    addXp(100);
     addLog('⭐ ¡Todas las misiones del día completadas! BONUS: +<span class="money-log">' + fmtMoney(bonusMoney) + '</span> +100 XP');
     showToast('⭐', '¡Todas las misiones completas! BONUS');
     floatNumber('+' + fmtMoney(bonusMoney), 'var(--purple)');
@@ -662,7 +662,7 @@ function toggleCampaign(id) {
     game.stats.campaignsLaunched++;
     game.dailyTracking.campaignsLaunched++;
     var xpGain = 20;
-    game.xp += xpGain;
+    addXp(xpGain);
     game.dailyTracking.xpEarned += xpGain;
   }
 
@@ -717,7 +717,7 @@ function launchCampaign(id) {
   game.dailyTracking.reputationGained += repBoost;
 
   const xpGain = 20;
-  game.xp += xpGain;
+  addXp(xpGain);
   game.dailyTracking.xpEarned += xpGain;
 
   addLog('📢 Campaña <span class="highlight">' + mc.name + '</span> lanzada! +' + membersToGive + ' miembros en ' + fmtTime(realDuration) + ', +' + repBoost + '⭐');
@@ -1887,7 +1887,7 @@ function buyZone(zoneId) {
   game.money -= zoneCost;
 
   const xpGain = 100;
-  game.xp += xpGain;
+  addXp(xpGain);
   game.dailyTracking.xpEarned += xpGain;
 
   if (zone.buildTime > 0) {
@@ -2104,7 +2104,7 @@ function acceptVip(vipId) {
   game.money += moneyReward;
   game.totalMoneyEarned += moneyReward;
   game.reputation += Math.ceil(vipDef.reward.rep * vipMult);
-  game.xp += Math.ceil(vipDef.reward.xp * vipMult);
+  addXp(Math.ceil(vipDef.reward.xp * vipMult));
   game.stats.vipsServed++;
   game.dailyTracking.moneyEarned += moneyReward;
   game.dailyTracking.reputationGained += vipDef.reward.rep;

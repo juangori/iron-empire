@@ -272,7 +272,7 @@ function checkAchievements() {
       game.achievements[a.id] = true;
       showToast(a.icon, '¡Logro: ' + a.name + '!');
       addLog('🎖️ Logro desbloqueado: <span class="highlight">' + a.name + '</span>');
-      game.xp += 50;
+      addXp(50);
       game.dailyTracking.xpEarned += 50;
     }
   });

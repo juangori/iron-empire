@@ -488,7 +488,7 @@ function checkTrainingCompletion() {
       state.level = (state.level || 1) + 1;
       state.trainingUntil = 0;
       var xpGain = 25 * state.level;
-      game.xp += xpGain;
+      addXp(xpGain);
       game.dailyTracking.xpEarned += xpGain;
       addLog('🎓 <span class="highlight">' + s.name + '</span> subió a LVL ' + state.level + '!');
       showToast('🎓', s.name + ' → LVL ' + state.level + '!');
@@ -501,7 +501,7 @@ function checkTrainingCompletion() {
           ex.level = (ex.level || 1) + 1;
           ex.trainingUntil = 0;
           var xpGain = 25 * ex.level;
-          game.xp += xpGain;
+          addXp(xpGain);
           game.dailyTracking.xpEarned += xpGain;
           addLog('🎓 <span class="highlight">' + s.name + ' #' + (i + 2) + '</span> subió a LVL ' + ex.level + '!');
           showToast('🎓', s.name + ' #' + (i + 2) + ' → LVL ' + ex.level + '!');
@@ -893,7 +893,7 @@ function checkSkillResearchCompletion() {
     game.skills[skillId] = true;
     game.stats.skillsResearched++;
     var xpGain = 80;
-    game.xp += xpGain;
+    addXp(xpGain);
     game.dailyTracking.xpEarned += xpGain;
 
     if (skillInfo) {
@@ -1152,7 +1152,7 @@ function buySupplement(id) {
   game.dailyTracking.supplementsBought++;
 
   var xpGain = 15;
-  game.xp += xpGain;
+  addXp(xpGain);
   game.dailyTracking.xpEarned += xpGain;
 
   updateMembers();
@@ -1244,7 +1244,7 @@ function launchRivalPromo(id) {
   game.rivals[id].promoUntil = Date.now() + rival.promoDuration * 1000;
 
   var xpGain = 20;
-  game.xp += xpGain;
+  addXp(xpGain);
   game.dailyTracking.xpEarned += xpGain;
 
   updateMembers();
@@ -1282,7 +1282,7 @@ function defeatRival(id) {
   game.stats.rivalsDefeated++;
 
   var xpGain = 100;
-  game.xp += xpGain;
+  addXp(xpGain);
   game.dailyTracking.xpEarned += xpGain;
 
   var bonusParts = [];
@@ -1380,7 +1380,7 @@ function buyProperty() {
   game.ownProperty = true;
   addLog('🏠 ¡Compraste el local! No pagás más alquiler.');
   showToast('🏠', '¡Local propio! Sin más alquiler.');
-  game.xp += 200;
+  addXp(200);
   game.dailyTracking.xpEarned += 200;
   renderExpansion();
   updateUI();
@@ -1562,7 +1562,7 @@ function buyEquipment(id) {
 
   const nextLevel = state.level + 1;
   const xpGain = 15 + nextLevel * 3;
-  game.xp += xpGain;
+  addXp(xpGain);
   game.dailyTracking.equipmentBought++;
   game.dailyTracking.xpEarned += xpGain;
 
@@ -1597,7 +1597,7 @@ function hireStaff(id) {
   game.money -= cost;
   game.staff[id] = { hired: true, level: 1, trainingUntil: 0, sickUntil: 0, extras: [] };
   const xpGain = 50;
-  game.xp += xpGain;
+  addXp(xpGain);
   game.dailyTracking.xpEarned += xpGain;
 
   addLog('🤝 Contrataste a <span class="highlight">' + s.name + '</span> (' + s.role + ')');
@@ -1644,7 +1644,7 @@ function enterCompetition(id) {
     var compRepMult = getSkillEffect('compRepMult');
     game.reputation += Math.ceil(c.repReward * compRepMult);
     var compXpMult = getSkillEffect('compXpMult');
-    game.xp += Math.ceil(c.xpReward * compXpMult);
+    addXp(Math.ceil(c.xpReward * compXpMult));
     game.competitions[id].wins++;
     game.stats.competitionsWon++;
     game.dailyTracking.competitionsWon++;
@@ -1656,7 +1656,7 @@ function enterCompetition(id) {
     floatNumber('+' + fmtMoney(reward));
   } else {
     const xpGain = Math.ceil(c.xpReward * 0.2);
-    game.xp += xpGain;
+    addXp(xpGain);
     game.dailyTracking.xpEarned += xpGain;
     game.competitions[id].losses++;
     addLog('😤 Derrota en <span class="highlight">' + c.name + '</span>. A seguir entrenando...');
@@ -1681,6 +1681,11 @@ function updateMembers() {
 }
 
 // ===== LEVEL UP =====
+function addXp(amount) {
+  game.xp += amount;
+  checkLevelUp();
+}
+
 function checkLevelUp() {
   while (game.xp >= game.xpToNext) {
     game.xp -= game.xpToNext;
@@ -1876,7 +1881,7 @@ function championCompete(compId) {
     game.money += reward;
     game.totalMoneyEarned += reward;
     game.reputation += repGain;
-    game.xp += xpGain;
+    addXp(xpGain);
     state.wins++;
     game.champion.wins++;
     game.stats.championWins++;
@@ -1891,7 +1896,7 @@ function championCompete(compId) {
     floatNumber('+' + fmtMoney(reward));
   } else {
     var consolationXp = Math.ceil(c.xpReward * 0.2);
-    game.xp += consolationXp;
+    addXp(consolationXp);
     game.dailyTracking.xpEarned += consolationXp;
     state.losses++;
     game.champion.losses++;
@@ -2044,7 +2049,7 @@ function classTick() {
       var netIncome = reward.income - commissionAmt;
       game.money += netIncome;
       game.totalMoneyEarned += netIncome;
-      game.xp += reward.xp;
+      addXp(reward.xp);
       game.reputation += reward.rep;
       game.stats.classesCompleted++;
       game.dailyTracking.classesRun++;
@@ -2351,7 +2356,7 @@ function calculateOfflineProgress(elapsedSeconds) {
     if (state.trainingUntil > 0 && Date.now() >= state.trainingUntil) {
       state.level = (state.level || 1) + 1;
       var xpGain = 25 * state.level;
-      game.xp += xpGain;
+      addXp(xpGain);
       report.xp += xpGain;
       state.trainingUntil = 0;
       report.staffTrained.push(s.name + ' → LVL ' + state.level);
@@ -2361,7 +2366,7 @@ function calculateOfflineProgress(elapsedSeconds) {
         if (ex.trainingUntil > 0 && Date.now() >= ex.trainingUntil) {
           ex.level = (ex.level || 1) + 1;
           var xpGain = 25 * ex.level;
-          game.xp += xpGain;
+          addXp(xpGain);
           report.xp += xpGain;
           ex.trainingUntil = 0;
           report.staffTrained.push(s.name + ' #' + (i + 2) + ' → LVL ' + ex.level);
@@ -2390,7 +2395,7 @@ function calculateOfflineProgress(elapsedSeconds) {
         var netIncome = reward.income - commissionAmt;
         game.money += netIncome;
         game.totalMoneyEarned += netIncome;
-        game.xp += reward.xp;
+        addXp(reward.xp);
         game.reputation += reward.rep;
         game.stats.classesCompleted++;
         report.classesCompleted.push(gc.name + ': +' + fmtMoney(netIncome) + (commissionAmt > 0 ? ' (comisión: -' + fmtMoney(commissionAmt) + ')' : ''));
