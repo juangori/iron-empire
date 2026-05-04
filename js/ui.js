@@ -476,6 +476,19 @@ function updateUI() {
   }
   el = document.getElementById('totalEarnedBig');
   if (el) el.textContent = fmtMoney(game.totalMoneyEarned);
+  var empireStarEl = document.getElementById('empireStarSub');
+  if (empireStarEl) {
+    var stars = typeof getFranchiseStars === 'function' ? getFranchiseStars() : 0;
+    var nextStarAt = (stars + 1) * (stars + 1) * 2000000;
+    var remaining = nextStarAt - game.totalMoneyEarned;
+    if (stars === 0) {
+      empireStarEl.textContent = '⭐ Primera franquicia: te faltan ' + fmtMoney(Math.max(0, remaining));
+    } else {
+      var starStr = '';
+      for (var s = 0; s < stars; s++) starStr += '⭐';
+      empireStarEl.textContent = starStr + ' · Próxima: ' + fmtMoney(Math.max(0, remaining));
+    }
+  }
   el = document.getElementById('tierBig');
   if (el) el.textContent = getGymTier();
 

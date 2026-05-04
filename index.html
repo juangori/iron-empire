@@ -177,6 +177,11 @@
   <div class="tab-walkthrough-card" id="tabWalkthroughCard"></div>
 </div>
 
+<!-- PRIMEROS PASOS OVERLAY -->
+<div class="event-overlay hidden" id="primerosPasosOverlay">
+  <div class="primeros-pasos-card" id="primerosPasosCard"></div>
+</div>
+
 <!-- HEADER -->
 <header class="header">
   <div class="header-inner">
@@ -361,6 +366,7 @@
       <div class="stat-box">
         <div class="stat-box-label">Total Ganado</div>
         <div class="stat-box-value" style="color:var(--green);" id="totalEarnedBig">$0</div>
+        <div class="stat-box-sub" id="empireStarSub" style="color:var(--accent);"></div>
       </div>
       <div class="stat-box">
         <div class="stat-box-label">Categoría</div>
@@ -413,6 +419,7 @@
   <div class="tab-content" id="tab-classes">
     <div class="section-title">🧘 Clases Especiales</div>
     <p class="section-subtitle">Dictá clases para ganar plata extra, XP y reputación. Cada clase tiene duración y cooldown.</p>
+    <div class="classes-synergy-banner" id="classesSynergyBanner"></div>
     <div class="classes-grid" id="classesGrid"></div>
   </div>
 
@@ -546,11 +553,11 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <!-- GAME SCRIPTS -->
-<script src="js/data.js?v=31"></script>
-<script src="js/game.js?v=31"></script>
-<script src="js/ui.js?v=31"></script>
-<script src="js/systems.js?v=31"></script>
-<script src="js/auth.js?v=31"></script>
+<script src="js/data.js?v=32"></script>
+<script src="js/game.js?v=32"></script>
+<script src="js/ui.js?v=32"></script>
+<script src="js/systems.js?v=32"></script>
+<script src="js/auth.js?v=32"></script>
 
 <!-- Profile refresh -->
 <script>

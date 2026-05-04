@@ -478,10 +478,12 @@ function startClass(id) {
 
   if (classCost > 0) game.money -= classCost;
 
+  var prevAutoRestart = game.classes[id] ? !!game.classes[id].autoRestart : false;
   game.classes[id] = {
     runningUntil: Date.now() + gc.duration * 1000,
     cooldownUntil: 0,
-    collected: false
+    collected: false,
+    autoRestart: prevAutoRestart
   };
 
   addLog('🧘 Clase <span class="highlight">' + gc.name + '</span> iniciada! Costo: ' + fmtMoney(classCost) + ' (' + fmtTime(gc.duration) + ')');
@@ -491,9 +493,31 @@ function startClass(id) {
   saveGame();
 }
 
+function setClassAutoRestart(id, val) {
+  if (!game.classes[id]) game.classes[id] = {};
+  game.classes[id].autoRestart = !!val;
+  renderClasses();
+}
+
 function renderClasses() {
   const grid = document.getElementById('classesGrid');
   if (!grid) return;
+
+  // --- Synergy banner (Fix 11) ---
+  var banner = document.getElementById('classesSynergyBanner');
+  if (banner) {
+    var hiredCount = GYM_CLASSES.filter(function(gc) { return game.instructors[gc.id]?.hired; }).length;
+    var skillMult = getSkillEffect('classIncomeMult');
+    var skillPct = Math.round((skillMult - 1) * 100);
+    var decBonus = Math.round(getDecorationBonus('classQuality') * 100);
+    var parts = [];
+    if (hiredCount > 0) parts.push('👨‍🏫 ' + hiredCount + '/' + GYM_CLASSES.length + ' instructores contratados');
+    if (skillPct > 0) parts.push('🔬 Árbol: +' + skillPct + '% ingresos');
+    if (decBonus > 0) parts.push('🎨 Decoración: +' + decBonus + '% calidad');
+    if (hiredCount === 0) parts.push('💡 Contratá instructores para desbloquear clases');
+    banner.innerHTML = parts.length ? '<span>' + parts.join(' &nbsp;·&nbsp; ') + '</span>' : '';
+    banner.style.display = parts.length ? '' : 'none';
+  }
 
   grid.innerHTML = GYM_CLASSES.map(gc => {
     const state = game.classes[gc.id] || {};
@@ -588,11 +612,16 @@ function renderClasses() {
       btnHTML = '<button class="btn btn-buy" ' + (canAfford ? '' : 'disabled') + ' onclick="startClass(\'' + gc.id + '\')">🎯 INICIAR — ' + fmtMoney(classCost) + '</button>';
     }
 
-    // --- Quality indicator ---
+    // --- Quality indicator (Fix 11: break down sources) ---
     var qualityText = '';
     if (!locked && hasInstructor && reward.qualityBonus > 1) {
+      var eqBonus = gc.reqEquipment ? Math.round((game.equipment[gc.reqEquipment]?.level || 0) * 5) : 0;
+      var instBonus = Math.round(((instState?.level || 1)) * 20);
       var qPct = Math.round((reward.qualityBonus - 1) * 100);
-      qualityText = '<div style="font-size:11px;color:var(--accent);text-align:center;margin-top:2px;">⭐ Calidad +' + qPct + '% (equipo + instructor)</div>';
+      var qParts = [];
+      if (eqBonus > 0) qParts.push('🏋️ +' + eqBonus + '%');
+      if (instBonus > 0) qParts.push('👨‍🏫 +' + instBonus + '%');
+      qualityText = '<div style="font-size:11px;color:var(--accent);text-align:center;margin-top:2px;">⭐ Calidad total +' + qPct + '%' + (qParts.length ? ' (' + qParts.join(' · ') + ')' : '') + '</div>';
     }
 
     // --- Stats (only show full stats when instructor hired) ---
@@ -614,6 +643,18 @@ function renderClasses() {
       '</div>';
     }
 
+    // --- Auto-restart toggle (Fix 10) ---
+    var autoRestartHTML = '';
+    if (!locked && hasInstructor) {
+      var isOn = !!(state.autoRestart);
+      autoRestartHTML = '<div class="class-autorestart">' +
+        '<label class="autorestart-label">' +
+          '<input type="checkbox" ' + (isOn ? 'checked' : '') + ' onchange="setClassAutoRestart(\'' + gc.id + '\', this.checked)">' +
+          ' 🔄 Auto-reiniciar' +
+        '</label>' +
+      '</div>';
+    }
+
     var cardClass = 'class-card';
     if (locked) cardClass += ' locked';
     if (isRunning) cardClass += ' running';
@@ -630,6 +671,7 @@ function renderClasses() {
         qualityText +
         timerText +
         btnHTML +
+        autoRestartHTML +
       '</div>'
     );
   }).join('');
@@ -1650,6 +1692,43 @@ function endTutorial() {
   switchTab('gym');
 
   showToast('🎓', '¡Tutorial completado! ¡A construir tu imperio!');
+  saveGame();
+  setTimeout(showPrimerosPasosGuide, 700);
+}
+
+// ===== PRIMEROS PASOS GUIDE =====
+function showPrimerosPasosGuide() {
+  if (game.primerosPasosSeen) return;
+  game.primerosPasosSeen = true;
+  var card = document.getElementById('primerosPasosCard');
+  if (!card) return;
+  card.innerHTML =
+    '<div class="pp-title">🎯 PRIMEROS PASOS</div>' +
+    '<div class="pp-subtitle">Completaste el tutorial. Acá tus 3 primeros objetivos reales:</div>' +
+    '<div class="pp-goals">' +
+      '<div class="pp-goal">' +
+        '<div class="pp-goal-icon">🏋️</div>' +
+        '<div class="pp-goal-text"><strong>Comprá más máquinas</strong><span>Cada equipo sube tu capacidad e ingresos por segundo</span></div>' +
+        '<button class="btn btn-buy pp-goal-btn" onclick="closePrimerosPasosGuide(\'equipment\')">Ir →</button>' +
+      '</div>' +
+      '<div class="pp-goal">' +
+        '<div class="pp-goal-icon">📢</div>' +
+        '<div class="pp-goal-text"><strong>Activá una campaña de Flyers</strong><span>La más barata: suma socios automáticamente todos los días</span></div>' +
+        '<button class="btn btn-buy pp-goal-btn" onclick="closePrimerosPasosGuide(\'marketing\')">Ir →</button>' +
+      '</div>' +
+      '<div class="pp-goal">' +
+        '<div class="pp-goal-icon">👥</div>' +
+        '<div class="pp-goal-text"><strong>Contratá un entrenador</strong><span>El personal sube tus ingresos y atrae más miembros</span></div>' +
+        '<button class="btn btn-buy pp-goal-btn" onclick="closePrimerosPasosGuide(\'staff\')">Ir →</button>' +
+      '</div>' +
+    '</div>' +
+    '<button class="btn btn-small" style="width:100%;" onclick="closePrimerosPasosGuide(null)">¡Entendido, arrancamos!</button>';
+  document.getElementById('primerosPasosOverlay').classList.remove('hidden');
+}
+
+function closePrimerosPasosGuide(tab) {
+  document.getElementById('primerosPasosOverlay').classList.add('hidden');
+  if (tab) switchTab(tab);
   saveGame();
 }
 

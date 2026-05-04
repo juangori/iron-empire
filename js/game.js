@@ -2060,9 +2060,12 @@ function repTick() {
 function classTick() {
   GYM_CLASSES.forEach(gc => {
     const state = game.classes[gc.id];
-    if (state?.runningUntil && Date.now() >= state.runningUntil && !state.collected) {
-      // Class finished
+    if (!state) return;
+
+    // Class just finished — give rewards and set cooldown
+    if (state.runningUntil && Date.now() >= state.runningUntil && !state.collected) {
       game.classes[gc.id].collected = true;
+      game.classes[gc.id].cooldownUntil = Date.now() + gc.cooldown * 1000;
       var reward = getClassReward(gc);
       var commissionAmt = Math.ceil(reward.income * reward.commission);
       var netIncome = reward.income - commissionAmt;
@@ -2078,6 +2081,7 @@ function classTick() {
 
       var logMsg = '🧘 Clase <span class="highlight">' + gc.name + '</span> completada! +<span class="money-log">' + fmtMoney(netIncome) + '</span>';
       if (commissionAmt > 0) logMsg += ' <span style="color:var(--text-dim);">(comisión: -' + fmtMoney(commissionAmt) + ')</span>';
+      if (state.autoRestart) logMsg += ' <span style="color:var(--cyan);">🔄 auto</span>';
       addLog(logMsg);
       showToast(gc.icon, '¡Clase ' + gc.name + ': +' + fmtMoney(netIncome) + '!');
       floatNumber('+' + fmtMoney(netIncome));
@@ -2085,6 +2089,12 @@ function classTick() {
       checkAchievements();
       checkMissionProgress();
       renderClasses();
+      return;
+    }
+
+    // Auto-restart: cooldown expired and toggle is on
+    if (state.collected && state.cooldownUntil && Date.now() >= state.cooldownUntil && state.autoRestart) {
+      startClass(gc.id);
     }
   });
 }
