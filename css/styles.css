@@ -96,6 +96,25 @@ body::before {
 
 .logo-icon { font-size: 32px; filter: drop-shadow(0 0 8px var(--accent-glow)); }
 
+/* Branch visiting banner */
+.branch-visiting-banner {
+  background: linear-gradient(90deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05));
+  border-bottom: 2px solid var(--accent);
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--accent);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.branch-visiting-banner.hidden { display: none; }
+.branch-visiting-banner strong { color: var(--text); }
+.branch-return-btn { font-size: 12px !important; padding: 4px 12px !important; flex-shrink: 0; }
+
 .save-indicator {
   font-size: 11px;
   color: var(--green);

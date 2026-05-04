@@ -169,7 +169,7 @@ CNAME               - Custom domain config
 ## Cache Busting
 - Script tags in index.html use `?v=XX` query string (e.g. `js/game.js?v=24`)
 - Increment the version number on every deploy that changes JS/CSS so browsers don't serve stale files
-- Current version: **v=33**
+- Current version: **v=34**
 - Update all 5 script tags together (data, game, ui, systems, auth)
 
 ## Planned Improvements (by priority)

@@ -144,8 +144,9 @@ let game = {
 };
 
 // ===== BRANCH SYSTEM =====
+// money is intentionally NOT per-branch — it's global (owner's wallet)
 const BRANCH_PROPERTIES = [
-  'gymName', 'money', 'totalMoneyEarned', 'members', 'maxMembers', 'reputation',
+  'gymName', 'totalMoneyEarned', 'members', 'maxMembers', 'reputation',
   'level', 'xp', 'xpToNext', 'equipment', 'staff', 'competitions',
   'classes', 'instructors', 'marketing', 'supplements', 'rivals',
   'zones', 'zoneBuilding', 'ownProperty', 'vipMembers', 'lastVipTime',
@@ -215,16 +216,27 @@ function getBranchPassiveIncome(branchId) {
   var branch = game.branches[branchId];
   if (!branch) return 0;
   var base = 0;
+  var eqLevels = 0;
   EQUIPMENT.forEach(function(eq) {
     var lvl = branch.equipment[eq.id]?.level || 0;
     base += eq.incomePerLevel * lvl;
+    eqLevels += lvl;
   });
   var zoneIncome = 0;
   GYM_ZONES.forEach(function(z) {
     if (branch.zones && branch.zones[z.id]) zoneIncome += z.incomeBonus;
   });
   var prestigeMult = 1 + (game.prestigeStars * 0.25);
-  return (base + zoneIncome) * prestigeMult * 0.5; // 50% of active rate
+  var grossPerSec = (base + zoneIncome) * prestigeMult * 0.5; // 50% of active rate
+
+  // Deduct rent + utilities (no staff costs for inactive branches)
+  // 1 game day = 600 ticks/seconds
+  var hood = NEIGHBORHOODS.find(function(n) { return n.id === branch.neighborhoodId; }) || NEIGHBORHOODS[0];
+  var rentPerDay = branch.ownProperty ? 0 : Math.max(0, OPERATING_COSTS.baseRent * hood.rentMult);
+  var utilitiesPerDay = eqLevels * OPERATING_COSTS.utilitiesPerEquipLevel;
+  var costPerSec = (rentPerDay + utilitiesPerDay) / 600;
+
+  return Math.max(0, grossPerSec - costPerSec);
 }
 
 function getTotalEmpireIncomePerSecond() {
@@ -2231,14 +2243,16 @@ function gameTick() {
     checkMissionProgress();
   }
 
-  // Passive income for inactive branches (every 10 ticks)
+  // Passive income for inactive branches flows directly to owner's wallet
   if (game.tickCount % 10 === 0 && game.branches) {
     Object.keys(game.branches).forEach(function(id) {
       if (id === game.activeBranch) return;
       var passiveIncome = getBranchPassiveIncome(id);
       if (passiveIncome > 0) {
-        game.branches[id].money = (game.branches[id].money || 0) + passiveIncome * 10;
-        game.branches[id].totalMoneyEarned = (game.branches[id].totalMoneyEarned || 0) + passiveIncome * 10;
+        var earned = passiveIncome * 10;
+        game.money += earned;
+        // Track earnings per-branch for franchise stars, but NOT in active branch's totalMoneyEarned
+        game.branches[id].totalMoneyEarned = (game.branches[id].totalMoneyEarned || 0) + earned;
       }
     });
   }
@@ -2579,7 +2593,7 @@ function calculateOfflineProgress(elapsedSeconds) {
       var passiveIncome = getBranchPassiveIncome(id);
       var passiveMoney = Math.max(0, passiveIncome * capped * OFFLINE_INCOME_RATE);
       if (passiveMoney > 0) {
-        game.branches[id].money = (game.branches[id].money || 0) + passiveMoney;
+        game.money += passiveMoney;
         game.branches[id].totalMoneyEarned = (game.branches[id].totalMoneyEarned || 0) + passiveMoney;
         report.inactiveBranchIncome += passiveMoney;
       }
@@ -2739,6 +2753,15 @@ function loadGame() {
         game.branches.branch_0 = extractBranchData();
         game.branches.branch_0.neighborhoodId = 'palermo';
       }
+      // Migration: money is now global — pool inactive branch money to owner's wallet
+      if (game.branches) {
+        Object.keys(game.branches).forEach(function(id) {
+          if (id !== game.activeBranch && game.branches[id].money > 0) {
+            game.money = (game.money || 0) + game.branches[id].money;
+            game.branches[id].money = 0;
+          }
+        });
+      }
       return true;
     }
   } catch (e) { /* silently fail */ }
@@ -2832,6 +2855,7 @@ function renderAll() {
   renderProfile();
   renderLog();
   renderGymScene();
+  if (typeof renderBranchVisitingBanner === 'function') renderBranchVisitingBanner();
   updateUI();
   updateTabNotifications();
   updateTabVisibility(false);

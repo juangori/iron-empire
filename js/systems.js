@@ -1178,34 +1178,34 @@ function renderCityMap() {
   var gridEl = document.getElementById('cityGrid');
   if (!gridEl) return;
 
-  // Sync active branch data before rendering
+  // Sync active branch before rendering
   if (game.activeBranch && game.branches[game.activeBranch]) {
     var activeHood = game.branches[game.activeBranch].neighborhoodId;
     game.branches[game.activeBranch] = extractBranchData(activeHood);
   }
 
-  // Empire stats bar
   var branchCount = Object.keys(game.branches).length;
   var starsText = '';
   for (var i = 0; i < Math.min(game.prestigeStars, 20); i++) starsText += '⭐';
   var prestigeMult = (1 + game.prestigeStars * 0.25).toFixed(2);
   var empireIncome = typeof getTotalEmpireIncomePerSecond === 'function' ? getTotalEmpireIncomePerSecond() : getIncomePerSecond();
+  var passiveTotal = empireIncome - getIncomePerSecond();
 
   if (statsEl) {
+    var passiveNote = branchCount > 1 ? ' <span style="color:var(--text-dim);font-size:12px;">(+' + fmtMoney(passiveTotal) + '/s pasivo de ' + (branchCount - 1) + ' sucursal' + (branchCount - 1 > 1 ? 'es' : '') + ')</span>' : '';
     statsEl.innerHTML =
       '<div class="empire-stat-row">' +
         '<div class="empire-stat"><span class="empire-stat-icon">🏢</span> ' + branchCount + ' sucursal' + (branchCount > 1 ? 'es' : '') + '</div>' +
-        '<div class="empire-stat"><span class="empire-stat-icon">⭐</span> ' + (starsText || '0') + ' (x' + prestigeMult + ')</div>' +
-        '<div class="empire-stat"><span class="empire-stat-icon">💵</span> ' + fmtMoney(empireIncome) + '/s imperio</div>' +
+        '<div class="empire-stat"><span class="empire-stat-icon">⭐</span> ' + (starsText || 'Sin estrellas') + ' (x' + prestigeMult + ' ingresos)</div>' +
+        '<div class="empire-stat"><span class="empire-stat-icon">💵</span> ' + fmtMoney(empireIncome) + '/s total' + passiveNote + '</div>' +
       '</div>';
   }
 
-  // Find which neighborhood each branch is in
+  // Map branches to neighborhoods
   var branchByHood = {};
   Object.keys(game.branches).forEach(function(bId) {
     var b = game.branches[bId];
     if (!b.neighborhoodId) {
-      // Fix orphaned branch — assign first available neighborhood
       var usedHoods = {};
       Object.values(game.branches).forEach(function(ob) { if (ob.neighborhoodId) usedHoods[ob.neighborhoodId] = true; });
       var freeHood = NEIGHBORHOODS.find(function(n) { return !usedHoods[n.id]; });
@@ -1214,17 +1214,14 @@ function renderCityMap() {
     branchByHood[b.neighborhoodId] = { branchId: bId, data: b };
   });
 
+  var maxLevel = game.level;
+  Object.values(game.branches).forEach(function(b) { if (b.level > maxLevel) maxLevel = b.level; });
+
   var html = '';
   NEIGHBORHOODS.forEach(function(hood) {
     var branch = branchByHood[hood.id];
     var isActive = branch && branch.branchId === game.activeBranch;
     var hasGym = !!branch;
-
-    // Check if player can open here (use highest level across branches)
-    var maxLevel = game.level;
-    Object.values(game.branches).forEach(function(b) {
-      if (b.level > maxLevel) maxLevel = b.level;
-    });
     var canUnlock = !hasGym && maxLevel >= hood.reqLevel && game.money >= hood.unlockCost;
     var isLocked = !hasGym && (maxLevel < hood.reqLevel);
 
@@ -1241,7 +1238,6 @@ function renderCityMap() {
     html += '</div>';
     html += '<div class="city-cell-desc">' + hood.desc + '</div>';
 
-    // Traits
     html += '<div class="city-cell-traits">';
     html += '<span title="Multiplicador de alquiler">🏠 x' + hood.rentMult.toFixed(1) + '</span>';
     html += '<span title="Multiplicador de miembros">👥 x' + hood.memberMult.toFixed(1) + '</span>';
@@ -1251,36 +1247,44 @@ function renderCityMap() {
 
     if (hasGym) {
       var b = branch.data;
-      // Sync active branch display from game state
       var displayLevel = isActive ? game.level : b.level;
       var displayMembers = isActive ? game.members : b.members;
-      var displayMoney = isActive ? game.money : b.money;
       var branchIncome = isActive ? getIncomePerSecond() : getBranchPassiveIncome(branch.branchId);
+      var eqCount = EQUIPMENT.filter(function(eq) { return (isActive ? game.equipment[eq.id] : b.equipment[eq.id])?.level > 0; }).length;
+      var gymDisplayName = isActive ? game.gymName : (b.gymName || 'Mi Gimnasio');
 
       html += '<div class="city-cell-gym">';
-      html += '<div class="city-gym-name">' + (isActive ? game.gymName : (b.gymName || 'Mi Gimnasio')) + '</div>';
+      html += '<div class="city-gym-name">' + gymDisplayName + '</div>';
       html += '<div class="city-gym-stats">';
-      html += '<span>Nv.' + displayLevel + '</span>';
-      html += '<span>👥 ' + Math.floor(displayMembers) + '</span>';
-      html += '<span>💰 ' + fmtMoney(displayMoney) + '</span>';
-      html += '<span>💵 ' + fmtMoney(branchIncome) + '/s</span>';
+      html += '<span title="Nivel">Nv.' + displayLevel + '</span>';
+      html += '<span title="Miembros">👥 ' + Math.floor(displayMembers) + '</span>';
+      html += '<span title="Equipos">🏋️ ' + eqCount + '</span>';
+      if (isActive) {
+        html += '<span title="Ingresos activos" style="color:var(--green);">💵 ' + fmtMoney(branchIncome) + '/s</span>';
+      } else {
+        html += '<span title="Ingreso pasivo — fluye a tu cuenta" style="color:var(--cyan);">💵 ' + fmtMoney(branchIncome) + '/s → tuyo</span>';
+      }
       html += '</div>';
 
       if (!isActive) {
-        html += '<button class="btn btn-buy city-btn" onclick="switchBranch(\'' + branch.branchId + '\')">Gestionar</button>';
+        html += '<button class="btn btn-buy city-btn" onclick="switchBranch(\'' + branch.branchId + '\')">🔀 Gestionar</button>';
       } else {
-        html += '<div class="city-active-label">Gestionando ahora</div>';
+        html += '<div class="city-active-label">📍 Gestionando ahora</div>';
       }
       html += '</div>';
     } else if (isLocked) {
       html += '<div class="city-cell-locked">';
       html += '<span>🔒 Nivel ' + hood.reqLevel + ' requerido</span>';
+      if (maxLevel < hood.reqLevel) html += '<span style="color:var(--text-muted);font-size:11px;display:block;margin-top:4px;">Tu nivel más alto: ' + maxLevel + '</span>';
       html += '</div>';
     } else {
+      // Affordable check
+      var affordMsg = canUnlock ? '' : ' <span style="color:var(--red);font-size:11px;">(te faltan ' + fmtMoney(hood.unlockCost - game.money) + ')</span>';
       html += '<div class="city-cell-unlock">';
+      html += '<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Incluye: 🏋️ equipos básicos instalados</div>';
       html += '<button class="btn ' + (canUnlock ? 'btn-buy' : 'btn-disabled') + ' city-btn" ' +
         (canUnlock ? 'onclick="openNewBranchModal(\'' + hood.id + '\')"' : 'disabled') + '>' +
-        'Abrir sucursal — ' + fmtMoney(hood.unlockCost) + '</button>';
+        'Abrir sucursal — ' + fmtMoney(hood.unlockCost) + '</button>' + affordMsg;
       html += '</div>';
     }
 
@@ -1288,6 +1292,24 @@ function renderCityMap() {
   });
 
   gridEl.innerHTML = html;
+}
+
+function renderBranchVisitingBanner() {
+  var banner = document.getElementById('branchVisitingBanner');
+  if (!banner) return;
+  var hasMul = game.branches && Object.keys(game.branches).length > 1;
+  if (!hasMul || game.activeBranch === 'branch_0') {
+    banner.classList.add('hidden');
+    return;
+  }
+  var hood = getActiveNeighborhood();
+  var mainBranch = game.branches['branch_0'];
+  var mainName = mainBranch ? (mainBranch.gymName || 'Gym Principal') : 'Gym Principal';
+  banner.innerHTML =
+    '<span>🏢 Gestionando: <strong>' + game.gymName + '</strong>' +
+    (hood ? ' · ' + hood.icon + ' ' + hood.name : '') + '</span>' +
+    '<button class="btn btn-small branch-return-btn" onclick="switchBranch(\'branch_0\')">↩ Volver a ' + mainName + '</button>';
+  banner.classList.remove('hidden');
 }
 
 function openNewBranchModal(neighborhoodId) {
@@ -1345,17 +1367,24 @@ function confirmNewBranch(neighborhoodId) {
     return;
   }
 
-  // Deduct cost
+  // Deduct cost (from global wallet)
   game.money -= hood.unlockCost;
 
   // Get gym name
   var nameInput = document.getElementById('newBranchName');
   var gymName = (nameInput && nameInput.value.trim()) || ('Gym ' + hood.name);
 
-  // Create new branch with fresh state
+  // Create new branch with starter state (equipment included so it earns from day 1)
   var newBranch = getDefaultBranchState();
   newBranch.neighborhoodId = neighborhoodId;
   newBranch.gymName = gymName;
+  // Starter equipment bundled with setup — represents basic gear already installed
+  newBranch.equipment['dumbbells'] = { level: 1, brokenUntil: 0, upgradingUntil: 0 };
+  newBranch.equipment['cardio'] = { level: 1, brokenUntil: 0, upgradingUntil: 0 };
+  // Starter members proportional to neighborhood appeal
+  newBranch.members = Math.max(3, Math.round(8 * hood.memberMult));
+  newBranch.maxMembers = Math.max(10, Math.round(20 * hood.memberMult));
+  newBranch.reputation = 50;
 
   var newId = 'branch_' + game.branchCount;
   game.branchCount++;
@@ -1364,26 +1393,16 @@ function confirmNewBranch(neighborhoodId) {
   // Update franchise stars
   var newStars = getPrestigeStars();
   if (newStars > game.prestigeStars) game.prestigeStars = newStars;
-
   game.stats.prestigeCount = (game.stats.prestigeCount || 0) + 1;
 
   // Close modal
   var modal = document.getElementById('newBranchModal');
   if (modal) modal.remove();
 
-  // Save current branch before switching (preserve its neighborhoodId)
-  var oldHood = game.branches[game.activeBranch].neighborhoodId;
-  game.branches[game.activeBranch] = extractBranchData(oldHood);
+  // Player STAYS in current branch — new branch runs in background
+  addLog('🏙️ ¡Abriste <span class="highlight">' + gymName + '</span> en ' + hood.name + '! Ya está generando ingresos pasivos.', 'critical');
+  showToast('🏙️', gymName + ' abierto en ' + hood.name + ' · ¡Generando ingresos!');
 
-  // Switch to new branch
-  applyBranchToGame(newBranch);
-  game.activeBranch = newId;
-
-  addLog('🏙️ ¡Abriste <span class="highlight">' + gymName + '</span> en ' + hood.name + '!', 'critical');
-  showToast('🏙️', '¡Nueva sucursal en ' + hood.name + '!');
-
-  renderAll();
-  updateUI();
   renderCityMap();
   checkAchievements();
   saveGame();

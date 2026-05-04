@@ -532,6 +532,9 @@ function updateUI() {
   // Tab notifications
   updateTabNotifications();
 
+  // Branch visiting banner
+  if (typeof renderBranchVisitingBanner === 'function') renderBranchVisitingBanner();
+
   // Next goal banner (every 5 seconds to avoid recalc every tick)
   if (game.tickCount % 5 === 0) renderNextGoal();
 
