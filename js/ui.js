@@ -374,6 +374,11 @@ function updateUI() {
       _prevStats.members = newMembText;
     }
   }
+  var rivalStealEl = document.getElementById('rivalStealSub');
+  if (rivalStealEl) {
+    var steal = typeof getRivalMemberSteal === 'function' ? getRivalMemberSteal() : 0;
+    rivalStealEl.textContent = steal > 0 ? '-' + steal + ' cap por rivales' : '';
+  }
   el = document.getElementById('repBig');
   if (el) {
     var newRepText = fmt(Math.floor(game.reputation));

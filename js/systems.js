@@ -2575,7 +2575,7 @@ function renderChampion() {
     var cost = getChampionTrainingCost(stat);
     var duration = getChampionTrainingDuration(stat);
     var canAffordTrain = game.money >= cost;
-    var canTrain = !isTraining && !isExhausted && canAffordTrain;
+    var canTrain = !isTraining && canAffordTrain;
     var maxStatBar = Math.max(30, effective + 5);
     var barPct = Math.min(100, Math.round((effective / maxStatBar) * 100));
 
@@ -2634,7 +2634,8 @@ function renderChampion() {
     html += '<div class="champ-fatigue-recovery" style="color:var(--green);">Listo para entrenar y competir</div>';
   }
   if (isExhausted) {
-    html += '<div class="champ-exhausted-msg">⚠️ Campeón agotado — no puede entrenar ni competir. Esperá a que se recupere. No hay atajos.</div>';
+    var fp = typeof getChampionFatiguePenalty === 'function' ? getChampionFatiguePenalty() : { label: null };
+    html += '<div class="champ-exhausted-msg">⚠️ ' + (fp.label || 'Muy cansado') + ' — entrenar y competir con penalidad. Descansá para recuperar efectividad.</div>';
   }
   html += '</div>'; // champ-fatigue-panel
 
@@ -2695,10 +2696,11 @@ function renderChampion() {
     var tecnica = getChampionEffectiveStat('tecnica');
     var resistencia = getChampionEffectiveStat('resistencia');
     var statBonus = (fuerza * 0.008) + (velocidad * 0.012) + (mentalidad * 0.01);
-    var chance = Math.min(0.95, c.winChance + statBonus + getSkillEffect('compWinChanceBonus', 0));
+    var fp = typeof getChampionFatiguePenalty === 'function' ? getChampionFatiguePenalty() : { mult: 1.0, chancePenalty: 0, label: null };
+    var chance = Math.max(0.05, Math.min(0.95, c.winChance + statBonus + getSkillEffect('compWinChanceBonus', 0)) - fp.chancePenalty);
     var rewardMult = CHAMPION_REWARD_MULT * getSkillEffect('compRewardMult') * (1 + tecnica * 0.02) * (1 + fuerza * 0.01);
     var fatigueCost = Math.max(15, CHAMPION_FATIGUE_PER_COMPETE - Math.floor(resistencia * 0.5));
-    var canCompete = !locked && !onCooldown && !isTraining && !isExhausted;
+    var canCompete = !locked && !onCooldown && !isTraining;
 
     var chancePct = Math.round(chance * 100);
     var chanceColor = chancePct >= 70 ? 'var(--green)' : chancePct >= 40 ? 'var(--accent)' : 'var(--red)';
@@ -2710,8 +2712,9 @@ function renderChampion() {
       var timeLeft = Math.ceil((state.cooldownUntil - now) / 1000);
       actionHTML = '<span style="color:var(--text-dim);font-size:12px;">⏱️ ' + fmtTime(timeLeft) + '</span>';
     } else {
+      var penaltyLine = fp.label ? '<br><span style="font-size:10px;color:var(--accent);">' + fp.label + '</span>' : '';
       actionHTML = '<button class="btn btn-buy btn-small" ' + (canCompete ? '' : 'disabled') +
-        ' onclick="championCompete(\'' + c.id + '\')">🏅 COMPETIR<br><span style="font-size:10px;opacity:0.8;">-' + fatigueCost + ' fatiga</span></button>';
+        ' onclick="championCompete(\'' + c.id + '\')">🏅 COMPETIR<br><span style="font-size:10px;opacity:0.8;">-' + fatigueCost + ' fatiga</span>' + penaltyLine + '</button>';
     }
 
     html += '<div class="champion-comp-row' + (locked ? ' locked' : '') + '">' +

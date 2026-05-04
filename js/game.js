@@ -1331,7 +1331,12 @@ function getOperatingCostsPerDay() {
   let daily = 0;
   // Rent (unless property owned) - scales with player level and zones
   if (!game.ownProperty) {
-    daily += OPERATING_COSTS.baseRent + (game.level * OPERATING_COSTS.rentPerLevel);
+    if (game.level <= 5) {
+      // Grace period: minimal rent for new gyms — no base rent, soft per-level ($800-$4000/day)
+      daily += game.level * 800;
+    } else {
+      daily += OPERATING_COSTS.baseRent + (game.level * OPERATING_COSTS.rentPerLevel);
+    }
     let extraZones = 0;
     GYM_ZONES.forEach(function(z) {
       if (z.id !== 'ground_floor' && game.zones[z.id]) extraZones++;
@@ -1708,11 +1713,20 @@ function checkLevelUp() {
     renderMarketing();
     renderSupplements();
     renderRivals();
+    updateTabVisibility(true);
     saveGame(); // Save immediately so level-up survives a page reload
   }
 }
 
 // ===== CHAMPION SYSTEM =====
+
+function getChampionFatiguePenalty() {
+  var fatigue = game.champion ? (game.champion.fatigue || 0) : 0;
+  if (fatigue < 50) return { mult: 1.0, chancePenalty: 0, label: null };
+  if (fatigue < 75) return { mult: 0.85, chancePenalty: 0.05, label: '😓 Cansado: -15% recompensas' };
+  if (fatigue < 90) return { mult: 0.70, chancePenalty: 0.10, label: '😰 Muy cansado: -30% recompensas' };
+  return { mult: 0.50, chancePenalty: 0.20, label: '💀 Agotado: -50% recompensas' };
+}
 
 function getChampionTotalStats() {
   if (!game.champion || !game.champion.recruited) return 0;
@@ -1793,10 +1807,6 @@ function trainChampion(stat) {
     showToast('❌', '¡Tu campeón ya está entrenando!');
     return;
   }
-  if (game.champion.fatigue >= CHAMPION_FATIGUE_THRESHOLD) {
-    showToast('😴', '¡Campeón agotado! Esperá a que recupere energía.');
-    return;
-  }
 
   var cost = getChampionTrainingCost(stat);
   if (game.money < cost) {
@@ -1837,10 +1847,6 @@ function checkChampionTraining() {
 
 function championCompete(compId) {
   if (!game.champion || !game.champion.recruited) return;
-  if (game.champion.fatigue >= CHAMPION_FATIGUE_THRESHOLD) {
-    showToast('😴', '¡Campeón agotado! Necesita descansar antes de competir.');
-    return;
-  }
   if (game.champion.trainingUntil && Date.now() < game.champion.trainingUntil) {
     showToast('⏳', '¡Tu campeón está entrenando, esperá que termine!');
     return;
@@ -1859,13 +1865,14 @@ function championCompete(compId) {
   var fatigueCost = Math.max(15, CHAMPION_FATIGUE_PER_COMPETE - Math.floor(resistencia * 0.5));
   game.champion.fatigue = Math.min(CHAMPION_MAX_FATIGUE, game.champion.fatigue + fatigueCost);
 
-  // Win chance: base + fuerza + velocidad + mentalidad bonus
+  // Win chance: base + fuerza + velocidad + mentalidad bonus, modified by fatigue
   var fuerza = getChampionEffectiveStat('fuerza');
   var velocidad = getChampionEffectiveStat('velocidad');
   var mentalidad = getChampionEffectiveStat('mentalidad');
   var statBonus = (fuerza * 0.008) + (velocidad * 0.012) + (mentalidad * 0.01);
+  var fatiguePenalty = getChampionFatiguePenalty();
   var chance = c.winChance + statBonus + getSkillEffect('compWinChanceBonus', 0);
-  chance = Math.min(chance, 0.95);
+  chance = Math.max(0.05, Math.min(chance, 0.95) - fatiguePenalty.chancePenalty);
 
   var won = Math.random() < chance;
 
@@ -1882,9 +1889,9 @@ function championCompete(compId) {
   if (won) {
     var tecnica = getChampionEffectiveStat('tecnica');
     var rewardMult = CHAMPION_REWARD_MULT * getSkillEffect('compRewardMult') * (1 + tecnica * 0.02) * (1 + fuerza * 0.01) * (1 + getDecorationBonus('compReward'));
-    var reward = Math.ceil(c.reward * rewardMult);
+    var reward = Math.ceil(c.reward * rewardMult * fatiguePenalty.mult);
     var compRepMult = getSkillEffect('compRepMult');
-    var repGain = Math.ceil(c.repReward * compRepMult * (1 + tecnica * 0.01));
+    var repGain = Math.ceil(c.repReward * compRepMult * (1 + tecnica * 0.01) * fatiguePenalty.mult);
     var compXpMult = getSkillEffect('compXpMult');
     var xpGain = Math.ceil(c.xpReward * compXpMult);
 
@@ -1901,7 +1908,8 @@ function championCompete(compId) {
     game.dailyTracking.reputationGained += repGain;
     game.dailyTracking.xpEarned += xpGain;
 
-    addLog('🏅 ¡VICTORIA en <span class="highlight">' + c.name + '</span>! +<span class="money-log">' + fmtMoney(reward) + '</span> +' + repGain + '⭐', 'important');
+    var penaltyNote = fatiguePenalty.label ? ' <span style="color:var(--accent);font-size:11px;">(' + fatiguePenalty.label + ')</span>' : '';
+    addLog('🏅 ¡VICTORIA en <span class="highlight">' + c.name + '</span>! +<span class="money-log">' + fmtMoney(reward) + '</span> +' + repGain + '⭐' + penaltyNote, 'important');
     showToast('🏅', '¡Victoria en ' + c.name + '!');
     floatNumber('+' + fmtMoney(reward));
   } else {
@@ -2223,6 +2231,24 @@ function gameTick() {
         game.branches[id].totalMoneyEarned = (game.branches[id].totalMoneyEarned || 0) + passiveIncome * 10;
       }
     });
+  }
+
+  // Log rival member stealing every 5 min real time (300 ticks)
+  if (game.tickCount % 300 === 0) {
+    var stealTotal = getRivalMemberSteal();
+    if (stealTotal > 0) {
+      var stealerNames = [];
+      RIVAL_GYMS.forEach(function(r) {
+        if (game.level < r.reqLevel) return;
+        var st = game.rivals[r.id];
+        if (st && st.defeated) return;
+        if (st && st.promoUntil && Date.now() < st.promoUntil) return;
+        stealerNames.push(r.name + ' (-' + r.memberSteal + ')');
+      });
+      if (stealerNames.length > 0) {
+        addLog('🏪 Rivales activos te roban capacidad: <span class="highlight">' + stealerNames.join(', ') + '</span>. Total: -' + stealTotal + ' del cap de miembros.');
+      }
+    }
   }
 
   // Supplement tolerance decay: once per game day (600 ticks)
@@ -2797,6 +2823,7 @@ function renderAll() {
   renderGymScene();
   updateUI();
   updateTabNotifications();
+  updateTabVisibility(false);
 }
 
 // ===== START GAME =====
@@ -2834,6 +2861,45 @@ function startGame() {
     game.money = 100; // Starting money for tutorial (buy first equipment)
     renderAll();
     setTimeout(() => startTutorial(), 1000);
+  }
+}
+
+// ===== TAB PROGRESSIVE UNLOCK =====
+const TAB_UNLOCK_LEVELS = {
+  gym: 1, missions: 1, achievements: 1, settings: 1, wiki: 1,
+  equipment: 1, staff: 1, marketing: 1,
+  profile: 3,
+  classes: 3,
+  rivals: 4,
+  supplements: 5,
+  skills: 5,
+  expansion: 6,
+  vip: 6,
+  prestige: 7,
+  champion: 8,
+};
+
+function updateTabVisibility(isLevelUp) {
+  var newlyUnlocked = [];
+  document.querySelectorAll('.sidebar-item[data-tab]').forEach(function(item) {
+    var tabId = item.dataset.tab;
+    var minLevel = TAB_UNLOCK_LEVELS[tabId] || 1;
+    var shouldBeVisible = game.level >= minLevel;
+    var wasHidden = item.classList.contains('tab-hidden');
+    if (isLevelUp && shouldBeVisible && wasHidden) newlyUnlocked.push(tabId);
+    item.classList.toggle('tab-hidden', !shouldBeVisible);
+  });
+  document.querySelectorAll('.sidebar-category').forEach(function(cat) {
+    var visibleItems = cat.querySelectorAll('.sidebar-item:not(.tab-hidden)');
+    cat.classList.toggle('tab-hidden', visibleItems.length === 0);
+  });
+  if (newlyUnlocked.length > 0) {
+    newlyUnlocked.forEach(function(tabId) {
+      var item = document.querySelector('.sidebar-item[data-tab="' + tabId + '"]');
+      var label = item ? item.querySelector('.item-label') : null;
+      addLog('🔓 Nueva sección desbloqueada: <span class="highlight">' + (label ? label.textContent : tabId) + '</span>!', 'important');
+    });
+    showToast('🔓', newlyUnlocked.length === 1 ? '¡Nueva sección desbloqueada!' : '¡' + newlyUnlocked.length + ' nuevas secciones!');
   }
 }
 

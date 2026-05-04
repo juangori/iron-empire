@@ -428,6 +428,8 @@ body::before {
   white-space: nowrap;
 }
 .sidebar-item:hover { color: var(--text); background: rgba(255,255,255,0.04); }
+.sidebar-item.tab-hidden { display: none; }
+.sidebar-category.tab-hidden { display: none; }
 .sidebar-item.active {
   color: var(--accent);
   background: rgba(245, 158, 11, 0.08);
@@ -2607,6 +2609,13 @@ body::before {
 .stat-box-value {
   font-size: 24px;
   font-family: 'Bebas Neue', sans-serif;
+}
+
+.stat-box-sub {
+  font-size: 11px;
+  color: var(--red);
+  margin-top: 2px;
+  min-height: 14px;
 }
 
 /* ===== ACHIEVEMENTS ===== */
