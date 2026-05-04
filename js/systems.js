@@ -2431,6 +2431,13 @@ function updateTabReminders() {
     var reminderEl = document.getElementById('reminder-' + tabId);
     if (!reminderEl) continue;
 
+    // Don't show reminder if notification dot is already visible (avoids double indicator)
+    var notifDot = document.getElementById('dot-' + tabId);
+    if (notifDot && !notifDot.classList.contains('hidden')) {
+      reminderEl.classList.add('hidden');
+      continue;
+    }
+
     var lastVisit = game.tabLastVisited[tabId] || 0;
     var absentSeconds = (now - lastVisit) / 1000;
 

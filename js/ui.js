@@ -57,8 +57,9 @@ function renderEquipment() {
       // Broken - show repair button
       var repairCost = getRepairCost(eq, state.level);
       var canAffordRepair = game.money >= repairCost;
+      var repairTitle = canAffordRepair ? '' : ' title="Necesitás ' + fmtMoney(repairCost - game.money) + ' más para reparar"';
       breakdownHTML = '<div class="equip-broken-badge">⚠️ FUERA DE SERVICIO</div>';
-      btnHTML = '<button class="btn btn-red" ' + (canAffordRepair ? '' : 'disabled') +
+      btnHTML = '<button class="btn btn-red" ' + (canAffordRepair ? '' : 'disabled') + repairTitle +
         ' onclick="repairEquipment(\'' + eq.id + '\')">🔧 REPARAR — ' + fmtMoney(repairCost) + '</button>';
     } else if (repairing) {
       // Repairing - show progress bar
@@ -89,8 +90,9 @@ function renderEquipment() {
     } else if (atLevelCap && state.level > 0) {
       btnHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;margin-top:8px;">⚠️ Máx. nivel del equipo = tu nivel (' + game.level + ')</div>';
     } else {
+      var buyTitle = canAfford ? '' : ' title="Necesitás ' + fmtMoney(cost - game.money) + ' más"';
       btnHTML = '<button class="btn ' + (isNew ? 'btn-buy' : 'btn-upgrade') + '" ' +
-        (canAfford ? '' : 'disabled') +
+        (canAfford ? '' : 'disabled') + buyTitle +
         ' onclick="buyEquipment(\'' + eq.id + '\')">' +
         (isNew ? '🛒 COMPRAR' : '⬆️ MEJORAR') + ' — ' + fmtMoney(cost) +
       '</button>';
@@ -155,7 +157,8 @@ function renderStaff() {
     if (locked) {
       btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;margin-top:8px;">🔒 Requiere Nivel ' + s.reqLevel + '</div>';
     } else if (!state.hired) {
-      btnHTML = '<button class="btn btn-purple" ' + (canAfford ? '' : 'disabled') + ' onclick="hireStaff(\'' + s.id + '\')">CONTRATAR — ' + fmtMoney(cost) + '</button>';
+      var hireTitle = canAfford ? '' : ' title="Necesitás ' + fmtMoney(cost - game.money) + ' más"';
+      btnHTML = '<button class="btn btn-purple" ' + (canAfford ? '' : 'disabled') + hireTitle + ' onclick="hireStaff(\'' + s.id + '\')">CONTRATAR — ' + fmtMoney(cost) + '</button>';
     }
 
     // If hired, show main copy + extras
@@ -176,7 +179,8 @@ function renderStaff() {
         if (game.level >= reqLvl) {
           var extraCost = getStaffCost(s, extraCount);
           var canAffordExtra = game.money >= extraCost;
-          copiesHTML += '<button class="btn btn-cyan btn-small" style="margin-top:6px;width:100%;" ' + (canAffordExtra ? '' : 'disabled') +
+          var extraTitle = canAffordExtra ? '' : ' title="Necesitás ' + fmtMoney(extraCost - game.money) + ' más"';
+          copiesHTML += '<button class="btn btn-cyan btn-small" style="margin-top:6px;width:100%;" ' + (canAffordExtra ? '' : 'disabled') + extraTitle +
             ' onclick="hireExtraStaff(\'' + s.id + '\')">➕ CONTRATAR #' + nextCopyNum + ' — ' + fmtMoney(extraCost) + '</button>';
         } else {
           copiesHTML += '<div style="color:var(--text-muted);font-size:11px;margin-top:6px;text-align:center;">🔒 #' + nextCopyNum + ' en Nivel ' + reqLvl + '</div>';
@@ -319,6 +323,88 @@ function _pulseStatBox(id) {
   parent.classList.add('stat-pulse');
 }
 
+// ===== NEXT GOAL BANNER =====
+function renderNextGoal() {
+  var el = document.getElementById('nextGoalBanner');
+  if (!el) return;
+  if (!game.started || !game.tutorialDone) { el.innerHTML = ''; return; }
+
+  var goal = _getNextGoal();
+  if (!goal) { el.innerHTML = ''; return; }
+
+  el.innerHTML =
+    '<span class="next-goal-pin">📌</span>' +
+    '<span class="next-goal-text">' + goal.text + '</span>' +
+    (goal.tab ? '<button class="btn btn-small btn-cyan next-goal-btn" onclick="switchTab(\'' + goal.tab + '\')">Ver →</button>' : '');
+}
+
+function _getNextGoal() {
+  // 1. Unowned equipment within reach
+  var unowned = EQUIPMENT.filter(function(e) {
+    return game.level >= e.reqLevel && !(game.equipment[e.id] && game.equipment[e.id].level > 0);
+  });
+  if (unowned.length > 0) {
+    var eq = unowned[0];
+    if (game.money >= eq.baseCost) {
+      return { text: 'Comprá <strong>' + eq.name + '</strong> ' + eq.icon + ' para +' + fmtMoney(eq.incomePerLevel) + '/s', tab: 'equipment' };
+    }
+    if (game.money >= eq.baseCost * 0.5) {
+      return { text: 'Ahorrando para <strong>' + eq.name + '</strong> — faltan ' + fmtMoney(eq.baseCost - game.money), tab: 'equipment' };
+    }
+  }
+
+  // 2. No staff at all
+  if (!STAFF.some(function(s) { return game.staff[s.id] && game.staff[s.id].hired; })) {
+    var s = STAFF.find(function(st) { return game.level >= st.reqLevel; });
+    if (s) return { text: 'Contratá <strong>' + s.name + '</strong> para potenciar tus máquinas', tab: 'staff' };
+  }
+
+  // 3. No always-on marketing active
+  if (game.level >= 2) {
+    var hasMarketing = typeof MARKETING_CAMPAIGNS !== 'undefined' && MARKETING_CAMPAIGNS.some(function(mc) {
+      if (mc.type !== 'always-on') return false;
+      var st = game.marketing[mc.id];
+      return st && st.activeUntil && Date.now() < st.activeUntil;
+    });
+    if (!hasMarketing) return { text: 'Activá una campaña de marketing para atraer más miembros', tab: 'marketing' };
+  }
+
+  // 4. Affordable equipment upgrade
+  var upgradeTarget = null;
+  EQUIPMENT.forEach(function(e) {
+    if (upgradeTarget) return;
+    var st = game.equipment[e.id];
+    if (!st || !st.level || st.level >= game.level) return;
+    if (st.upgradingUntil > 0 || st.brokenUntil === -1) return;
+    var cost = getEquipCost(e, st.level);
+    if (game.money >= cost) upgradeTarget = { name: e.name, nextLevel: st.level + 1 };
+  });
+  if (upgradeTarget) return { text: 'Mejorá <strong>' + upgradeTarget.name + '</strong> a Nivel ' + upgradeTarget.nextLevel, tab: 'equipment' };
+
+  // 5. XP close to level-up
+  var xpPct = Math.round((game.xp / game.xpToNext) * 100);
+  if (xpPct >= 65) {
+    var nextLvl = game.level + 1;
+    var unlockTab = typeof TAB_UNLOCK_LEVELS !== 'undefined' ?
+      Object.keys(TAB_UNLOCK_LEVELS).find(function(t) { return TAB_UNLOCK_LEVELS[t] === nextLvl; }) : null;
+    var hint = unlockTab ? ' · desbloquea <strong>' + unlockTab + '</strong>' : '';
+    return { text: '¡Casi Nivel ' + nextLvl + '! (' + xpPct + '% XP)' + hint };
+  }
+
+  // 6. Zone buildable
+  if (game.level >= 5 && typeof GYM_ZONES !== 'undefined') {
+    var nextZone = GYM_ZONES.find(function(z) {
+      return z.id !== 'ground_floor' && !game.zones[z.id] && !game.zoneBuilding[z.id] && game.level >= (z.reqLevel || 1);
+    });
+    if (nextZone) {
+      if (game.money >= nextZone.cost) return { text: 'Construí <strong>' + nextZone.name + '</strong> para expandir capacidad', tab: 'expansion' };
+      if (game.money >= nextZone.cost * 0.4) return { text: 'Ahorrando para <strong>' + nextZone.name + '</strong> — faltan ' + fmtMoney(nextZone.cost - game.money), tab: 'expansion' };
+    }
+  }
+
+  return null;
+}
+
 function updateUI() {
   const income = getIncomePerSecond();
   const salaries = getStaffSalaryPerSecond();
@@ -432,6 +518,9 @@ function updateUI() {
 
   // Tab notifications
   updateTabNotifications();
+
+  // Next goal banner (every 5 seconds to avoid recalc every tick)
+  if (game.tickCount % 5 === 0) renderNextGoal();
 }
 
 // ===== RENDER GYM SCENE (Animated) =====
