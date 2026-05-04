@@ -534,6 +534,28 @@ function updateUI() {
 
   // Next goal banner (every 5 seconds to avoid recalc every tick)
   if (game.tickCount % 5 === 0) renderNextGoal();
+
+  // Missions reset countdown (Fix 15 - live update every tick)
+  var mtimerEl = document.getElementById('missionsResetTimer');
+  if (mtimerEl) {
+    var mnow = new Date();
+    var mtomorrow = new Date(mnow);
+    mtomorrow.setHours(24, 0, 0, 0);
+    var msecsLeft = Math.floor((mtomorrow - mnow) / 1000);
+    mtimerEl.textContent = '⏰ Nuevas misiones en: ' + fmtTime(msecsLeft);
+  }
+}
+
+// Fix 16: Save flash indicator
+var _saveIndicatorTimeout = null;
+function flashSaveIndicator() {
+  var el = document.getElementById('saveIndicator');
+  if (!el) return;
+  el.classList.remove('hidden');
+  if (_saveIndicatorTimeout) clearTimeout(_saveIndicatorTimeout);
+  _saveIndicatorTimeout = setTimeout(function() {
+    el.classList.add('hidden');
+  }, 2000);
 }
 
 // ===== RENDER GYM SCENE (Animated) =====
@@ -607,8 +629,8 @@ function renderGymScene() {
   // --- People layer ---
   var peopleLayer = document.getElementById('gymPeopleLayer');
   if (peopleLayer) {
-    // Show people proportional to members (max 18 visible)
-    var visiblePeople = game.members <= 0 ? 0 : Math.min(Math.floor(game.members / 3) + 2, 18);
+    // Show people proportional to members (max 10 visible, cap walking at 5)
+    var visiblePeople = game.members <= 0 ? 0 : Math.min(Math.floor(game.members / 5) + 2, 10);
 
     // Regenerate seeds only when count changes
     if (_gymScenePeopleSeeds.length !== visiblePeople) {
@@ -617,22 +639,25 @@ function renderGymScene() {
         _gymScenePeopleSeeds.push({
           type: Math.random(),      // walking vs working out
           topPct: 48 + Math.random() * 40,
-          duration: 8 + Math.random() * 14,
+          duration: 10 + Math.random() * 12,
           delay: Math.random() * -20,
           emoji: _randomPersonEmoji()
         });
       }
     }
 
+    var walkCount = 0;
     var peopleHTML = _gymScenePeopleSeeds.map(function(seed, i) {
-      var isWalking = seed.type > 0.4;
+      var wantsWalking = seed.type > 0.4;
+      var isWalking = wantsWalking && walkCount < 5;
       if (isWalking) {
+        walkCount++;
         var dir = i % 2 === 0 ? 'walking-right' : 'walking-left';
         return '<div class="gym-person ' + dir + '" style="top:' + seed.topPct + '%;animation-duration:' + seed.duration + 's;animation-delay:' + seed.delay + 's;">' + seed.emoji + '</div>';
       } else {
-        // Working out near equipment
-        var leftPct = 10 + (i * 7) % 80;
-        return '<div class="gym-person working-out" style="top:' + seed.topPct + '%;left:' + leftPct + '%;animation-delay:' + (seed.delay * 0.3) + 's;">' + seed.emoji + '</div>';
+        // Working out near equipment (lightweight scale animation)
+        var leftPct = 10 + (i * 9) % 80;
+        return '<div class="gym-person working-out" style="top:' + seed.topPct + '%;left:' + leftPct + '%;animation-delay:' + (i * 0.35) + 's;">' + seed.emoji + '</div>';
       }
     }).join('');
 

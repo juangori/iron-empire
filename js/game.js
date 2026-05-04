@@ -2714,6 +2714,7 @@ function saveGame() {
     }
     localStorage.setItem('ironEmpireSave', JSON.stringify(game));
     localStorage.setItem('ironEmpireLastTick', Date.now().toString());
+    if (typeof flashSaveIndicator === 'function') flashSaveIndicator();
   } catch (e) { /* silently fail */ }
   // Also trigger cloud save if logged in (throttled to once every 30s)
   var now = Date.now();

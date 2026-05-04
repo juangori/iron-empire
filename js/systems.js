@@ -245,13 +245,7 @@ function renderDailyMissions() {
       '</div>';
   });
 
-  // Timer until reset
-  const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setHours(24, 0, 0, 0);
-  const secsLeft = Math.floor((tomorrow - now) / 1000);
-
-  html += '<div class="missions-timer">⏰ Nuevas misiones en: ' + fmtTime(secsLeft) + '</div>';
+  html += '<div class="missions-timer" id="missionsResetTimer"></div>';
   html += '</div>';
 
   container.innerHTML = html;
