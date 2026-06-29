@@ -23,6 +23,15 @@ Si te gusta el resultado, aplicá esos números al código real (`data.js` / `ga
 > suplementos y decoración. O sea, el juego real progresa un poco más rápido. Sirve como
 > cota inferior — ideal para detectar fases con neto negativo, paredes de nivel e inflación.
 
+## `sim_equipment.js` — análisis de maquinarias
+```
+node tools/sim_equipment.js
+```
+Tablas de diagnóstico de equipos: eficiencia $/ingreso por tier, "muro de costo" (costo de
+un upgrade a cada nivel), ROI marginal, si conviene maxear al cap, balance miembros-vs-capacidad,
+economía de roturas/reparación, y la config óptima (greedy) por nivel. Útil para ver si algún
+tier quedó muerto o si la curva de costo se autobalancea.
+
 ## `audit_timings.js` — auditoría de cooldowns/tiempos
 ```
 node tools/audit_timings.js

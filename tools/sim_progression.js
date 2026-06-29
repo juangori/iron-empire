@@ -28,7 +28,7 @@ function run(cfg){
   const eqCost=(e,l,mgr)=>Math.ceil(e.baseCost*Math.pow(e.costMult,l)*(mgr?0.8:1));
   const staffMult=S=>{let m=1;for(const s of STAFF){const st=S.staff[s.id];if(st&&s.incomeMult)m+=s.incomeMult*slm(st.level);}return m;};
   const capStaff=S=>{let c=0;for(const s of STAFF){const st=S.staff[s.id];if(st&&s.capacityBonus)c+=s.capacityBonus*slm(st.level);}return c;};
-  const maxMem=S=>{let c=0;for(const z of GYM_ZONES)if(S.zones[z.id])c+=z.capacityBonus;for(const e of EQUIPMENT)c+=e.capacityPerLevel*(S.equipment[e.id]||0);c+=capStaff(S);return Math.min(Math.floor(c),500);};
+  const maxMem=S=>{let c=0;for(const z of GYM_ZONES)if(S.zones[z.id])c+=z.capacityBonus;for(const e of EQUIPMENT)c+=e.capacityPerLevel*(S.equipment[e.id]||0);c+=capStaff(S);return Math.min(Math.floor(c),2500);};
   const mem=S=>{let b=0;for(const e of EQUIPMENT)b+=e.membersPerLevel*(S.equipment[e.id]||0);return Math.min(b,maxMem(S));};
   const stars=S=>{const v=S.totalEarned/cfg.starDiv; if(S.totalEarned<cfg.starDiv)return 0; return Math.min(cfg.starCap, Math.floor(Math.sqrt(v)));};
   const inc=S=>{let base=0;for(const e of EQUIPMENT)base+=e.incomePerLevel*(S.equipment[e.id]||0);

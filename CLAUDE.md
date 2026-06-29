@@ -104,7 +104,8 @@ CNAME               - Custom domain config
 - XP curve: `100 * 1.40^(level-1)`. Repeatable XP scales with level to avoid a mid/late wall: classes use `levelScale = 1+0.2*(level-1)`; competitions (normal + champion, win + loss) use `1+0.15*(level-1)`; missions `1+0.2*(level-1)`.
 - Operating costs (per game day = 600s): CONTINUOUS rent ramp, no cliff. `level<=5 → level*800`; `level>5 → 5*800 + (level-5)*rentPerLevel` (rentPerLevel=2000). Plus extra-zone rent + utilities (`60/equip level/day`). Neighborhood rentMult applies (Palermo=1.0). `baseRent` constant is legacy/unused.
 - Property purchase ($8M, lvl 18) eliminates rent
-- Equipment level capped at player level
+- Equipment level capped at player level. Cost curve (costMult 1.85→2.5) is intentionally steep — players buy breadth (all tiers at low-mid level) and the income-per-$ equilibrium self-balances; not meant to be maxed to the level cap.
+- Member count is driven by CAPACITY (equipment capacityPerLevel + zones + staff + supplements), not by attraction (membersPerLevel is an intentional surplus that keeps you full). Palermo's `maxMembersCap` raised 500→2500 so capacity is the real driver and the member income bonus can reach its ×3 ceiling (≈1000 members). The old 500 cap was vestigial from the multi-branch design.
 - Equipment baseCost scales exponentially by tier: $50 (dumbbells) → $200 → $600 → $1.5K → $4K → $10K → $25K → $75K → $180K → $450K → $1.2M → $3.5M (spa). costMult also increases for higher tiers (1.85→2.5).
 - Event outcome scaling (game.js `evMoney`/`evRep`/`evXp`/`evMembers`): money gains = seconds-of-income (tiers ~40/110/280s, floored); money COSTS = same but capped at 12/25/45% of current cash (never bankrupts); rep ~12/28/55 ×(1+0.22·(lvl-1)); xp ~35/90/190 ×(1+0.18·(lvl-1)); members = 4/9/18% of cap (floored). Stays meaningful early AND late.
 - Competition cooldowns (compressed for daily engagement): 10m / 20m / 40m / 1.5h / 3h / 6h (local→world). Competition XP (normal+champion, win+loss) scales ×(1+0.15·(lvl-1)).
@@ -172,7 +173,7 @@ CNAME               - Custom domain config
 ## Cache Busting
 - Script tags in index.html use `?v=XX` query string (e.g. `js/game.js?v=24`)
 - Increment the version number on every deploy that changes JS/CSS so browsers don't serve stale files
-- Current version: **v=37**
+- Current version: **v=38**
 - Update all 5 script tags together (data, game, ui, systems, auth)
 
 ## Planned Improvements (by priority)

@@ -4,7 +4,7 @@ const STAFF_MAX_LEVEL = 5;
 const STAFF_EXTRA_UNLOCK = { 2: 12, 3: 20 }; // 2nd copy at player level 12, 3rd at 20
 
 const EQUIPMENT = [
-  { id: 'dumbbells', name: 'Mancuernas', icon: '🏋️', desc: 'El básico de todo gym. Atraen principiantes.', baseCost: 50, costMult: 1.85, incomePerLevel: 0.4, membersPerLevel: 2, capacityPerLevel: 0, reqLevel: 1 },
+  { id: 'dumbbells', name: 'Mancuernas', icon: '🏋️', desc: 'El básico de todo gym. Atraen principiantes.', baseCost: 50, costMult: 1.85, incomePerLevel: 0.4, membersPerLevel: 2, capacityPerLevel: 2, reqLevel: 1 },
   { id: 'bench', name: 'Banco Plano', icon: '🏋️‍♀️', desc: 'Press de banca, el rey de los ejercicios.', baseCost: 200, costMult: 1.9, incomePerLevel: 1.0, membersPerLevel: 3, capacityPerLevel: 2, reqLevel: 1 },
   { id: 'squat_rack', name: 'Squat Rack', icon: '🔱', desc: 'Para los que no saltean leg day.', baseCost: 600, costMult: 1.95, incomePerLevel: 2.0, membersPerLevel: 4, capacityPerLevel: 3, reqLevel: 2 },
   { id: 'treadmill', name: 'Cinta de Correr', icon: '🏃‍♂️', desc: 'Cardio warriors love this.', baseCost: 1500, costMult: 1.95, incomePerLevel: 2.6, membersPerLevel: 5, capacityPerLevel: 3, reqLevel: 3 },
@@ -554,7 +554,7 @@ const GYM_ZONES = [
 
 // ===== NEIGHBORHOODS (City Map) =====
 const NEIGHBORHOODS = [
-  { id: 'palermo',    name: 'Palermo',    icon: '🌳', desc: 'Zona trendy con alta demanda fitness',          unlockCost: 0,       reqLevel: 1,  rentMult: 1.0, memberMult: 1.0, vipChanceMult: 1.0, maxMembersCap: 500 },
+  { id: 'palermo',    name: 'Palermo',    icon: '🌳', desc: 'Zona trendy con alta demanda fitness',          unlockCost: 0,       reqLevel: 1,  rentMult: 1.0, memberMult: 1.0, vipChanceMult: 1.0, maxMembersCap: 2500 },
   { id: 'la_boca',    name: 'La Boca',    icon: '⚽', desc: 'Zona popular, todo cuesta menos pero gana menos', unlockCost: 500000,  reqLevel: 3,  rentMult: 0.6, memberMult: 1.3, vipChanceMult: 0.5, maxMembersCap: 700 },
   { id: 'caballito',  name: 'Caballito',  icon: '🏙️', desc: 'Centro geográfico, alquiler accesible',          unlockCost: 800000,  reqLevel: 5,  rentMult: 0.8, memberMult: 1.1, vipChanceMult: 0.8, maxMembersCap: 550 },
   { id: 'belgrano',   name: 'Belgrano',   icon: '🏘️', desc: 'Zona familiar, crecimiento estable',             unlockCost: 1500000, reqLevel: 8,  rentMult: 1.3, memberMult: 1.2, vipChanceMult: 1.0, maxMembersCap: 600 },
