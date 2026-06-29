@@ -54,9 +54,9 @@ const ACHIEVEMENTS = [
   { id: 'level_5', name: 'Nivel 5', icon: '📈', desc: 'Llegá al nivel 5', check: () => game.level >= 5 },
   { id: 'level_10', name: 'Nivel 10', icon: '🚀', desc: 'Llegá al nivel 10', check: () => game.level >= 10 },
   { id: 'level_20', name: 'Nivel 20', icon: '🏔️', desc: 'Llegá al nivel 20', check: () => game.level >= 20 },
-  { id: 'first_prestige', name: 'Primera Sucursal', icon: '🏙️', desc: 'Abrí tu segunda sucursal', check: () => Object.keys(game.branches).length >= 2 },
-  { id: 'three_branches', name: 'Cadena', icon: '🏢', desc: 'Tené 3 sucursales activas', check: () => Object.keys(game.branches).length >= 3 },
-  { id: 'all_neighborhoods', name: 'Rey de Buenos Aires', icon: '👑', desc: 'Tené un gym en cada barrio', check: () => Object.keys(game.branches).length >= 6 },
+  { id: 'first_prestige', name: 'Primera Sucursal', icon: '🏙️', desc: 'Abrí tu segunda sucursal', check: () => getTotalGymCount() >= 2 },
+  { id: 'three_branches', name: 'Cadena', icon: '🏢', desc: 'Tené 3 gyms en tu imperio', check: () => getTotalGymCount() >= 3 },
+  { id: 'all_neighborhoods', name: 'Rey de Buenos Aires', icon: '👑', desc: 'Tené un gym en cada barrio', check: () => getTotalGymCount() >= 6 },
   { id: 'rep_100', name: 'Conocido', icon: '📣', desc: 'Llegá a 100 de reputación', check: () => game.reputation >= 100 },
   { id: 'rep_1000', name: 'Famoso', icon: '🌟', desc: 'Llegá a 1000 de reputación', check: () => game.reputation >= 1000 },
   { id: 'first_class', name: 'Profe', icon: '🧘', desc: 'Dictá tu primera clase', check: () => game.stats.classesCompleted >= 1 },
@@ -758,8 +758,8 @@ const PLAYER_TITLES = [
   { id: 'entrenador', name: 'Entrenador', icon: '💪', desc: 'Nivel 10', check: () => game.level >= 10 },
   { id: 'empresario', name: 'Empresario', icon: '🏢', desc: 'Ganá $500K total', check: () => game.totalMoneyEarned >= 500000 },
   { id: 'magnate', name: 'Magnate', icon: '👑', desc: 'Ganá $5M total', check: () => game.totalMoneyEarned >= 5000000 },
-  { id: 'franquiciado', name: 'Franquiciado', icon: '🏙️', desc: 'Abrí 2 sucursales', check: () => Object.keys(game.branches).length >= 2 },
-  { id: 'franquicia_estrella', name: 'Magnate', icon: '👑', desc: 'Abrí 4 sucursales', check: () => Object.keys(game.branches).length >= 4 },
+  { id: 'franquiciado', name: 'Franquiciado', icon: '🏙️', desc: 'Tené 2 gyms en tu imperio', check: () => getTotalGymCount() >= 2 },
+  { id: 'franquicia_estrella', name: 'Magnate', icon: '👑', desc: 'Tené 4 gyms en tu imperio', check: () => getTotalGymCount() >= 4 },
   { id: 'campeon_invicto', name: 'Campeón Invicto', icon: '🏆', desc: '20 champion wins', check: () => game.stats.championWins >= 20 },
   { id: 'completista', name: 'Completista', icon: '🎖️', desc: '40 achievements', check: () => Object.values(game.achievements).filter(Boolean).length >= 40 },
   { id: 'perfeccionista', name: 'Perfeccionista', icon: '💎', desc: 'Todos los achievements', check: () => Object.values(game.achievements).filter(Boolean).length >= ACHIEVEMENTS.length },
@@ -948,13 +948,13 @@ const TAB_WALKTHROUGHS = {
   },
   prestige: {
     icon: '🏙️', title: 'Ciudad / Franquicia', wiki: 'prestige',
-    intro: 'Desde acá podés abrir nuevas sucursales en distintos barrios de Buenos Aires. ¡Tu imperio crece sin perder nada!',
+    intro: 'Acá expandís tu imperio abriendo sucursales en otros barrios de Buenos Aires. Cada una genera plata sola, sin que la gestiones.',
     tips: [
-      '🏙️ Abrí nuevas sucursales en distintos barrios — cada uno tiene multiplicadores únicos de alquiler, miembros y VIPs.',
-      '💰 Tus gyms viejos siguen generando ingresos pasivos (50% de la tasa activa) mientras gestionás otro.',
-      '⭐ Las estrellas de franquicia se calculan por los ingresos TOTALES de todo tu imperio — nunca bajan.',
-      '📍 Cambiá entre sucursales desde el mapa o tocando el indicador de barrio en el header.',
-      '🏆 El leaderboard global muestra el ranking por ingresos totales del imperio.',
+      '🏙️ Tu gimnasio principal es el que gestionás en las demás pestañas. Las sucursales son ingreso 100% pasivo.',
+      '💵 Cada sucursal cae directo en tu billetera, en todo momento (online y offline). No tiene roturas ni costos.',
+      '⬆️ Ampliá una sucursal para que rinda más. Cuanto más cara la zona, más genera.',
+      '⭐ Las estrellas de franquicia suben con la plata TOTAL ganada por tu imperio — nunca bajan, y dan +25% ingresos c/u.',
+      '🏆 El leaderboard global rankea por plata total ganada.',
     ],
   },
 };
@@ -1194,20 +1194,20 @@ const WIKI_CONTENT = [
   },
   {
     id: 'prestige', icon: '🏙️', title: 'Ciudad / Franquicia',
-    content: '<p>El sistema de franquicia te permite abrir múltiples sucursales en distintos barrios de Buenos Aires. ¡Nunca perdés nada!</p>' +
+    content: '<p>La franquicia te deja expandir tu imperio abriendo sucursales en otros barrios de Buenos Aires. Gestionás UN solo gimnasio; las sucursales son ingreso 100% pasivo.</p>' +
       '<p><strong>🏙️ Cómo funciona:</strong></p>' +
-      '<ul><li>Desde la pestaña "Ciudad" ves el mapa con 6 barrios de Buenos Aires.</li>' +
-      '<li>Cada barrio tiene multiplicadores únicos: alquiler, miembros, chance de VIP, y cap de miembros.</li>' +
-      '<li>Abrí una sucursal nueva pagando el costo del barrio. Tu gym anterior sigue funcionando.</li>' +
-      '<li>Cambiá entre sucursales desde el mapa para gestionarlas.</li></ul>' +
-      '<p><strong>💰 Ingresos pasivos:</strong></p>' +
-      '<ul><li>Las sucursales que no estás gestionando generan el 50% de sus ingresos automáticamente.</li>' +
-      '<li>No hay eventos negativos (roturas, enfermedades) en gyms inactivos.</li></ul>' +
+      '<ul><li>Tu <strong>gimnasio principal</strong> es el que manejás en todas las demás pestañas (equipos, staff, clases, etc.).</li>' +
+      '<li>Desde "Ciudad" abrís <strong>sucursales</strong> pagando el costo del barrio. No se gestionan: generan plata sola.</li>' +
+      '<li>Barrios más caros y de mayor nivel rinden más ingreso pasivo.</li></ul>' +
+      '<p><strong>💵 Ingreso pasivo:</strong></p>' +
+      '<ul><li>Cada sucursal vuelca su ingreso directo en tu billetera, online y offline.</li>' +
+      '<li>No tienen roturas, enfermedades ni costos — son ganancia limpia.</li>' +
+      '<li>Tocá <strong>Ampliar</strong> en una sucursal para invertir y subir su ingreso (+25% por nivel).</li></ul>' +
       '<p><strong>⭐ Estrellas de franquicia:</strong></p>' +
-      '<ul><li>Se calculan por la plata total ganada en TODO el imperio.</li>' +
-      '<li>Cada estrella da +25% de multiplicador de ingresos permanente.</li>' +
+      '<ul><li>Se calculan por la plata total ganada en TODO el imperio (incluye el pasivo).</li>' +
+      '<li>Cada estrella da +25% de multiplicador de ingresos permanente — afecta a todos tus gyms.</li>' +
       '<li>Las estrellas nunca bajan — solo crecen.</li></ul>' +
-      '<div class="wiki-tip-box">Elegí barrios estratégicamente. La Boca tiene alquiler bajo pero cap de VIPs limitado. Recoleta tiene alquiler caro pero muchos VIPs premium.</div>',
+      '<div class="wiki-tip-box">No conviene apurarse: una sucursal cara rinde mucho, pero primero hacé crecer tu gym principal, que es el que multiplica todo con las estrellas.</div>',
   },
   {
     id: 'economy', icon: '💰', title: 'Economía & Balance',

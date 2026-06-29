@@ -12,7 +12,7 @@ let game = {
   xpToNext: 100,
   prestigeStars: 0,
   branches: {},
-  activeBranch: null,
+  mainNeighborhoodId: 'palermo',
   branchCount: 0,
   equipment: {},
   staff: {},
@@ -143,61 +143,18 @@ let game = {
   }
 };
 
-// ===== BRANCH SYSTEM =====
-// money is intentionally NOT per-branch — it's global (owner's wallet)
-const BRANCH_PROPERTIES = [
-  'gymName', 'totalMoneyEarned', 'members', 'maxMembers', 'reputation',
-  'level', 'xp', 'xpToNext', 'equipment', 'staff', 'competitions',
-  'classes', 'instructors', 'marketing', 'supplements', 'rivals',
-  'zones', 'zoneBuilding', 'ownProperty', 'vipMembers', 'lastVipTime',
-  'nextVipIn', 'lastEventTime', 'nextEventIn', 'log', 'tickCount',
-  'dailyTracking', 'decoration'
-];
+// ===== BRANCH SYSTEM (passive franchise — idle model) =====
+// You actively manage ONE gym (game.* directly), located in game.mainNeighborhoodId.
+// Other branches are lightweight PASSIVE income nodes — no switching, no per-branch level.
+// game.branches = { branch_1: { id, neighborhoodId, name, level, openedAt } }
 
-function extractBranchData(neighborhoodId) {
-  var data = {};
-  BRANCH_PROPERTIES.forEach(function(key) {
-    var val = game[key];
-    if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
-      data[key] = JSON.parse(JSON.stringify(val));
-    } else if (Array.isArray(val)) {
-      data[key] = JSON.parse(JSON.stringify(val));
-    } else {
-      data[key] = val;
-    }
-  });
-  // Preserve neighborhoodId: use explicit param > existing branch data > fallback
-  if (neighborhoodId) {
-    data.neighborhoodId = neighborhoodId;
-  } else if (game.activeBranch && game.branches[game.activeBranch] && game.branches[game.activeBranch].neighborhoodId) {
-    data.neighborhoodId = game.branches[game.activeBranch].neighborhoodId;
-  }
-  return data;
-}
+// Tuning (easy to balance)
+var BRANCH_INCOME_PAYBACK = 1500; // a level-1 branch returns its unlock cost in ~this many seconds
+var BRANCH_LEVEL_STEP = 0.25;     // each "Ampliar" level adds +25% passive income
+var BRANCH_UPGRADE_BASE = 0.5;    // upgrade cost = unlockCost * BRANCH_UPGRADE_BASE * currentLevel
 
-function applyBranchToGame(branchData) {
-  BRANCH_PROPERTIES.forEach(function(key) {
-    if (branchData.hasOwnProperty(key)) {
-      game[key] = branchData[key];
-    }
-  });
-}
-
-function switchBranch(branchId) {
-  if (branchId === game.activeBranch) return;
-  if (!game.branches[branchId]) return;
-  // Save current branch (preserve its neighborhoodId)
-  if (game.activeBranch && game.branches[game.activeBranch]) {
-    var oldHood = game.branches[game.activeBranch].neighborhoodId;
-    game.branches[game.activeBranch] = extractBranchData(oldHood);
-  }
-  // Load target branch
-  applyBranchToGame(game.branches[branchId]);
-  game.activeBranch = branchId;
-  var hood = getNeighborhoodForBranch(branchId);
-  showToast('📍', '¡Cambiaste a ' + (hood ? hood.name : 'sucursal') + '!');
-  renderAll();
-  updateUI();
+function branchIncomeBasis(hood) {
+  return (hood && hood.unlockCost) ? hood.unlockCost : 250000;
 }
 
 function getNeighborhoodForBranch(branchId) {
@@ -207,83 +164,79 @@ function getNeighborhoodForBranch(branchId) {
 }
 
 function getActiveNeighborhood() {
-  if (!game.activeBranch || !game.branches[game.activeBranch]) return NEIGHBORHOODS[0];
-  var nId = game.branches[game.activeBranch].neighborhoodId;
+  var nId = game.mainNeighborhoodId || 'palermo';
   return NEIGHBORHOODS.find(function(n) { return n.id === nId; }) || NEIGHBORHOODS[0];
+}
+
+function getTotalGymCount() {
+  return 1 + Object.keys(game.branches || {}).length;
 }
 
 function getBranchPassiveIncome(branchId) {
   var branch = game.branches[branchId];
   if (!branch) return 0;
-  var base = 0;
-  var eqLevels = 0;
-  EQUIPMENT.forEach(function(eq) {
-    var lvl = branch.equipment[eq.id]?.level || 0;
-    base += eq.incomePerLevel * lvl;
-    eqLevels += lvl;
-  });
-  var zoneIncome = 0;
-  GYM_ZONES.forEach(function(z) {
-    if (branch.zones && branch.zones[z.id]) zoneIncome += z.incomeBonus;
-  });
-  var prestigeMult = 1 + (game.prestigeStars * 0.25);
-  var grossPerSec = (base + zoneIncome) * prestigeMult * 0.5; // 50% of active rate
-
-  // Deduct rent + utilities (no staff costs for inactive branches)
-  // 1 game day = 600 ticks/seconds
   var hood = NEIGHBORHOODS.find(function(n) { return n.id === branch.neighborhoodId; }) || NEIGHBORHOODS[0];
-  var rentPerDay = branch.ownProperty ? 0 : Math.max(0, OPERATING_COSTS.baseRent * hood.rentMult);
-  var utilitiesPerDay = eqLevels * OPERATING_COSTS.utilitiesPerEquipLevel;
-  var costPerSec = (rentPerDay + utilitiesPerDay) / 600;
+  var level = branch.level || 1;
+  var franchiseMult = 1 + (game.prestigeStars * 0.25);
+  var perSec = (branchIncomeBasis(hood) / BRANCH_INCOME_PAYBACK) * (1 + (level - 1) * BRANCH_LEVEL_STEP) * franchiseMult;
+  return Math.max(0, perSec);
+}
 
-  return Math.max(0, grossPerSec - costPerSec);
+function getBranchUpgradeCost(branchId) {
+  var branch = game.branches[branchId];
+  if (!branch) return 0;
+  var hood = NEIGHBORHOODS.find(function(n) { return n.id === branch.neighborhoodId; }) || NEIGHBORHOODS[0];
+  var level = branch.level || 1;
+  return Math.ceil(branchIncomeBasis(hood) * BRANCH_UPGRADE_BASE * level);
 }
 
 function getTotalEmpireIncomePerSecond() {
-  var total = getIncomePerSecond(); // active branch full income
-  Object.keys(game.branches).forEach(function(id) {
-    if (id === game.activeBranch) return;
+  var total = getIncomePerSecond(); // active main gym income
+  Object.keys(game.branches || {}).forEach(function(id) {
     total += getBranchPassiveIncome(id);
   });
   return total;
 }
 
-function getDefaultBranchState() {
-  return {
-    gymName: 'Mi Gimnasio',
-    money: 0,
-    totalMoneyEarned: 0,
-    members: 0,
-    maxMembers: 10,
-    reputation: 0,
-    level: 1,
-    xp: 0,
-    xpToNext: 100,
-    equipment: {},
-    staff: {},
-    competitions: {},
-    classes: {},
-    instructors: {},
-    marketing: {},
-    supplements: {},
-    rivals: {},
-    zones: { ground_floor: true },
-    zoneBuilding: {},
-    ownProperty: false,
-    vipMembers: [],
-    lastVipTime: 0,
-    nextVipIn: 300,
-    lastEventTime: 0,
-    nextEventIn: 180,
-    log: [],
-    tickCount: 0,
-    dailyTracking: {
-      moneyEarned: 0, equipmentBought: 0, competitionsWon: 0,
-      reputationGained: 0, classesRun: 0, campaignsLaunched: 0,
-      xpEarned: 0, eventsHandled: 0, supplementsBought: 0,
-    },
-    decoration: { theme: 'classic', unlockedThemes: ['classic'], items: {} }
-  };
+function migrateBranchesToPassive() {
+  // Convert the old "active branch swap" save into the passive franchise model.
+  var oldBranches = game.branches || {};
+  var activeId = game.activeBranch;
+  // The main gym keeps the neighborhood of whatever branch was active when saved
+  if (activeId && oldBranches[activeId] && oldBranches[activeId].neighborhoodId) {
+    game.mainNeighborhoodId = oldBranches[activeId].neighborhoodId;
+  } else {
+    game.mainNeighborhoodId = game.mainNeighborhoodId || 'palermo';
+  }
+  var newBranches = {};
+  Object.keys(oldBranches).forEach(function(id) {
+    if (id === activeId) return;
+    var b = oldBranches[id];
+    if (!b || !b.neighborhoodId) return;
+    // Derive an investment level from how developed the old branch was
+    var eqLevels = 0;
+    if (b.equipment) Object.keys(b.equipment).forEach(function(k) { eqLevels += (b.equipment[k] && b.equipment[k].level) || 0; });
+    var lvl = Math.max(1, Math.min(10, Math.round(eqLevels / 5)));
+    newBranches[id] = { id: id, neighborhoodId: b.neighborhoodId, name: b.gymName || 'Sucursal', level: lvl, openedAt: 0 };
+  });
+  game.branches = newBranches;
+  delete game.activeBranch;
+}
+
+// Run after EVERY load (localStorage or cloud) so old saves migrate and new fields exist. Idempotent.
+function normalizeBranchesOnLoad() {
+  if (game.activeBranch) {
+    // Pool any leftover per-branch money into the global wallet first
+    Object.keys(game.branches || {}).forEach(function(id) {
+      if (id !== game.activeBranch && game.branches[id] && game.branches[id].money > 0) {
+        game.money = (game.money || 0) + game.branches[id].money;
+      }
+    });
+    migrateBranchesToPassive();
+  }
+  if (!game.mainNeighborhoodId) game.mainNeighborhoodId = 'palermo';
+  if (!game.branches) game.branches = {};
+  if (!game.branchCount) game.branchCount = Object.keys(game.branches).length + 1;
 }
 
 // ===== UTILITY FUNCTIONS =====
@@ -1991,19 +1944,10 @@ function equipChampion(eqId) {
 
 // ===== PRESTIGE =====
 function getPrestigeStars() {
-  // Sum totalMoneyEarned across ALL branches
-  var totalEarned = 0;
-  if (game.branches && Object.keys(game.branches).length > 0) {
-    // Sync active branch first
-    if (game.activeBranch && game.branches[game.activeBranch]) {
-      game.branches[game.activeBranch].totalMoneyEarned = game.totalMoneyEarned;
-    }
-    Object.values(game.branches).forEach(function(b) { totalEarned += (b.totalMoneyEarned || 0); });
-  } else {
-    totalEarned = game.totalMoneyEarned;
-  }
-  if (totalEarned < 2000000) return 0;
-  return Math.floor(Math.sqrt(totalEarned / 2000000));
+  // Franchise stars scale with total money earned across the whole empire.
+  // Passive branch income now flows into game.totalMoneyEarned, so this is already global.
+  if (game.totalMoneyEarned < 2000000) return 0;
+  return Math.floor(Math.sqrt(game.totalMoneyEarned / 2000000));
 }
 
 function doPrestige() {
@@ -2243,16 +2187,14 @@ function gameTick() {
     checkMissionProgress();
   }
 
-  // Passive income for inactive branches flows directly to owner's wallet
+  // Passive income from franchise branches flows directly to the owner's wallet
   if (game.tickCount % 10 === 0 && game.branches) {
     Object.keys(game.branches).forEach(function(id) {
-      if (id === game.activeBranch) return;
       var passiveIncome = getBranchPassiveIncome(id);
       if (passiveIncome > 0) {
         var earned = passiveIncome * 10;
         game.money += earned;
-        // Track earnings per-branch for franchise stars, but NOT in active branch's totalMoneyEarned
-        game.branches[id].totalMoneyEarned = (game.branches[id].totalMoneyEarned || 0) + earned;
+        game.totalMoneyEarned += earned;
       }
     });
   }
@@ -2589,12 +2531,11 @@ function calculateOfflineProgress(elapsedSeconds) {
   report.inactiveBranchIncome = 0;
   if (game.branches) {
     Object.keys(game.branches).forEach(function(id) {
-      if (id === game.activeBranch) return;
       var passiveIncome = getBranchPassiveIncome(id);
       var passiveMoney = Math.max(0, passiveIncome * capped * OFFLINE_INCOME_RATE);
       if (passiveMoney > 0) {
         game.money += passiveMoney;
-        game.branches[id].totalMoneyEarned = (game.branches[id].totalMoneyEarned || 0) + passiveMoney;
+        game.totalMoneyEarned += passiveMoney;
         report.inactiveBranchIncome += passiveMoney;
       }
     });
@@ -2721,11 +2662,6 @@ function closeOfflineReport() {
 var _lastCloudSaveTime = 0;
 function saveGame() {
   try {
-    // Sync active branch data before saving (preserve neighborhoodId)
-    if (game.activeBranch && game.branches[game.activeBranch]) {
-      var activeHood = game.branches[game.activeBranch].neighborhoodId;
-      game.branches[game.activeBranch] = extractBranchData(activeHood);
-    }
     localStorage.setItem('ironEmpireSave', JSON.stringify(game));
     localStorage.setItem('ironEmpireLastTick', Date.now().toString());
     if (typeof flashSaveIndicator === 'function') flashSaveIndicator();
@@ -2745,23 +2681,8 @@ function loadGame() {
       const data = JSON.parse(saved);
       // Deep merge preserving new default properties
       game = deepMerge(game, data);
-      // Migration: old save without branches
-      if (!game.activeBranch) {
-        game.activeBranch = 'branch_0';
-        game.branchCount = 1;
-        game.branches = {};
-        game.branches.branch_0 = extractBranchData();
-        game.branches.branch_0.neighborhoodId = 'palermo';
-      }
-      // Migration: money is now global — pool inactive branch money to owner's wallet
-      if (game.branches) {
-        Object.keys(game.branches).forEach(function(id) {
-          if (id !== game.activeBranch && game.branches[id].money > 0) {
-            game.money = (game.money || 0) + game.branches[id].money;
-            game.branches[id].money = 0;
-          }
-        });
-      }
+      // Migrate old "active branch swap" saves → passive franchise model + ensure new fields
+      normalizeBranchesOnLoad();
       return true;
     }
   } catch (e) { /* silently fail */ }
@@ -2855,7 +2776,6 @@ function renderAll() {
   renderProfile();
   renderLog();
   renderGymScene();
-  if (typeof renderBranchVisitingBanner === 'function') renderBranchVisitingBanner();
   updateUI();
   updateTabNotifications();
   updateTabVisibility(false);
@@ -2868,14 +2788,10 @@ function startGame() {
   game.gymName = name;
   game.started = true;
 
-  // Initialize branch system for new games
-  if (!game.activeBranch) {
-    game.activeBranch = 'branch_0';
-    game.branchCount = 1;
-    game.branches = {};
-    game.branches.branch_0 = extractBranchData();
-    game.branches.branch_0.neighborhoodId = 'palermo';
-  }
+  // Initialize franchise system for new games
+  if (!game.mainNeighborhoodId) game.mainNeighborhoodId = 'palermo';
+  if (!game.branches) game.branches = {};
+  if (!game.branchCount) game.branchCount = 1;
 
   document.getElementById('nameModal').classList.add('hidden');
 

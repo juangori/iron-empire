@@ -477,17 +477,8 @@ async function saveCloudSave() {
       prestigeStars: game.prestigeStars,
     });
 
-    // Sync leaderboard
-    // Empire total money earned (across all branches)
-    var empireTotalEarned = 0;
-    if (game.branches && Object.keys(game.branches).length > 0) {
-      if (game.activeBranch && game.branches[game.activeBranch]) {
-        game.branches[game.activeBranch].totalMoneyEarned = game.totalMoneyEarned;
-      }
-      Object.values(game.branches).forEach(function(b) { empireTotalEarned += (b.totalMoneyEarned || 0); });
-    } else {
-      empireTotalEarned = game.totalMoneyEarned;
-    }
+    // Sync leaderboard — totalMoneyEarned is global (includes passive franchise income)
+    var empireTotalEarned = game.totalMoneyEarned;
     await db.collection('leaderboard').doc(currentUser.uid).set({
       username: currentUser.displayName || 'Anónimo',
       gymName: game.gymName,
@@ -510,6 +501,8 @@ async function loadCloudSave() {
     if (doc.exists && doc.data().gameData) {
       const data = JSON.parse(doc.data().gameData);
       game = deepMerge(game, data);
+      // Migrate old "active branch swap" cloud saves → passive franchise model
+      if (typeof normalizeBranchesOnLoad === 'function') normalizeBranchesOnLoad();
       return true;
     }
   } catch (err) {
@@ -552,12 +545,7 @@ async function fetchLeaderboard(forceRefresh) {
 
 async function fetchMyRank() {
   if (!currentUser) return null;
-  var empireTotalEarned = 0;
-  if (game.branches && Object.keys(game.branches).length > 0) {
-    Object.values(game.branches).forEach(function(b) { empireTotalEarned += (b.totalMoneyEarned || 0); });
-  } else {
-    empireTotalEarned = game.totalMoneyEarned;
-  }
+  var empireTotalEarned = game.totalMoneyEarned;
   if (!empireTotalEarned) return null;
 
   try {

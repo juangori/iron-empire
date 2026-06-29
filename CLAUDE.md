@@ -22,7 +22,7 @@ js/data.js          - Game data: equipment, staff, competitions, achievements, c
                       VIP members, supplements, rivals, champion, TAB_WALKTHROUGHS, WIKI_CONTENT, player titles, gym decoration
 js/game.js          - Core engine: game state, save/load, tick loop, game actions, utility functions,
                       skill/zone calculations, chaos mechanics, construction timers, champion logic,
-                      branch system (BRANCH_PROPERTIES, extract/apply/switch), franchise stars,
+                      branch system (passive franchise: getBranchPassiveIncome/getBranchUpgradeCost/migrateBranchesToPassive), franchise stars,
                       offline progression (calculateOfflineProgress + showOfflineReport)
 js/ui.js            - UI rendering: equipment, staff, competitions, achievements, log, updateUI
 js/systems.js       - Engagement: daily bonus, daily missions, random events, tutorial, tab walkthroughs,
@@ -42,14 +42,15 @@ CNAME               - Custom domain config
 - All rendering functions follow pattern: `renderXxx()` reads from `game` state and writes innerHTML
 - Save system: auto-save every 30 ticks to localStorage, cloud save every 60 ticks to Firestore
 - Offline progression: `calculateOfflineProgress()` in game.js, capped at 8 hours. Calculates net income (income - salaries - op costs), completes all timers (equipment upgrades/repairs, zones, staff training, classes, champion training), processes marketing campaigns (always-on costs + members + rep, burst completion), passive rep from members, auto-members from staff, champion fatigue recovery. Shows `showOfflineReport()` modal with full breakdown on return.
-- **Branch system**: Multi-gym franchise replaces old destructive prestige. Uses "Active Branch Swap" pattern: `game.equipment = game.branches[id].equipment` via JS object references. All existing functions work unchanged — they read from `game.*` which points to the active branch's data. `BRANCH_PROPERTIES` defines which fields are per-branch. `extractBranchData()` / `applyBranchToGame()` / `switchBranch()` manage state swaps. Old saves auto-migrate on load.
-- Branch state: `game.branches = { branch_0: { ...branchProps, neighborhoodId } }`, `game.activeBranch = 'branch_0'`
-- Skills, champion, achievements, stats persist globally (not per-branch)
-- Equipment state: `{ level, brokenUntil, upgradingUntil }` — tracks breakdown and construction (per-branch)
-- Staff state: `{ hired, level, trainingUntil, sickUntil, extras: [] }` — tracks training and illness (per-branch)
-- Zone building state: `game.zoneBuilding = { zoneId: timestamp }` (per-branch)
-- Champion state: `game.champion = { recruited, name, stats, level, xp, fatigue, equipment, trainingUntil, trainingStat, wins, losses }` — global, persists across branches. No SVG, no energy system. Uses fatigue (not energy).
-- Instructor state: `game.instructors[classId] = { hired, level }` — one per class, per-branch
+- **Branch system (idle/passive franchise)**: You actively manage ONE gym — the entire `game.*` state IS that gym (no swapping). It lives in `game.mainNeighborhoodId` (default `'palermo'`). Additional branches are lightweight PASSIVE income nodes: `game.branches[id] = { id, neighborhoodId, name, level, openedAt }`. No per-branch level/equipment/staff, no switching. Each branch's passive income = `branchIncomeBasis(hood)/BRANCH_INCOME_PAYBACK × (1 + (level-1)×BRANCH_LEVEL_STEP) × franchiseMult` and flows straight into `game.money` + `game.totalMoneyEarned` (online tick every 10s + offline). `upgradeBranch()` ("Ampliar") raises a branch's level. `migrateBranchesToPassive()` converts old "active-swap" saves (full-state branches) into lightweight nodes on load, deriving level from old equipment.
+- Tuning constants in game.js: `BRANCH_INCOME_PAYBACK=1500`, `BRANCH_LEVEL_STEP=0.25`, `BRANCH_UPGRADE_BASE=0.5`. `getTotalGymCount()` = 1 (main) + passive branches.
+- Neighborhoods differ by `unlockCost`/`reqLevel`/flavor only; pricier zone = more passive income. Their old per-stat multipliers (rentMult/memberMult/vipChanceMult/maxMembersCap) still apply ONLY to the main gym via `getActiveNeighborhood()` (Palermo = neutral).
+- Skills, champion, achievements, stats, money, level/XP all persist globally on the single managed gym.
+- Equipment state: `{ level, brokenUntil, upgradingUntil }` — tracks breakdown and construction
+- Staff state: `{ hired, level, trainingUntil, sickUntil, extras: [] }` — tracks training and illness
+- Zone building state: `game.zoneBuilding = { zoneId: timestamp }`
+- Champion state: `game.champion = { recruited, name, stats, level, xp, fatigue, equipment, trainingUntil, trainingStat, wins, losses }` — global. No SVG, no energy system. Uses fatigue (not energy).
+- Instructor state: `game.instructors[classId] = { hired, level }` — one per class
 - Tab tracking: `game.tabLastVisited = { tabId: timestamp }` for reminders; `game.tabsSeen = { tabId: true }` for first-visit walkthroughs
 
 ## Auth Flow
@@ -71,7 +72,7 @@ CNAME               - Custom domain config
 2. **Staff** (8 types) - Hire + train levels. Passive bonuses. Can get sick randomly. Multiple copies via extras.
 3. **Competitions** (6 tiers) - Unified in champion tab. Normal competitions before recruiting, 2x rewards with champion. Shared cooldowns.
 4. **Achievements** (76) - Auto-checked conditions, grant XP. Covers all systems.
-5. **City/Franchise** (6 neighborhoods) - Open new gym branches in Buenos Aires neighborhoods (Palermo, La Boca, Caballito, Belgrano, Recoleta, San Telmo). Each has unique multipliers (rent, members, VIP, member cap). Never lose progress — old gyms keep earning passively. Franchise stars based on empire total earnings.
+5. **City/Franchise** (6 neighborhoods) - Manage ONE main gym; open extra branches in Buenos Aires neighborhoods (Palermo, La Boca, Caballito, Belgrano, Recoleta, San Telmo) as pure PASSIVE income generators (no management, no chaos, no costs). Pricier/higher-level neighborhoods yield more passive income. "Ampliar" invests to raise a branch's income (+25%/level). Franchise stars based on global total earnings (+25% income each).
 6. **Daily Bonus** - 7-day streak cycle with escalating rewards
 7. **Daily Missions** (3/day) - Random from pool of 8 types, bonus for all 3
 8. **Random Events** (every 5-10 min) - 28 events with player choices, costs scale with income
@@ -120,8 +121,9 @@ CNAME               - Custom domain config
 - Champion fatigue recovery: `2 + floor(stamina * 0.5)` points per 30 ticks
 - Neighborhood unlock costs: $0 (Palermo) → $500K (La Boca) → $800K (Caballito) → $1.5M (Belgrano) → $3M (Recoleta) → $5M (San Telmo)
 - Neighborhood rent multipliers: 0.6 (La Boca) to 1.8 (Recoleta)
-- Inactive branch income: 50% of active rate, no chaos events
-- Franchise stars: `floor(sqrt(empireTotalEarned / 2000000))`, each star = +25% income mult
+- Passive branch income: `unlockCost / 1500` per sec at level 1 (≈25 min payback), +25% per "Ampliar" level, × franchise star mult. No chaos, no rent/utilities. Flows to global wallet online (every 10s) + offline.
+- Branch upgrade ("Ampliar") cost: `unlockCost * 0.5 * currentLevel`
+- Franchise stars: `floor(sqrt(game.totalMoneyEarned / 2000000))` (global total, includes passive), each star = +25% income mult
 
 ## Skill Tree Branches (6)
 1. **Equipment** (🔧) - Cost reduction, income boost, capacity, mastery, breakdown resistance
@@ -169,7 +171,7 @@ CNAME               - Custom domain config
 ## Cache Busting
 - Script tags in index.html use `?v=XX` query string (e.g. `js/game.js?v=24`)
 - Increment the version number on every deploy that changes JS/CSS so browsers don't serve stale files
-- Current version: **v=34**
+- Current version: **v=35**
 - Update all 5 script tags together (data, game, ui, systems, auth)
 
 ## Planned Improvements (by priority)
