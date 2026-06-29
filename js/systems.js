@@ -1254,7 +1254,7 @@ function renderCityMap() {
       html += '<span style="color:var(--text-muted);font-size:11px;display:block;margin-top:4px;">Tu nivel: ' + game.level + '</span>';
       html += '</div>';
     } else {
-      var projected = (branchIncomeBasis(hood) / BRANCH_INCOME_PAYBACK) * (1 + game.prestigeStars * 0.25);
+      var projected = branchIncomeBasis(hood) / BRANCH_INCOME_PAYBACK;
       var affordMsg = canUnlock ? '' : ' <span style="color:var(--red);font-size:11px;">(te faltan ' + fmtMoney(hood.unlockCost - game.money) + ')</span>';
       html += '<div class="city-cell-unlock">';
       html += '<div style="font-size:12px;color:var(--cyan);margin-bottom:8px;">💵 Genera ~' + fmtMoney(projected) + '/s pasivo · ampliable</div>';
@@ -1291,7 +1291,7 @@ function openNewBranchModal(neighborhoodId) {
   var hood = NEIGHBORHOODS.find(function(n) { return n.id === neighborhoodId; });
   if (!hood) return;
 
-  var projected = (branchIncomeBasis(hood) / BRANCH_INCOME_PAYBACK) * (1 + game.prestigeStars * 0.25);
+  var projected = branchIncomeBasis(hood) / BRANCH_INCOME_PAYBACK;
   var modalHtml =
     '<div class="modal-overlay" id="newBranchModal" onclick="if(event.target===this)this.remove()">' +
     '<div class="modal-content" style="max-width:420px;">' +

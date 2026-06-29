@@ -7,7 +7,7 @@ const EQUIPMENT = [
   { id: 'dumbbells', name: 'Mancuernas', icon: '🏋️', desc: 'El básico de todo gym. Atraen principiantes.', baseCost: 50, costMult: 1.85, incomePerLevel: 0.4, membersPerLevel: 2, capacityPerLevel: 0, reqLevel: 1 },
   { id: 'bench', name: 'Banco Plano', icon: '🏋️‍♀️', desc: 'Press de banca, el rey de los ejercicios.', baseCost: 200, costMult: 1.9, incomePerLevel: 1.0, membersPerLevel: 3, capacityPerLevel: 2, reqLevel: 1 },
   { id: 'squat_rack', name: 'Squat Rack', icon: '🔱', desc: 'Para los que no saltean leg day.', baseCost: 600, costMult: 1.95, incomePerLevel: 2.0, membersPerLevel: 4, capacityPerLevel: 3, reqLevel: 2 },
-  { id: 'treadmill', name: 'Cinta de Correr', icon: '🏃‍♂️', desc: 'Cardio warriors love this.', baseCost: 1500, costMult: 1.95, incomePerLevel: 1.6, membersPerLevel: 5, capacityPerLevel: 3, reqLevel: 3 },
+  { id: 'treadmill', name: 'Cinta de Correr', icon: '🏃‍♂️', desc: 'Cardio warriors love this.', baseCost: 1500, costMult: 1.95, incomePerLevel: 2.6, membersPerLevel: 5, capacityPerLevel: 3, reqLevel: 3 },
   { id: 'cables', name: 'Polea / Cables', icon: '🔗', desc: 'Versatilidad total. Mil ejercicios.', baseCost: 4000, costMult: 2.0, incomePerLevel: 3.2, membersPerLevel: 5, capacityPerLevel: 4, reqLevel: 4 },
   { id: 'leg_press', name: 'Prensa de Piernas', icon: '💺', desc: 'Para empujar peso de verdad.', baseCost: 10000, costMult: 2.05, incomePerLevel: 4.5, membersPerLevel: 6, capacityPerLevel: 4, reqLevel: 5 },
   { id: 'smith', name: 'Smith Machine', icon: '⚒️', desc: 'Guiada y segura. Ideal para entrenar solo.', baseCost: 25000, costMult: 2.1, incomePerLevel: 7.0, membersPerLevel: 7, capacityPerLevel: 5, reqLevel: 7 },
@@ -679,11 +679,11 @@ const TUTORIAL_STEPS = [
 
 // ===== OPERATING COSTS =====
 const OPERATING_COSTS = {
-  baseRent: 8000,              // per game day (600 ticks = 10 min real)
-  rentPerLevel: 2500,          // additional rent per player level per game day
+  baseRent: 8000,              // legacy — rent is now a continuous ramp (see getOperatingCostsPerDay), no flat base
+  rentPerLevel: 2000,          // rent added per player level above 5 (continuous, no cliff at L6)
   rentPerExtraZone: 12000,     // additional rent per zone beyond ground floor
   rentZoneMultPerLevel: 800,   // extra zone rent scales: zone_rent + (playerLevel * this)
-  utilitiesPerEquipLevel: 150, // utilities cost per total equipment level per game day
+  utilitiesPerEquipLevel: 60,  // utilities cost per total equipment level per game day
   propertyPrice: 8000000,      // one-time purchase to eliminate rent
   propertyReqLevel: 18,
 };
@@ -980,7 +980,7 @@ const WIKI_CONTENT = [
       '<ul><li><strong>💰 Ingresos/s:</strong> suma de todas las máquinas × bonos de staff y habilidades.</li>' +
       '<li><strong>👥 Socios:</strong> activos vs capacidad máxima. Si llegás al máximo, dejás de atraer nuevos.</li>' +
       '<li><strong>⭐ Reputación:</strong> desbloquea competencias, VIPs y hace al gym más atractivo.</li>' +
-      '<li><strong>📈 Nivel y XP:</strong> la curva es <em>100 × 1.55^(nivel-1)</em>. Sube comprando equipos, completando logros y misiones.</li></ul>' +
+      '<li><strong>📈 Nivel y XP:</strong> la curva es <em>100 × 1.40^(nivel-1)</em>. Sube comprando equipos, dando clases, ganando competencias y completando logros y misiones.</li></ul>' +
       '<p><strong>Costos operativos diarios:</strong></p>' +
       '<ul><li>Alquiler base: $60/día</li>' +
       '<li>Alquiler por zona activa: $30/zona/día</li>' +
@@ -1212,7 +1212,7 @@ const WIKI_CONTENT = [
   {
     id: 'economy', icon: '💰', title: 'Economía & Balance',
     content: '<p>Entender la economía te ayuda a tomar mejores decisiones de inversión.</p>' +
-      '<p><strong>Curva de XP:</strong> <em>100 × 1.55^(nivel-1)</em>. La progresión se vuelve más lenta con cada nivel.</p>' +
+      '<p><strong>Curva de XP:</strong> <em>100 × 1.40^(nivel-1)</em>. La XP de clases y competencias escala con tu nivel, así que la progresión se mantiene fluida.</p>' +
       '<p><strong>Costos operativos diarios (1 día = 10 minutos reales = 600 ticks):</strong></p>' +
       '<ul><li>Alquiler base: $60/día (hasta nivel 14 o compra de propiedad)</li>' +
       '<li>Por zona activa: $30/zona/día</li>' +

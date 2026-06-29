@@ -177,8 +177,8 @@ function getBranchPassiveIncome(branchId) {
   if (!branch) return 0;
   var hood = NEIGHBORHOODS.find(function(n) { return n.id === branch.neighborhoodId; }) || NEIGHBORHOODS[0];
   var level = branch.level || 1;
-  var franchiseMult = 1 + (game.prestigeStars * 0.25);
-  var perSec = (branchIncomeBasis(hood) / BRANCH_INCOME_PAYBACK) * (1 + (level - 1) * BRANCH_LEVEL_STEP) * franchiseMult;
+  // Intentionally does NOT scale with franchise stars — avoids stars×branches runaway compounding.
+  var perSec = (branchIncomeBasis(hood) / BRANCH_INCOME_PAYBACK) * (1 + (level - 1) * BRANCH_LEVEL_STEP);
   return Math.max(0, perSec);
 }
 
@@ -1296,11 +1296,11 @@ function getOperatingCostsPerDay() {
   let daily = 0;
   // Rent (unless property owned) - scales with player level and zones
   if (!game.ownProperty) {
+    // Continuous rent ramp — no cliff. Soft grace slope to L5, then steeper per-level (no flat base jump).
     if (game.level <= 5) {
-      // Grace period: minimal rent for new gyms — no base rent, soft per-level ($800-$4000/day)
       daily += game.level * 800;
     } else {
-      daily += OPERATING_COSTS.baseRent + (game.level * OPERATING_COSTS.rentPerLevel);
+      daily += (5 * 800) + (game.level - 5) * OPERATING_COSTS.rentPerLevel;
     }
     let extraZones = 0;
     GYM_ZONES.forEach(function(z) {
@@ -1619,7 +1619,7 @@ function enterCompetition(id) {
     var compRepMult = getSkillEffect('compRepMult');
     game.reputation += Math.ceil(c.repReward * compRepMult);
     var compXpMult = getSkillEffect('compXpMult');
-    addXp(Math.ceil(c.xpReward * compXpMult));
+    addXp(Math.ceil(c.xpReward * compXpMult * (1 + (game.level - 1) * 0.15)));
     game.competitions[id].wins++;
     game.stats.competitionsWon++;
     game.dailyTracking.competitionsWon++;
@@ -1630,7 +1630,7 @@ function enterCompetition(id) {
     showToast('🏆', '¡Victoria en ' + c.name + '!');
     floatNumber('+' + fmtMoney(reward));
   } else {
-    const xpGain = Math.ceil(c.xpReward * 0.2);
+    const xpGain = Math.ceil(c.xpReward * 0.2 * (1 + (game.level - 1) * 0.15));
     addXp(xpGain);
     game.dailyTracking.xpEarned += xpGain;
     game.competitions[id].losses++;
@@ -1666,7 +1666,7 @@ function checkLevelUp() {
   while (game.xp >= game.xpToNext) {
     game.xp -= game.xpToNext;
     game.level++;
-    game.xpToNext = Math.ceil(100 * Math.pow(1.55, game.level - 1));
+    game.xpToNext = Math.ceil(100 * Math.pow(1.40, game.level - 1));
     addLog('🎉 ¡Subiste al <span class="highlight">Nivel ' + game.level + '</span>!', 'critical');
     showToast('🎉', '¡Nivel ' + game.level + '!');
     leveled = true;
@@ -1858,7 +1858,7 @@ function championCompete(compId) {
     var compRepMult = getSkillEffect('compRepMult');
     var repGain = Math.ceil(c.repReward * compRepMult * (1 + tecnica * 0.01) * fatiguePenalty.mult);
     var compXpMult = getSkillEffect('compXpMult');
-    var xpGain = Math.ceil(c.xpReward * compXpMult);
+    var xpGain = Math.ceil(c.xpReward * compXpMult * (1 + (game.level - 1) * 0.15));
 
     game.money += reward;
     game.totalMoneyEarned += reward;
@@ -1878,7 +1878,7 @@ function championCompete(compId) {
     showToast('🏅', '¡Victoria en ' + c.name + '!');
     floatNumber('+' + fmtMoney(reward));
   } else {
-    var consolationXp = Math.ceil(c.xpReward * 0.2);
+    var consolationXp = Math.ceil(c.xpReward * 0.2 * (1 + (game.level - 1) * 0.15));
     addXp(consolationXp);
     game.dailyTracking.xpEarned += consolationXp;
     state.losses++;
@@ -1944,10 +1944,9 @@ function equipChampion(eqId) {
 
 // ===== PRESTIGE =====
 function getPrestigeStars() {
-  // Franchise stars scale with total money earned across the whole empire.
-  // Passive branch income now flows into game.totalMoneyEarned, so this is already global.
-  if (game.totalMoneyEarned < 2000000) return 0;
-  return Math.floor(Math.sqrt(game.totalMoneyEarned / 2000000));
+  // Franchise stars scale with total money earned (global). Capped + slower curve to avoid runaway inflation.
+  if (game.totalMoneyEarned < 8000000) return 0;
+  return Math.min(10, Math.floor(Math.sqrt(game.totalMoneyEarned / 8000000)));
 }
 
 function doPrestige() {

@@ -101,8 +101,8 @@ CNAME               - Custom domain config
 - `getCampaignCostsPerSecond()` helper includes always-on campaign costs in total expenses
 
 ## Balance & Economy
-- XP curve: `100 * 1.55^(level-1)` — slower progression
-- Operating costs: base rent ($250/day) + zone rent ($300/zone/day) + utilities ($20/equip level/day)
+- XP curve: `100 * 1.40^(level-1)`. Repeatable XP scales with level to avoid a mid/late wall: classes use `levelScale = 1+0.2*(level-1)`; competitions (normal + champion, win + loss) use `1+0.15*(level-1)`; missions `1+0.2*(level-1)`.
+- Operating costs (per game day = 600s): CONTINUOUS rent ramp, no cliff. `level<=5 → level*800`; `level>5 → 5*800 + (level-5)*rentPerLevel` (rentPerLevel=2000). Plus extra-zone rent + utilities (`60/equip level/day`). Neighborhood rentMult applies (Palermo=1.0). `baseRent` constant is legacy/unused.
 - Property purchase ($8M, lvl 18) eliminates rent
 - Equipment level capped at player level
 - Equipment baseCost scales exponentially by tier: $50 (dumbbells) → $200 → $600 → $1.5K → $4K → $10K → $25K → $75K → $180K → $450K → $1.2M → $3.5M (spa). costMult also increases for higher tiers (1.85→2.5).
@@ -121,9 +121,9 @@ CNAME               - Custom domain config
 - Champion fatigue recovery: `2 + floor(stamina * 0.5)` points per 30 ticks
 - Neighborhood unlock costs: $0 (Palermo) → $500K (La Boca) → $800K (Caballito) → $1.5M (Belgrano) → $3M (Recoleta) → $5M (San Telmo)
 - Neighborhood rent multipliers: 0.6 (La Boca) to 1.8 (Recoleta)
-- Passive branch income: `unlockCost / 1500` per sec at level 1 (≈25 min payback), +25% per "Ampliar" level, × franchise star mult. No chaos, no rent/utilities. Flows to global wallet online (every 10s) + offline.
+- Passive branch income: `unlockCost / 1500` per sec at level 1 (≈25 min payback), +25% per "Ampliar" level. Does NOT scale with franchise stars (avoids stars×branches runaway compounding). No chaos, no rent/utilities. Flows to global wallet online (every 10s) + offline.
 - Branch upgrade ("Ampliar") cost: `unlockCost * 0.5 * currentLevel`
-- Franchise stars: `floor(sqrt(game.totalMoneyEarned / 2000000))` (global total, includes passive), each star = +25% income mult
+- Franchise stars: `min(10, floor(sqrt(game.totalMoneyEarned / 8000000)))` (global total, includes passive; capped at 10), each star = +25% income mult (applies to active gym only, not passive branches)
 
 ## Skill Tree Branches (6)
 1. **Equipment** (🔧) - Cost reduction, income boost, capacity, mastery, breakdown resistance
@@ -171,7 +171,7 @@ CNAME               - Custom domain config
 ## Cache Busting
 - Script tags in index.html use `?v=XX` query string (e.g. `js/game.js?v=24`)
 - Increment the version number on every deploy that changes JS/CSS so browsers don't serve stale files
-- Current version: **v=35**
+- Current version: **v=36**
 - Update all 5 script tags together (data, game, ui, systems, auth)
 
 ## Planned Improvements (by priority)
