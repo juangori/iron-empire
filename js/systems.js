@@ -50,7 +50,8 @@ function claimDailyBonus() {
   const reward = DAILY_BONUS_REWARDS[streakDay];
 
   const prestigeMult = 1 + (game.prestigeStars * 0.25);
-  const moneyReward = Math.ceil(reward.money * prestigeMult);
+  const levelScale = 1 + (game.level - 1) * 0.3; // login bonus stays meaningful at high level
+  const moneyReward = Math.ceil(reward.money * prestigeMult * levelScale);
 
   game.money += moneyReward;
   game.totalMoneyEarned += moneyReward;
@@ -269,13 +270,20 @@ function checkRandomEvent() {
   }
 }
 
-function scaleEventText(text) {
-  var scale = getEventCostScale();
-  if (scale <= 1) return text;
-  return text.replace(/\$(\d[\d,\.]*)/g, function(match, num) {
-    var amount = parseInt(num.replace(/[,\.]/g, ''));
-    return '$' + fmt(Math.ceil(amount * scale));
-  });
+function eventChoiceLabels(choice) {
+  // Returns { cost, outcome } display strings for a declarative choice (scaled to current economy)
+  if (choice.gamble) {
+    var w = resolveEventSpec(choice.gamble.win), l = resolveEventSpec(choice.gamble.lose);
+    var p = Math.round(choice.gamble.p * 100);
+    return {
+      cost: '🎲 ' + p + '%',
+      outcome: '✅ ' + fmtEventDeltas(w, (choice.gamble.win || {}).special) + '　❌ ' + fmtEventDeltas(l, (choice.gamble.lose || {}).special)
+    };
+  }
+  var d = resolveEventSpec(choice);
+  var cost = d.money ? ((d.money > 0 ? '+' : '-') + fmtMoney(Math.abs(d.money))) : 'Gratis';
+  var outcome = fmtEventDeltas({ money: 0, rep: d.rep, xp: d.xp, members: d.members }, choice.special);
+  return { cost: cost, outcome: outcome };
 }
 
 function showRandomEvent(event) {
@@ -284,13 +292,15 @@ function showRandomEvent(event) {
 
   let choicesHTML = '';
   event.choices.forEach((choice, i) => {
+    var lbl = eventChoiceLabels(choice);
     choicesHTML +=
       '<div class="event-choice" onclick="handleEventChoice(\'' + event.id + '\',' + i + ')">' +
         '<div class="event-choice-main">' +
           '<span class="event-choice-text">' + choice.text + '</span>' +
-          '<span class="event-choice-cost">' + scaleEventText(choice.cost) + '</span>' +
+          '<span class="event-choice-cost">' + lbl.cost + '</span>' +
         '</div>' +
-        (choice.hint ? '<div class="event-choice-hint">' + scaleEventText(choice.hint) + '</div>' : '') +
+        (choice.hint ? '<div class="event-choice-hint">' + choice.hint + '</div>' : '') +
+        (lbl.outcome && lbl.outcome !== 'Nada' ? '<div class="event-choice-hint" style="color:var(--cyan);">' + lbl.outcome + '</div>' : '') +
       '</div>';
   });
 
@@ -309,38 +319,31 @@ function handleEventChoice(eventId, choiceIndex) {
   if (!event || event.id !== eventId) return;
 
   const choice = event.choices[choiceIndex];
-  var scale = getEventCostScale();
 
-  // Check if player can afford (scaled cost)
-  if (choice.cost.includes('-$')) {
-    const costAmount = Math.ceil(parseInt(choice.cost.replace('-$', '').replace(',', '')) * scale);
-    if (game.money < costAmount) {
-      showToast('❌', '¡No tenés suficiente plata!');
-      return;
-    }
+  // Deterministic upfront money cost? (gambles resolve after the roll). Costs are %-capped so this
+  // almost never blocks; it only protects a very-low-cash player from going to zero on the floor.
+  if (!choice.gamble && choice.money && choice.money < 0) {
+    var plannedCost = -evMoney(choice.money);
+    if (plannedCost > game.money) { showToast('❌', '¡No tenés suficiente plata!'); return; }
   }
 
-  // Apply effect with money scaling
-  var moneyBefore = game.money;
-  var totalBefore = game.totalMoneyEarned;
-  choice.effect(game);
-  var moneyDiff = game.money - moneyBefore;
-  if (moneyDiff !== 0 && scale > 1) {
-    var scaledDiff = Math.ceil(moneyDiff * scale);
-    var adjustment = scaledDiff - moneyDiff;
-    game.money += adjustment;
-    // Scale totalMoneyEarned if it was a gain
-    if (moneyDiff > 0) {
-      var totalDiff = game.totalMoneyEarned - totalBefore;
-      if (totalDiff > 0) game.totalMoneyEarned += Math.ceil(totalDiff * (scale - 1));
-    }
+  var d, special, resultLabel;
+  if (choice.gamble) {
+    var won = Math.random() < choice.gamble.p;
+    var spec = won ? choice.gamble.win : choice.gamble.lose;
+    d = resolveEventSpec(spec); special = (spec || {}).special;
+    resultLabel = (won ? '✅ ' : '❌ ') + fmtEventDeltas(d, special);
+  } else {
+    d = resolveEventSpec(choice); special = choice.special;
+    resultLabel = fmtEventDeltas(d, special);
   }
+  applyEventDeltas(d, special);
 
   game.stats.eventsHandled++;
   game.dailyTracking.eventsHandled++;
 
-  addLog('⚡ Evento: <span class="highlight">' + event.title + '</span> → ' + choice.text + ' (' + scaleEventText(choice.result) + ')');
-  showToast(event.icon, scaleEventText(choice.result));
+  addLog('⚡ Evento: <span class="highlight">' + event.title + '</span> → ' + choice.text + ' (' + resultLabel + ')');
+  showToast(event.icon, resultLabel);
 
   document.getElementById('eventOverlay').classList.add('hidden');
   window._currentEvent = null;

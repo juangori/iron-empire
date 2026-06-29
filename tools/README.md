@@ -23,6 +23,24 @@ Si te gusta el resultado, aplicá esos números al código real (`data.js` / `ga
 > suplementos y decoración. O sea, el juego real progresa un poco más rápido. Sirve como
 > cota inferior — ideal para detectar fases con neto negativo, paredes de nivel e inflación.
 
+## `audit_timings.js` — auditoría de cooldowns/tiempos
+```
+node tools/audit_timings.js
+```
+Tabula TODOS los tiempos del juego (cooldowns de competencias y clases, duraciones,
+intervalos de eventos/VIP, construcción, research, campeón) y los clasifica por ventana
+de sesión (instant / quick / session / short-AFK / daily / slow), marcando outliers.
+Útil cuando ajustás cualquier cooldown: corré esto para ver si quedó en una ventana sana
+para "jugar un rato cada día".
+
+## `test_events.js` — tests del sistema de eventos
+```
+node tools/test_events.js
+```
+Valida los 39 eventos random: integridad de datos, que todo resuelva sin error a nivel
+bajo y alto, que los premios escalen con nivel/ingreso, que los costos estén capeados como
+% del efectivo (nunca te funden), y que `applyEventDeltas` mute el estado bien.
+
 ## `test_branches.js` — tests de lógica de sucursales
 ```
 node tools/test_branches.js

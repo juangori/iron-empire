@@ -75,7 +75,7 @@ CNAME               - Custom domain config
 5. **City/Franchise** (6 neighborhoods) - Manage ONE main gym; open extra branches in Buenos Aires neighborhoods (Palermo, La Boca, Caballito, Belgrano, Recoleta, San Telmo) as pure PASSIVE income generators (no management, no chaos, no costs). Pricier/higher-level neighborhoods yield more passive income. "Ampliar" invests to raise a branch's income (+25%/level). Franchise stars based on global total earnings (+25% income each).
 6. **Daily Bonus** - 7-day streak cycle with escalating rewards
 7. **Daily Missions** (3/day) - Random from pool of 8 types, bonus for all 3
-8. **Random Events** (every 5-10 min) - 28 events with player choices, costs scale with income
+8. **Random Events** (every 5-10 min) - 39 events with player choices. DECLARATIVE outcomes: each choice specifies signed tier magnitudes (`money`/`rep`/`xp`/`members` = ±1/2/3, or a `gamble:{p,win,lose}`, or `special:'curestaff'|'randomsupp'`). Resolved at runtime by `resolveEventSpec`/`applyEventDeltas`/`fmtEventDeltas` (game.js) so ALL outcomes scale with the player's economy. No hardcoded magic numbers, no effect functions in data.
 9. **Gym Classes** (8 types) - Real-time duration + cooldown, costs money. Each class has a dedicated instructor that must be hired to unlock it. Instructor levels 1-5 boost income +20%/level. Instructors earn 15% commission on gross class income (no fixed salary). Quality bonus from equipment + instructor levels.
 10. **Marketing Campaigns** (10 total: 4 always-on + 6 burst) - Always-on: toggle on/off, continuous cost+member generation (Flyers, WhatsApp, Instagram, Google Ads). Burst: one-time with cooldown (YouTube, Radio, TV, Celebrity, Patrocinio, Gala). ROI insights for active campaigns.
 11. **Tutorial** - 16-step interactive walkthrough. Game tick paused during tutorial. Action steps force user to click (navigate tabs, buy first equipment). Smart tooltip positioning (below/above/side/center). Player starts with $100 for first purchase.
@@ -106,7 +106,8 @@ CNAME               - Custom domain config
 - Property purchase ($8M, lvl 18) eliminates rent
 - Equipment level capped at player level
 - Equipment baseCost scales exponentially by tier: $50 (dumbbells) → $200 → $600 → $1.5K → $4K → $10K → $25K → $75K → $180K → $450K → $1.2M → $3.5M (spa). costMult also increases for higher tiers (1.85→2.5).
-- Event costs scale: `max(levelScale, income * 0.5)` — scales with actual income/s
+- Event outcome scaling (game.js `evMoney`/`evRep`/`evXp`/`evMembers`): money gains = seconds-of-income (tiers ~40/110/280s, floored); money COSTS = same but capped at 12/25/45% of current cash (never bankrupts); rep ~12/28/55 ×(1+0.22·(lvl-1)); xp ~35/90/190 ×(1+0.18·(lvl-1)); members = 4/9/18% of cap (floored). Stays meaningful early AND late.
+- Competition cooldowns (compressed for daily engagement): 10m / 20m / 40m / 1.5h / 3h / 6h (local→world). Competition XP (normal+champion, win+loss) scales ×(1+0.15·(lvl-1)).
 - Supplement costs scale: +15% per level above requirement
 - Rival costs scale: +20% per level above requirement
 - Game day = 600 ticks = 10 min real time
@@ -118,7 +119,7 @@ CNAME               - Custom domain config
 - Class costs scale +15%/level, rewards scale +20%/level with quality bonus
 - Instructor hire costs: $300 (yoga) to $25K (swimming), upgrade cost = hireCost * level * 2.5
 - Instructor commission: 15% of gross class income, deducted on completion
-- Champion fatigue recovery: `2 + floor(stamina * 0.5)` points per 30 ticks
+- Champion fatigue recovery: `3 + floor(stamina * 0.6)` points per 30 ticks
 - Neighborhood unlock costs: $0 (Palermo) → $500K (La Boca) → $800K (Caballito) → $1.5M (Belgrano) → $3M (Recoleta) → $5M (San Telmo)
 - Neighborhood rent multipliers: 0.6 (La Boca) to 1.8 (Recoleta)
 - Passive branch income: `unlockCost / 1500` per sec at level 1 (≈25 min payback), +25% per "Ampliar" level. Does NOT scale with franchise stars (avoids stars×branches runaway compounding). No chaos, no rent/utilities. Flows to global wallet online (every 10s) + offline.
@@ -171,7 +172,7 @@ CNAME               - Custom domain config
 ## Cache Busting
 - Script tags in index.html use `?v=XX` query string (e.g. `js/game.js?v=24`)
 - Increment the version number on every deploy that changes JS/CSS so browsers don't serve stale files
-- Current version: **v=36**
+- Current version: **v=37**
 - Update all 5 script tags together (data, game, ui, systems, auth)
 
 ## Planned Improvements (by priority)

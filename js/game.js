@@ -1361,13 +1361,55 @@ function buyProperty() {
   saveGame();
 }
 
-// ===== EVENT COST SCALING =====
-function getEventCostScale() {
-  var levelScale = 1 + (game.level - 1) * 0.2;
-  // Scale with income so events always feel meaningful
-  var income = getIncomePerSecond();
-  var incomeScale = Math.max(1, income * 0.5);
-  return Math.max(levelScale, incomeScale);
+// ===== RANDOM EVENT OUTCOME SCALING =====
+// Outcomes are DECLARED as signed tier magnitudes (1=chico, 2=medio, 3=grande; signo=gana/pierde)
+// and resolved into real numbers that scale with the player's economy, so cada evento sigue siendo
+// relevante temprano Y tarde. Plata: ganancias = segundos-de-ingreso; costos = igual pero capeados
+// como % del efectivo (nunca te funden). Rep/XP/miembros escalan con nivel y con el cap.
+function evIncSec() { var i = getIncomePerSecond(); return i > 5 ? i : 5; }
+function evMoney(tier) {
+  if (!tier) return 0;
+  var t = Math.abs(tier);
+  var secs  = [0, 40, 110, 280][t] || 60;
+  var floor = [0, 250, 800, 2200][t] || 500;
+  var amt = Math.max(floor, Math.round(evIncSec() * secs));
+  if (tier < 0) {
+    var pctCap = [0, 0.12, 0.25, 0.45][t] || 0.2;
+    amt = Math.min(amt, Math.floor((game.money || 0) * pctCap)); // a cost NEVER exceeds this % of cash → never bankrupts
+    return -amt;
+  }
+  return amt;
+}
+function evRep(tier)  { if (!tier) return 0; var t = Math.abs(tier); var v = Math.ceil([0,12,28,55][t] * (1 + (game.level - 1) * 0.22)); return tier < 0 ? -v : v; }
+function evXp(tier)   { if (!tier) return 0; var t = Math.abs(tier); return Math.ceil([0,35,90,190][t] * (1 + (game.level - 1) * 0.18)); }
+function evMembers(tier) { if (!tier) return 0; var t = Math.abs(tier); var v = Math.max([0,2,5,10][t], Math.ceil(getMaxMembers() * [0,0.04,0.09,0.18][t])); return tier < 0 ? -v : v; }
+
+// spec: { money, rep, xp, members } signed tiers -> actual numbers
+function resolveEventSpec(spec) {
+  if (!spec) return { money:0, rep:0, xp:0, members:0 };
+  return { money: evMoney(spec.money || 0), rep: evRep(spec.rep || 0), xp: evXp(spec.xp || 0), members: evMembers(spec.members || 0) };
+}
+function applyEventDeltas(d, special) {
+  if (d.money) { game.money += d.money; if (d.money > 0) game.totalMoneyEarned += d.money; if (game.money < 0) game.money = 0; }
+  if (d.rep) { game.reputation = Math.max(0, game.reputation + d.rep); if (d.rep > 0) game.dailyTracking.reputationGained += d.rep; }
+  if (d.xp) { addXp(d.xp); game.dailyTracking.xpEarned += d.xp; }
+  if (d.members) game.members = Math.max(0, Math.min(game.members + d.members, getMaxMembers()));
+  if (special === 'curestaff') {
+    STAFF.forEach(function(s){ var st = game.staff[s.id]; if (st && st.hired) { st.sickUntil = 0; if (st.extras) st.extras.forEach(function(e){ e.sickUntil = 0; }); } });
+  } else if (special === 'randomsupp') {
+    var avail = SUPPLEMENTS.filter(function(s){ return game.level >= s.reqLevel && !(game.supplements[s.id] && game.supplements[s.id].activeUntil && Date.now() < game.supplements[s.id].activeUntil); });
+    if (avail.length) { var pick = avail[Math.floor(Math.random() * avail.length)]; game.supplements[pick.id] = { activeUntil: Date.now() + pick.duration * 1000, toleranceLevel: 0, lastUsedTick: game.tickCount }; }
+  }
+}
+function fmtEventDeltas(d, special) {
+  var parts = [];
+  if (d.money) parts.push((d.money > 0 ? '+' : '-') + fmtMoney(Math.abs(d.money)));
+  if (d.rep) parts.push((d.rep > 0 ? '+' : '') + d.rep + ' rep');
+  if (d.xp) parts.push('+' + d.xp + ' XP');
+  if (d.members) parts.push((d.members > 0 ? '+' : '') + d.members + ' miembros');
+  if (special === 'curestaff') parts.push('staff recuperado');
+  if (special === 'randomsupp') parts.push('suplemento gratis');
+  return parts.length ? parts.join(' · ') : 'Nada';
 }
 
 function getMaxMembers() {
@@ -1701,7 +1743,7 @@ function getChampionTotalStats() {
 // Returns estimated full recovery time in seconds given current stamina
 function getChampionRecoveryRate() {
   var stamina = getChampionEffectiveStat('stamina');
-  return 2 + Math.floor(stamina * 0.5); // fatigue points recovered per 30 ticks
+  return 3 + Math.floor(stamina * 0.6); // fatigue points recovered per 30 ticks
 }
 
 function getChampionRecoveryTimeSeconds() {
@@ -1916,7 +1958,7 @@ function championFatigueTick() {
   if (game.champion.fatigue <= 0) return;
   if (game.tickCount % 30 === 0) {
     var stamina = getChampionEffectiveStat('stamina');
-    var recovery = 2 + Math.floor(stamina * 0.5);
+    var recovery = 3 + Math.floor(stamina * 0.6);
     game.champion.fatigue = Math.max(0, game.champion.fatigue - recovery);
   }
 }
@@ -2516,7 +2558,7 @@ function calculateOfflineProgress(elapsedSeconds) {
     if (game.champion.fatigue > 0) {
       var recoveryCycles = Math.floor(capped / 30);
       var stamina = getChampionEffectiveStat('stamina');
-      var recoveryPerCycle = 2 + Math.floor(stamina * 0.5);
+      var recoveryPerCycle = 3 + Math.floor(stamina * 0.6);
       var totalRecovery = recoveryCycles * recoveryPerCycle;
       var oldFatigue = game.champion.fatigue;
       game.champion.fatigue = Math.max(0, game.champion.fatigue - totalRecovery);

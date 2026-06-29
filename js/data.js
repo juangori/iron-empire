@@ -30,12 +30,12 @@ const STAFF = [
 ];
 
 const COMPETITIONS = [
-  { id: 'local', name: 'Torneo de Barrio', icon: '🏠', desc: 'Competencia local de pesas. Bajo riesgo.', reward: 500, repReward: 10, xpReward: 30, cooldown: 900, minRep: 0, winChance: 0.8 },
-  { id: 'city', name: 'Campeonato Municipal', icon: '🏙️', desc: 'Los mejores del municipio. Nivel intermedio.', reward: 2000, repReward: 30, xpReward: 80, cooldown: 1800, minRep: 50, winChance: 0.6 },
-  { id: 'regional', name: 'Regional de Powerlifting', icon: '🗺️', desc: 'Deadlift, squat, bench. Los tres grandes.', reward: 8000, repReward: 80, xpReward: 200, cooldown: 5400, minRep: 200, winChance: 0.45 },
-  { id: 'national', name: 'Nacional de Fuerza', icon: '🇦🇷', desc: 'Lo mejor del país compite acá.', reward: 30000, repReward: 200, xpReward: 500, cooldown: 10800, minRep: 500, winChance: 0.3 },
-  { id: 'continental', name: 'Sudamericano', icon: '🌎', desc: 'Argentina vs. Brasil vs. todos. Épico.', reward: 100000, repReward: 500, xpReward: 1200, cooldown: 21600, minRep: 1500, winChance: 0.2 },
-  { id: 'world', name: 'Mundial de Pesas', icon: '🌍', desc: 'El pináculo. Solo los mejores del mundo.', reward: 500000, repReward: 2000, xpReward: 5000, cooldown: 43200, minRep: 5000, winChance: 0.1 },
+  { id: 'local', name: 'Torneo de Barrio', icon: '🏠', desc: 'Competencia local de pesas. Bajo riesgo.', reward: 500, repReward: 10, xpReward: 30, cooldown: 600, minRep: 0, winChance: 0.8 },
+  { id: 'city', name: 'Campeonato Municipal', icon: '🏙️', desc: 'Los mejores del municipio. Nivel intermedio.', reward: 2000, repReward: 30, xpReward: 80, cooldown: 1200, minRep: 50, winChance: 0.6 },
+  { id: 'regional', name: 'Regional de Powerlifting', icon: '🗺️', desc: 'Deadlift, squat, bench. Los tres grandes.', reward: 8000, repReward: 80, xpReward: 200, cooldown: 2400, minRep: 200, winChance: 0.45 },
+  { id: 'national', name: 'Nacional de Fuerza', icon: '🇦🇷', desc: 'Lo mejor del país compite acá.', reward: 30000, repReward: 200, xpReward: 500, cooldown: 5400, minRep: 500, winChance: 0.3 },
+  { id: 'continental', name: 'Sudamericano', icon: '🌎', desc: 'Argentina vs. Brasil vs. todos. Épico.', reward: 100000, repReward: 500, xpReward: 1200, cooldown: 10800, minRep: 1500, winChance: 0.2 },
+  { id: 'world', name: 'Mundial de Pesas', icon: '🌍', desc: 'El pináculo. Solo los mejores del mundo.', reward: 500000, repReward: 2000, xpReward: 5000, cooldown: 21600, minRep: 5000, winChance: 0.1 },
 ];
 
 const ACHIEVEMENTS = [
@@ -190,317 +190,259 @@ const MARKETING_CAMPAIGNS = [
 ];
 
 const RANDOM_EVENTS = [
-  {
-    id: 'inspection',
-    icon: '🏛️',
-    title: 'Inspección Municipal',
-    desc: 'Un inspector del municipio vino a revisar las instalaciones. Tus decisiones afectan tu reputación directamente.',
-    choices: [
-      { text: 'Mejorar instalaciones', cost: '-$500', hint: 'Inversión segura. Mejora tu imagen y da experiencia.', result: '+15 reputación y +30 XP', effect: (g) => { g.money -= 500; g.reputation += 15; g.xp += 30; } },
-      { text: 'Pagar la multa', cost: '-$200', hint: 'Solución rápida, sin beneficio extra.', result: 'Te sacás el problema de encima', effect: (g) => { g.money -= 200; } },
-      { text: 'Ignorar al inspector', cost: 'Gratis', hint: '⚠️ Riesgoso. Puede dañar tu reputación.', result: '-10 reputación', effect: (g) => { g.reputation = Math.max(0, g.reputation - 10); } },
-    ],
-    minLevel: 1
-  },
-  {
-    id: 'celebrity_visit',
-    icon: '🌟',
-    title: 'Visita de un Famoso',
-    desc: 'Un influencer fitness quiere entrenar en tu gym hoy. ¿Cómo lo manejás?',
-    choices: [
-      { text: 'Dejarlo entrenar gratis', cost: 'Gratis', hint: 'Gran boost de reputación. Su audiencia va a conocer tu gym.', result: '+30 reputación y +50 XP', effect: (g) => { g.reputation += 30; g.xp += 50; } },
-      { text: 'Cobrarle membresía VIP', cost: 'Gratis', hint: 'Ganancia inmediata, pero pierde impacto en redes.', result: '+$2,000 y +5 rep', effect: (g) => { g.money += 2000; g.totalMoneyEarned += 2000; g.reputation += 5; } },
-    ],
-    minLevel: 3
-  },
-  {
-    id: 'broken_equipment',
-    icon: '🔧',
-    title: 'Equipo Roto',
-    desc: 'Se rompió una máquina y los miembros están molestos. Cada minuto sin resolver baja la moral.',
-    choices: [
-      { text: 'Reparar inmediatamente', cost: '-$800', hint: 'Solución práctica. Demuestra que te importa.', result: '+10 reputación', effect: (g) => { g.money -= 800; g.reputation += 10; } },
-      { text: 'Poner cartel "fuera de servicio"', cost: 'Gratis', hint: '⚠️ Barato pero los miembros lo notan.', result: '-5 reputación', effect: (g) => { g.reputation = Math.max(0, g.reputation - 5); } },
-      { text: 'Upgrade a equipo nuevo', cost: '-$2,000', hint: 'Inversión fuerte. Gran impacto positivo.', result: '+25 reputación y +50 XP', effect: (g) => { g.money -= 2000; g.reputation += 25; g.xp += 50; } },
-    ],
-    minLevel: 2
-  },
-  {
-    id: 'sponsor_offer',
-    icon: '💼',
-    title: 'Oferta de Sponsor',
-    desc: 'Una marca de suplementos quiere patrocinar tu gym. Te ofrecen plata a cambio de exclusividad.',
-    choices: [
-      { text: 'Aceptar el sponsoreo', cost: 'Gratis', hint: 'Ganancia segura. Plata + experiencia garantizada.', result: '+$3,000 y +20 XP', effect: (g) => { g.money += 3000; g.totalMoneyEarned += 3000; g.xp += 20; } },
-      { text: 'Negociar mejor deal', cost: 'Gratis', hint: '🎲 Riesgo/recompensa. 50% de chance de duplicar la oferta, pero podés irte con las manos vacías.', result: '50% chance: +$6,000 o nada', effect: (g) => { if (Math.random() > 0.5) { g.money += 6000; g.totalMoneyEarned += 6000; } } },
-      { text: 'Rechazar (mantener libertad)', cost: 'Gratis', hint: 'Sin plata pero tu gym mantiene su identidad. Bonus de reputación.', result: '+15 reputación', effect: (g) => { g.reputation += 15; } },
-    ],
-    minLevel: 4
-  },
-  {
-    id: 'group_discount',
-    icon: '👥',
-    title: 'Grupo Corporativo',
-    desc: 'Una empresa quiere membresías grupales con descuento para 8 empleados.',
-    choices: [
-      { text: 'Aceptar con descuento', cost: 'Gratis', hint: 'Seguro. Muchos miembros nuevos de golpe + algo de plata.', result: '+8 miembros y +$1,500', effect: (g) => { g.members = Math.min(g.members + 8, g.maxMembers); g.money += 1500; g.totalMoneyEarned += 1500; } },
-      { text: 'Precio completo o nada', cost: 'Gratis', hint: '🎲 Solo 30% de chance de que acepten, pero pagás más por miembro.', result: '30% chance: +4 miembros y +$2,000', effect: (g) => { if (Math.random() < 0.3) { g.members = Math.min(g.members + 4, g.maxMembers); g.money += 2000; g.totalMoneyEarned += 2000; } } },
-    ],
-    minLevel: 3
-  },
-  {
-    id: 'competition_invite',
-    icon: '🏆',
-    title: 'Invitación a Exhibición',
-    desc: 'Te invitan a una exhibición de fuerza en un evento local. Gran oportunidad de marketing.',
-    choices: [
-      { text: 'Participar personalmente', cost: 'Gratis', hint: 'Máximo impacto. Tu cara representa el gym.', result: '+40 reputación y +80 XP', effect: (g) => { g.reputation += 40; g.xp += 80; } },
-      { text: 'Enviar al mejor miembro', cost: 'Gratis', hint: 'Buen resultado pero con menor impacto personal.', result: '+20 reputación y +40 XP', effect: (g) => { g.reputation += 20; g.xp += 40; } },
-    ],
-    minLevel: 5
-  },
-  {
-    id: 'water_leak',
-    icon: '💧',
-    title: 'Filtración de Agua',
-    desc: 'Hay una filtración en el techo. El agua gotea sobre las máquinas.',
-    choices: [
-      { text: 'Arreglar ya', cost: '-$500', hint: 'Resolvelo antes de que empeore. Pequeño bonus de rep.', result: 'Problema resuelto, +5 rep', effect: (g) => { g.money -= 500; g.reputation += 5; } },
-      { text: 'Dejarlo para después', cost: 'Gratis', hint: '⚠️ Muy riesgoso. Los miembros van a hablar mal del gym.', result: '-15 reputación', effect: (g) => { g.reputation = Math.max(0, g.reputation - 15); } },
-    ],
-    minLevel: 1
-  },
-  {
-    id: 'fitness_challenge',
-    icon: '🎯',
-    title: 'Desafío Fitness Viral',
-    desc: 'Un desafío de fitness se hizo viral en TikTok. Tu gym podría sumarse.',
-    choices: [
-      { text: 'Organizar el desafío en el gym', cost: '-$300', hint: 'Mejor opción. Atrae miembros nuevos y sube reputación.', result: '+5 miembros, +25 rep, +60 XP', effect: (g) => { g.members = Math.min(g.members + 5, g.maxMembers); g.reputation += 25; g.xp += 60; g.money -= 300; } },
-      { text: 'Filmar y subir a redes', cost: 'Gratis', hint: 'Sin costo. Buen marketing gratis.', result: '+15 reputación y +30 XP', effect: (g) => { g.reputation += 15; g.xp += 30; } },
-      { text: 'Ignorarlo', cost: 'Gratis', hint: 'Oportunidad perdida, pero no te afecta negativamente.', result: 'Nada pasa', effect: () => {} },
-    ],
-    minLevel: 2
-  },
-  {
-    id: 'power_outage',
-    icon: '⚡',
-    title: 'Corte de Luz',
-    desc: 'Se cortó la luz en todo el barrio. Tu gym está a oscuras y los miembros no pueden entrenar bien.',
-    choices: [
-      { text: 'Comprar generador', cost: '-$3,000', hint: 'Inversión grande pero a largo plazo te protege de futuros cortes. Gran reputación.', result: '+30 rep y +40 XP', effect: (g) => { g.money -= 3000; g.reputation += 30; g.xp += 40; } },
-      { text: 'Entrenar a la luz de velas', cost: 'Gratis', hint: '🎲 Creativo. Puede salir bien o mal. Los miembros podrían encontrarlo divertido... o peligroso.', result: '70% chance: +10 rep. 30% chance: -5 rep y -1 miembro', effect: (g) => { if (Math.random() < 0.7) { g.reputation += 10; g.xp += 20; } else { g.reputation = Math.max(0, g.reputation - 5); g.members = Math.max(0, g.members - 1); } } },
-      { text: 'Cerrar por hoy', cost: 'Gratis', hint: '⚠️ Fácil, pero los miembros se van a otro gym.', result: '-20 reputación', effect: (g) => { g.reputation = Math.max(0, g.reputation - 20); } },
-    ],
-    minLevel: 3
-  },
-  {
-    id: 'member_complaint',
-    icon: '😤',
-    title: 'Queja de Miembro VIP',
-    desc: 'Un miembro con mucha antigüedad amenaza con irse. Dice que la competencia tiene mejores instalaciones.',
-    choices: [
-      { text: 'Ofrecerle un mes gratis', cost: '-$500', hint: 'Gasto moderado. Lo retiene y mejora la percepción.', result: 'Se queda, +10 rep', effect: (g) => { g.money -= 500; g.reputation += 10; } },
-      { text: 'Escuchar y prometer mejoras', cost: 'Gratis', hint: 'Sin costo. Lo calma por ahora pero el efecto es menor.', result: '+5 rep, se queda por ahora', effect: (g) => { g.reputation += 5; } },
-      { text: 'Dejarlo ir', cost: 'Gratis', hint: '⚠️ Peligroso. Puede llevar a otros miembros con él.', result: '-2 miembros, -10 rep', effect: (g) => { g.members = Math.max(0, g.members - 2); g.reputation = Math.max(0, g.reputation - 10); } },
-    ],
-    minLevel: 2
-  },
-  {
-    id: 'equipment_theft',
-    icon: '🦹',
-    title: 'Robo en el Gym',
-    desc: 'Entraron a robar de noche. Faltan pesas y accesorios. Los miembros están preocupados.',
-    choices: [
-      { text: 'Instalar cámaras de seguridad', cost: '-$1,500', hint: 'Previene futuros robos y da tranquilidad a los miembros.', result: '+20 rep y +40 XP', effect: (g) => { g.money -= 1500; g.reputation += 20; g.xp += 40; } },
-      { text: 'Hacer la denuncia policial', cost: '-$200', hint: 'Trámite burocrático. No soluciona la inseguridad.', result: 'Trámite hecho', effect: (g) => { g.money -= 200; } },
-      { text: 'No hacer nada', cost: 'Gratis', hint: '⚠️ Los miembros se sienten inseguros y se van.', result: '-20 rep, -3 miembros', effect: (g) => { g.reputation = Math.max(0, g.reputation - 20); g.members = Math.max(0, g.members - 3); } },
-    ],
-    minLevel: 3
-  },
-  {
-    id: 'flu_outbreak',
-    icon: '🤒',
-    title: 'Brote de Gripe',
-    desc: 'Varios miembros se enfermaron. El gym está medio vacío y hay riesgo de contagio.',
-    choices: [
-      { text: 'Desinfección profesional', cost: '-$1,000', hint: 'Limpieza profunda. Los miembros lo agradecen mucho.', result: '+15 rep y +30 XP', effect: (g) => { g.money -= 1000; g.reputation += 15; g.xp += 30; } },
-      { text: 'Poner alcohol en gel', cost: '-$200', hint: 'Mínimo esfuerzo. Algo es algo.', result: '+5 rep', effect: (g) => { g.money -= 200; g.reputation += 5; } },
-      { text: 'Esperar que pase', cost: 'Gratis', hint: '⚠️ Los sanos empiezan a irse también.', result: '-3 miembros, -10 rep', effect: (g) => { g.members = Math.max(0, g.members - 3); g.reputation = Math.max(0, g.reputation - 10); } },
-    ],
-    minLevel: 2
-  },
-  {
-    id: 'negative_review',
-    icon: '📱',
-    title: 'Reseña Negativa Viral',
-    desc: 'Un ex-miembro publicó una reseña de 1 estrella en Google que se hizo viral.',
-    choices: [
-      { text: 'Responder profesionalmente', cost: 'Gratis', hint: 'La mejor estrategia. Mostrás madurez y profesionalismo.', result: '+10 rep y +20 XP', effect: (g) => { g.reputation += 10; g.xp += 20; } },
-      { text: 'Campaña de reseñas positivas', cost: '-$800', hint: 'Pedile a miembros actuales que dejen buenas reseñas.', result: '+25 rep y +40 XP', effect: (g) => { g.money -= 800; g.reputation += 25; g.xp += 40; } },
-      { text: 'Ignorarlo', cost: 'Gratis', hint: '⚠️ El algoritmo prioriza la reseña negativa.', result: '-15 reputación', effect: (g) => { g.reputation = Math.max(0, g.reputation - 15); } },
-    ],
-    minLevel: 4
-  },
-  {
-    id: 'gym_tournament',
-    icon: '🏋️',
-    title: 'Torneo en Tu Gym',
-    desc: 'Una federación quiere organizar un torneo amateur de levantamiento en tus instalaciones.',
-    choices: [
-      { text: 'Organizar el torneo', cost: '-$2,000', hint: 'Gran inversión pero enorme visibilidad. El gym se llena.', result: '+$5,000, +50 rep, +100 XP', effect: (g) => { g.money += 3000; g.totalMoneyEarned += 5000; g.reputation += 50; g.xp += 100; } },
-      { text: 'Cobrar entrada y comisión', cost: 'Gratis', hint: 'Menos trabajo. Ganancia segura con menor impacto.', result: '+$2,000, +15 rep', effect: (g) => { g.money += 2000; g.totalMoneyEarned += 2000; g.reputation += 15; } },
-    ],
-    minLevel: 6
-  },
-  {
-    id: 'supplier_deal',
-    icon: '📦',
-    title: 'Oferta de Proveedor',
-    desc: 'Un proveedor de equipamiento te ofrece un lote con descuento por renovación de stock.',
-    choices: [
-      { text: 'Comprar el lote', cost: '-$3,000', hint: 'Mejora la calidad general del gym. Inversión que vale.', result: '+30 rep, +80 XP', effect: (g) => { g.money -= 3000; g.reputation += 30; g.xp += 80; } },
-      { text: 'Negociar financiación', cost: '-$1,500', hint: 'Pagás la mitad ahora. Menor impacto pero más accesible.', result: '+15 rep, +40 XP', effect: (g) => { g.money -= 1500; g.reputation += 15; g.xp += 40; } },
-      { text: 'No me interesa', cost: 'Gratis', hint: 'Sin costo, sin beneficio. Oportunidad perdida.', result: 'Nada', effect: () => {} },
-    ],
-    minLevel: 5
-  },
-  {
-    id: 'journalist_visit',
-    icon: '📰',
-    title: 'Nota Periodística',
-    desc: 'Un periodista local quiere hacer una nota sobre tu gym para el diario del barrio.',
-    choices: [
-      { text: 'Dar la entrevista', cost: 'Gratis', hint: 'Publicidad gratuita. Gran exposición local.', result: '+40 rep, +5 miembros, +60 XP', effect: (g) => { g.reputation += 40; g.members = Math.min(g.members + 5, g.maxMembers); g.xp += 60; } },
-      { text: 'Pagar por publicidad extra', cost: '-$1,500', hint: 'Nota + media página de publicidad en el diario. Máximo impacto.', result: '+80 rep, +10 miembros, +100 XP', effect: (g) => { g.money -= 1500; g.reputation += 80; g.members = Math.min(g.members + 10, g.maxMembers); g.xp += 100; } },
-    ],
-    minLevel: 5
-  },
-  {
-    id: 'staff_burnout',
-    icon: '😩',
-    title: 'Burnout del Staff',
-    desc: 'Tu equipo está agotado. Varios empleados se quejan de las horas y el ritmo. Podés invertir en bienestar o ignorarlo.',
-    choices: [
-      { text: 'Día de spa para el staff', cost: '-$2,000', hint: 'Inversión en tu equipo. Mejora el ánimo y previene enfermedades.', result: 'Staff curado + 20 rep + 50 XP', effect: (g) => { STAFF.forEach(s => { var st = g.staff[s.id]; if (st && st.hired) { st.sickUntil = 0; if (st.extras) st.extras.forEach(e => { e.sickUntil = 0; }); } }); g.reputation += 20; g.xp += 50; } },
-      { text: 'Pizza party', cost: '-$300', hint: 'Barato pero apreciado. Algo es algo.', result: '+10 rep', effect: (g) => { g.money -= 300; g.reputation += 10; } },
-      { text: 'Les decís que aguanten', cost: 'Gratis', hint: '⚠️ Riesgo de que se enfermen más seguido.', result: '-10 rep', effect: (g) => { g.reputation = Math.max(0, g.reputation - 10); } },
-    ],
-    minLevel: 5
-  },
-  {
-    id: 'supplement_deal',
-    icon: '🧪',
-    title: 'Mayorista de Suplementos',
-    desc: 'Un distribuidor te ofrece suplementos a precio de costo. Podés stockearte o revender.',
-    choices: [
-      { text: 'Comprar stock completo', cost: '-$5,000', hint: 'Inversión grande. Activa un suplemento gratis al azar.', result: 'Suplemento random activado + 30 XP', effect: (g) => { g.money -= 5000; var available = SUPPLEMENTS.filter(s => g.level >= s.reqLevel && !(g.supplements[s.id] && g.supplements[s.id].activeUntil && Date.now() < g.supplements[s.id].activeUntil)); if (available.length > 0) { var pick = available[Math.floor(Math.random() * available.length)]; g.supplements[pick.id] = { activeUntil: Date.now() + pick.duration * 1000 }; } g.xp += 30; } },
-      { text: 'Revender con ganancia', cost: 'Gratis', hint: 'Negocio rápido. Plata segura.', result: '+$3,000', effect: (g) => { g.money += 3000; g.totalMoneyEarned += 3000; } },
-    ],
-    minLevel: 6
-  },
-  {
-    id: 'construction_delay',
-    icon: '🚧',
-    title: 'Problemas con la Obra',
-    desc: 'El proveedor de materiales se atrasó. Las construcciones en curso van más lento.',
-    choices: [
-      { text: 'Buscar otro proveedor', cost: '-$3,000', hint: 'Más caro pero no perdés tiempo. Las obras siguen normales.', result: '+20 rep, +40 XP', effect: (g) => { g.money -= 3000; g.reputation += 20; g.xp += 40; } },
-      { text: 'Esperar pacientemente', cost: 'Gratis', hint: '⚠️ Sin costo pero las mejoras en curso tardan más.', result: '-10 rep', effect: (g) => { g.reputation = Math.max(0, g.reputation - 10); } },
-    ],
-    minLevel: 4
-  },
-  {
-    id: 'rival_sabotage',
-    icon: '🕵️',
-    title: 'Sabotaje del Rival',
-    desc: 'Un rival dejó reseñas falsas y volantes difamando tu gym por el barrio.',
-    choices: [
-      { text: 'Campaña de contraataque', cost: '-$4,000', hint: 'Marketing agresivo. Neutraliza al rival y gana miembros.', result: '+30 rep, +8 miembros, +60 XP', effect: (g) => { g.money -= 4000; g.reputation += 30; g.members = Math.min(g.members + 8, g.maxMembers); g.xp += 60; } },
-      { text: 'Demandar por difamación', cost: '-$1,500', hint: 'Proceso largo pero sentás precedente. Bonus de XP.', result: '+15 rep, +80 XP', effect: (g) => { g.money -= 1500; g.reputation += 15; g.xp += 80; } },
-      { text: 'Ignorar y seguir laburando', cost: 'Gratis', hint: '⚠️ Sin costo pero perdés miembros.', result: '-5 miembros, -15 rep', effect: (g) => { g.members = Math.max(0, g.members - 5); g.reputation = Math.max(0, g.reputation - 15); } },
-    ],
-    minLevel: 7
-  },
-  {
-    id: 'training_seminar',
-    icon: '🎓',
-    title: 'Seminario de Capacitación',
-    desc: 'Una academia fitness ofrece un seminario intensivo para tu staff. Podría mejorar sus habilidades.',
-    choices: [
-      { text: 'Mandar a todo el staff', cost: '-$5,000', hint: 'Inversión importante. Acelera el entrenamiento de tu equipo.', result: '+50 XP, +25 rep', effect: (g) => { g.money -= 5000; g.xp += 50; g.reputation += 25; } },
-      { text: 'Mandar solo al entrenador', cost: '-$1,500', hint: 'Más económico. Menor impacto pero razonable.', result: '+25 XP, +10 rep', effect: (g) => { g.money -= 1500; g.xp += 25; g.reputation += 10; } },
-      { text: 'No vale la pena', cost: 'Gratis', hint: 'Ahorrás plata, perdés la oportunidad.', result: 'Nada pasa', effect: () => {} },
-    ],
-    minLevel: 6
-  },
-  {
-    id: 'equipment_recall',
-    icon: '⚠️',
-    title: 'Recall de Equipamiento',
-    desc: 'El fabricante detectó un defecto en ciertos equipos. Ofrecen reemplazo gratis o compensación.',
-    choices: [
-      { text: 'Pedir reemplazo mejorado', cost: 'Gratis', hint: 'Equipos nuevos y mejores. Gran reputación.', result: '+25 rep, +40 XP', effect: (g) => { g.reputation += 25; g.xp += 40; } },
-      { text: 'Aceptar compensación económica', cost: 'Gratis', hint: 'Plata en mano. Menos impacto en el gym.', result: '+$4,000', effect: (g) => { g.money += 4000; g.totalMoneyEarned += 4000; } },
-    ],
-    minLevel: 8
-  },
-  {
-    id: 'social_media_collab',
-    icon: '📸',
-    title: 'Collab con Instagrammer',
-    desc: 'Un influencer fitness con 500K seguidores quiere hacer una collab en tu gym.',
-    choices: [
-      { text: 'Collab full (le prestás el gym)', cost: '-$2,000', hint: 'Mucha exposición. Boom de miembros y reputación.', result: '+12 miembros, +50 rep, +80 XP', effect: (g) => { g.money -= 2000; g.members = Math.min(g.members + 12, g.maxMembers); g.reputation += 50; g.xp += 80; } },
-      { text: 'Que pague por usar el gym', cost: 'Gratis', hint: 'Plata segura pero menor impacto mediático.', result: '+$3,000, +10 rep', effect: (g) => { g.money += 3000; g.totalMoneyEarned += 3000; g.reputation += 10; } },
-      { text: 'No me interesa', cost: 'Gratis', hint: 'Sin impacto.', result: 'Nada pasa', effect: () => {} },
-    ],
-    minLevel: 8
-  },
-  {
-    id: 'health_inspection',
-    icon: '🩺',
-    title: 'Inspección Sanitaria',
-    desc: 'Bromatología vino a inspeccionar los vestuarios y la zona de jugos. Todo tiene que estar en orden.',
-    choices: [
-      { text: 'Limpieza profunda express', cost: '-$1,500', hint: 'Pasás la inspección con nota 10. Los miembros notan la diferencia.', result: '+20 rep, +30 XP', effect: (g) => { g.money -= 1500; g.reputation += 20; g.xp += 30; } },
-      { text: 'Confiar en tu limpieza habitual', cost: 'Gratis', hint: '🎲 50/50. Si tenés personal de limpieza, mejor chance.', result: '50% OK (+10 rep), 50% multa (-$500, -10 rep)', effect: (g) => { var hasClean = g.staff.cleaner && g.staff.cleaner.hired; var chance = hasClean ? 0.8 : 0.5; if (Math.random() < chance) { g.reputation += 10; } else { g.money -= 500; g.reputation = Math.max(0, g.reputation - 10); } } },
-    ],
-    minLevel: 3
-  },
-  {
-    id: 'lucky_day',
-    icon: '🍀',
-    title: 'Día de Suerte',
-    desc: '¡Todo sale bien hoy! Un ex-miembro volvió con amigos y un sponsor dejó productos gratis.',
-    choices: [
-      { text: '¡A disfrutar!', cost: 'Gratis', hint: 'Sin trampas, solo buenas noticias.', result: '+$2,000, +5 miembros, +20 rep', effect: (g) => { g.money += 2000; g.totalMoneyEarned += 2000; g.members = Math.min(g.members + 5, g.maxMembers); g.reputation += 20; } },
-    ],
-    minLevel: 1
-  },
-  {
-    id: 'neighborhood_event',
-    icon: '🎪',
-    title: 'Feria del Barrio',
-    desc: 'Hay una feria vecinal este fin de semana. Podés poner un stand para promocionar tu gym.',
-    choices: [
-      { text: 'Stand con demos gratis', cost: '-$2,500', hint: 'Muestra de clases + sorteo. Atrae muchos curiosos.', result: '+10 miembros, +30 rep, +60 XP', effect: (g) => { g.money -= 2500; g.members = Math.min(g.members + 10, g.maxMembers); g.reputation += 30; g.xp += 60; } },
-      { text: 'Repartir volantes', cost: '-$300', hint: 'Bajo costo, bajo impacto. Algo es algo.', result: '+3 miembros, +10 rep', effect: (g) => { g.money -= 300; g.members = Math.min(g.members + 3, g.maxMembers); g.reputation += 10; } },
-      { text: 'Pasar de largo', cost: 'Gratis', hint: 'Sin interés. Oportunidad perdida.', result: 'Nada pasa', effect: () => {} },
-    ],
-    minLevel: 2
-  },
-  {
-    id: 'tax_audit',
-    icon: '🧾',
-    title: 'Auditoría de AFIP',
-    desc: 'AFIP quiere revisar tus números. Mejor tener todo en regla...',
-    choices: [
-      { text: 'Contratar contador express', cost: '-$3,000', hint: 'Profesional que ordena todo rápido. Tranquilidad total.', result: 'Sin problemas, +15 rep', effect: (g) => { g.money -= 3000; g.reputation += 15; } },
-      { text: 'Presentar los libros como están', cost: 'Gratis', hint: '🎲 Depende de cómo vengas. 60% bien, 40% multa.', result: '60%: OK (+10 rep), 40%: multa -$5,000', effect: (g) => { if (Math.random() < 0.6) { g.reputation += 10; } else { g.money -= 5000; } } },
-    ],
-    minLevel: 10
-  },
+  { id:'inspection', icon:'🏛️', title:'Inspección Municipal', minLevel:1,
+    desc:'Un inspector del municipio vino a revisar las instalaciones. Tus decisiones afectan tu reputación.',
+    choices:[
+      { text:'Mejorar instalaciones', hint:'Inversión segura que mejora tu imagen.', money:-1, rep:2, xp:1 },
+      { text:'Pagar la multa', hint:'Solución rápida, te sacás el problema de encima.', money:-1 },
+      { text:'Ignorar al inspector', hint:'⚠️ Riesgoso. Daña tu reputación.', rep:-1 },
+    ]},
+  { id:'celebrity_visit', icon:'🌟', title:'Visita de un Famoso', minLevel:3,
+    desc:'Un influencer fitness quiere entrenar en tu gym hoy. ¿Cómo lo manejás?',
+    choices:[
+      { text:'Dejarlo entrenar gratis', hint:'Su audiencia va a conocer tu gym. Boom de reputación.', rep:3, xp:2 },
+      { text:'Cobrarle membresía VIP', hint:'Ganancia inmediata, menos impacto en redes.', money:2, rep:1 },
+    ]},
+  { id:'broken_equipment', icon:'🔧', title:'Equipo Roto', minLevel:2,
+    desc:'Se rompió una máquina y los miembros están molestos.',
+    choices:[
+      { text:'Reparar inmediatamente', hint:'Demostrás que te importa.', money:-1, rep:1 },
+      { text:'Cartel de fuera de servicio', hint:'⚠️ Barato pero los miembros lo notan.', rep:-1 },
+      { text:'Upgrade a equipo nuevo', hint:'Inversión fuerte, gran impacto positivo.', money:-2, rep:3, xp:2 },
+    ]},
+  { id:'sponsor_offer', icon:'💼', title:'Oferta de Sponsor', minLevel:4,
+    desc:'Una marca de suplementos quiere patrocinar tu gym a cambio de exclusividad.',
+    choices:[
+      { text:'Aceptar el sponsoreo', hint:'Ganancia segura + experiencia.', money:2, xp:1 },
+      { text:'Negociar mejor deal', hint:'🎲 Riesgo/recompensa: duplicás o te vas con las manos vacías.', gamble:{ p:0.5, win:{ money:3, xp:1 }, lose:{} } },
+      { text:'Rechazar (mantener libertad)', hint:'Tu gym mantiene su identidad. Bonus de reputación.', rep:2 },
+    ]},
+  { id:'group_discount', icon:'👥', title:'Grupo Corporativo', minLevel:3,
+    desc:'Una empresa quiere membresías grupales con descuento para sus empleados.',
+    choices:[
+      { text:'Aceptar con descuento', hint:'Muchos miembros nuevos de golpe + algo de plata.', members:2, money:1 },
+      { text:'Precio completo o nada', hint:'🎲 Difícil que acepten, pero pagás más por miembro.', gamble:{ p:0.35, win:{ members:1, money:2 }, lose:{} } },
+    ]},
+  { id:'competition_invite', icon:'🏆', title:'Invitación a Exhibición', minLevel:5,
+    desc:'Te invitan a una exhibición de fuerza en un evento local. Gran oportunidad de marketing.',
+    choices:[
+      { text:'Participar personalmente', hint:'Máximo impacto. Tu cara representa el gym.', rep:3, xp:3 },
+      { text:'Enviar al mejor miembro', hint:'Buen resultado con menor impacto personal.', rep:2, xp:2 },
+    ]},
+  { id:'water_leak', icon:'💧', title:'Filtración de Agua', minLevel:1,
+    desc:'Hay una filtración en el techo. El agua gotea sobre las máquinas.',
+    choices:[
+      { text:'Arreglar ya', hint:'Resolvelo antes de que empeore.', money:-1, rep:1 },
+      { text:'Dejarlo para después', hint:'⚠️ Muy riesgoso. Los miembros van a hablar mal.', rep:-2 },
+    ]},
+  { id:'fitness_challenge', icon:'🎯', title:'Desafío Fitness Viral', minLevel:2,
+    desc:'Un desafío de fitness se hizo viral en TikTok. Tu gym podría sumarse.',
+    choices:[
+      { text:'Organizar el desafío en el gym', hint:'Atrae miembros nuevos y sube reputación.', money:-1, members:2, rep:2, xp:2 },
+      { text:'Filmar y subir a redes', hint:'Sin costo. Buen marketing gratis.', rep:1, xp:1 },
+      { text:'Ignorarlo', hint:'Oportunidad perdida, pero no te afecta.', },
+    ]},
+  { id:'power_outage', icon:'⚡', title:'Corte de Luz', minLevel:3,
+    desc:'Se cortó la luz en el barrio. Tu gym está a oscuras.',
+    choices:[
+      { text:'Comprar generador', hint:'Inversión grande pero gran reputación.', money:-2, rep:3, xp:2 },
+      { text:'Entrenar a la luz de velas', hint:'🎲 Creativo. Puede salir divertido... o peligroso.', gamble:{ p:0.7, win:{ rep:1, xp:1 }, lose:{ rep:-1, members:-1 } } },
+      { text:'Cerrar por hoy', hint:'⚠️ Fácil, pero los miembros se van a otro gym.', rep:-3 },
+    ]},
+  { id:'member_complaint', icon:'😤', title:'Queja de Miembro Antiguo', minLevel:2,
+    desc:'Un miembro con mucha antigüedad amenaza con irse a la competencia.',
+    choices:[
+      { text:'Ofrecerle un mes gratis', hint:'Lo retiene y mejora la percepción.', money:-1, rep:2 },
+      { text:'Escuchar y prometer mejoras', hint:'Lo calma por ahora.', rep:1 },
+      { text:'Dejarlo ir', hint:'⚠️ Puede llevarse a otros con él.', members:-1, rep:-2 },
+    ]},
+  { id:'equipment_theft', icon:'🦹', title:'Robo en el Gym', minLevel:3,
+    desc:'Entraron a robar de noche. Faltan pesas y accesorios.',
+    choices:[
+      { text:'Instalar cámaras de seguridad', hint:'Previene futuros robos y da tranquilidad.', money:-2, rep:2, xp:2 },
+      { text:'Hacer la denuncia policial', hint:'Trámite burocrático, no soluciona la inseguridad.', money:-1 },
+      { text:'No hacer nada', hint:'⚠️ Los miembros se sienten inseguros y se van.', rep:-3, members:-1 },
+    ]},
+  { id:'flu_outbreak', icon:'🤒', title:'Brote de Gripe', minLevel:2,
+    desc:'Varios miembros se enfermaron. Hay riesgo de contagio.',
+    choices:[
+      { text:'Desinfección profesional', hint:'Los miembros lo agradecen mucho.', money:-2, rep:2, xp:1 },
+      { text:'Poner alcohol en gel', hint:'Mínimo esfuerzo, algo es algo.', money:-1, rep:1 },
+      { text:'Esperar que pase', hint:'⚠️ Los sanos empiezan a irse también.', members:-1, rep:-2 },
+    ]},
+  { id:'negative_review', icon:'📱', title:'Reseña Negativa Viral', minLevel:4,
+    desc:'Un ex-miembro publicó una reseña de 1 estrella que se hizo viral.',
+    choices:[
+      { text:'Responder profesionalmente', hint:'Mostrás madurez. La mejor estrategia.', rep:1, xp:1 },
+      { text:'Campaña de reseñas positivas', hint:'Pedís a miembros actuales que dejen buenas reseñas.', money:-1, rep:3, xp:2 },
+      { text:'Ignorarlo', hint:'⚠️ El algoritmo prioriza la reseña negativa.', rep:-2 },
+    ]},
+  { id:'gym_tournament', icon:'🏋️', title:'Torneo en Tu Gym', minLevel:6,
+    desc:'Una federación quiere organizar un torneo amateur en tus instalaciones.',
+    choices:[
+      { text:'Organizar el torneo', hint:'Inversión que se paga sola: el gym se llena.', money:2, rep:3, xp:3 },
+      { text:'Cobrar entrada y comisión', hint:'Menos trabajo, ganancia segura.', money:2, rep:1 },
+    ]},
+  { id:'supplier_deal', icon:'📦', title:'Oferta de Proveedor', minLevel:5,
+    desc:'Un proveedor te ofrece un lote de equipamiento con descuento.',
+    choices:[
+      { text:'Comprar el lote', hint:'Mejora la calidad general del gym.', money:-2, rep:3, xp:2 },
+      { text:'Negociar financiación', hint:'Pagás menos ahora, menor impacto.', money:-1, rep:2, xp:1 },
+      { text:'No me interesa', hint:'Sin costo, sin beneficio.', },
+    ]},
+  { id:'journalist_visit', icon:'📰', title:'Nota Periodística', minLevel:5,
+    desc:'Un periodista local quiere hacer una nota sobre tu gym.',
+    choices:[
+      { text:'Dar la entrevista', hint:'Publicidad gratuita, gran exposición.', rep:3, members:1, xp:2 },
+      { text:'Pagar por publicidad extra', hint:'Nota + media página en el diario. Máximo impacto.', money:-2, rep:3, members:2, xp:3 },
+    ]},
+  { id:'staff_burnout', icon:'😩', title:'Burnout del Staff', minLevel:5,
+    desc:'Tu equipo está agotado. Varios empleados se quejan del ritmo.',
+    choices:[
+      { text:'Día de spa para el staff', hint:'Mejora el ánimo y cura a los enfermos.', money:-2, rep:2, xp:2, special:'curestaff' },
+      { text:'Pizza party', hint:'Barato pero apreciado.', money:-1, rep:1 },
+      { text:'Les decís que aguanten', hint:'⚠️ Riesgo de que se enfermen más seguido.', rep:-2 },
+    ]},
+  { id:'supplement_deal', icon:'🧪', title:'Mayorista de Suplementos', minLevel:6,
+    desc:'Un distribuidor te ofrece suplementos a precio de costo.',
+    choices:[
+      { text:'Comprar stock completo', hint:'Activa un suplemento gratis al azar.', money:-3, xp:1, special:'randomsupp' },
+      { text:'Revender con ganancia', hint:'Negocio rápido, plata segura.', money:2 },
+    ]},
+  { id:'construction_delay', icon:'🚧', title:'Problemas con la Obra', minLevel:4,
+    desc:'El proveedor de materiales se atrasó y complica todo.',
+    choices:[
+      { text:'Buscar otro proveedor', hint:'Más caro pero no perdés tiempo.', money:-2, rep:2, xp:1 },
+      { text:'Esperar pacientemente', hint:'⚠️ Los miembros se impacientan.', rep:-1 },
+    ]},
+  { id:'rival_sabotage', icon:'🕵️', title:'Sabotaje del Rival', minLevel:7,
+    desc:'Un rival dejó reseñas falsas y volantes difamando tu gym.',
+    choices:[
+      { text:'Campaña de contraataque', hint:'Marketing agresivo. Neutraliza y gana miembros.', money:-3, rep:3, members:2, xp:2 },
+      { text:'Demandar por difamación', hint:'Proceso largo pero sentás precedente.', money:-1, rep:2, xp:3 },
+      { text:'Ignorar y seguir laburando', hint:'⚠️ Perdés miembros.', members:-2, rep:-2 },
+    ]},
+  { id:'training_seminar', icon:'🎓', title:'Seminario de Capacitación', minLevel:6,
+    desc:'Una academia ofrece un seminario intensivo para tu staff.',
+    choices:[
+      { text:'Mandar a todo el staff', hint:'Inversión fuerte en tu equipo.', money:-3, xp:2, rep:2 },
+      { text:'Mandar solo al entrenador', hint:'Más económico, menor impacto.', money:-1, xp:1, rep:1 },
+      { text:'No vale la pena', hint:'Ahorrás plata, perdés la oportunidad.', },
+    ]},
+  { id:'equipment_recall', icon:'⚠️', title:'Recall de Equipamiento', minLevel:8,
+    desc:'El fabricante detectó un defecto. Ofrecen reemplazo o compensación.',
+    choices:[
+      { text:'Pedir reemplazo mejorado', hint:'Equipos nuevos y mejores.', rep:2, xp:2 },
+      { text:'Aceptar compensación económica', hint:'Plata en mano, menos impacto.', money:3 },
+    ]},
+  { id:'social_media_collab', icon:'📸', title:'Collab con Instagrammer', minLevel:8,
+    desc:'Un influencer con 500K seguidores quiere hacer una collab.',
+    choices:[
+      { text:'Collab full (le prestás el gym)', hint:'Mucha exposición. Boom de miembros.', money:-2, members:3, rep:3, xp:2 },
+      { text:'Que pague por usar el gym', hint:'Plata segura, menor impacto mediático.', money:2, rep:1 },
+      { text:'No me interesa', hint:'Sin impacto.', },
+    ]},
+  { id:'health_inspection', icon:'🩺', title:'Inspección Sanitaria', minLevel:3,
+    desc:'Bromatología vino a revisar los vestuarios y la zona de jugos.',
+    choices:[
+      { text:'Limpieza profunda express', hint:'Pasás con nota 10. Los miembros lo notan.', money:-2, rep:2, xp:1 },
+      { text:'Confiar en tu limpieza habitual', hint:'🎲 Si tenés todo en orden, zafás.', gamble:{ p:0.55, win:{ rep:1 }, lose:{ money:-1, rep:-1 } } },
+    ]},
+  { id:'lucky_day', icon:'🍀', title:'Día de Suerte', minLevel:1,
+    desc:'¡Todo sale bien hoy! Volvió un ex-miembro con amigos y llegaron productos gratis.',
+    choices:[
+      { text:'¡A disfrutar!', hint:'Sin trampas, solo buenas noticias.', money:2, members:2, rep:2 },
+    ]},
+  { id:'neighborhood_event', icon:'🎪', title:'Feria del Barrio', minLevel:2,
+    desc:'Hay una feria vecinal este fin de semana. Podés poner un stand.',
+    choices:[
+      { text:'Stand con demos gratis', hint:'Muestra de clases + sorteo. Atrae curiosos.', money:-2, members:3, rep:2, xp:2 },
+      { text:'Repartir volantes', hint:'Bajo costo, bajo impacto.', money:-1, members:1, rep:1 },
+      { text:'Pasar de largo', hint:'Oportunidad perdida.', },
+    ]},
+  { id:'tax_audit', icon:'🧾', title:'Auditoría de AFIP', minLevel:10,
+    desc:'AFIP quiere revisar tus números. Mejor tener todo en regla...',
+    choices:[
+      { text:'Contratar contador express', hint:'Ordena todo rápido. Tranquilidad total.', money:-2, rep:1 },
+      { text:'Presentar los libros como están', hint:'🎲 Depende de cómo vengas. Si zafás, bien; si no, multón.', gamble:{ p:0.6, win:{ rep:1 }, lose:{ money:-3 } } },
+    ]},
+  { id:'heat_wave', icon:'🥵', title:'Ola de Calor', minLevel:3,
+    desc:'40 grados y el aire no da abasto. Los miembros se derriten.',
+    choices:[
+      { text:'Comprar más aires acondicionados', hint:'Inversión que se nota. Todos lo agradecen.', money:-2, rep:2 },
+      { text:'Repartir ventiladores y agua', hint:'🎲 Solución parche: puede alcanzar o no.', gamble:{ p:0.6, win:{ rep:1 }, lose:{ rep:-1, members:-1 } } },
+      { text:'Que se aguanten', hint:'⚠️ Algunos no vuelven con este calor.', rep:-2, members:-1 },
+    ]},
+  { id:'star_instructor', icon:'🧑‍🏫', title:'Te Roban al Profe', minLevel:7,
+    desc:'Un rival quiere llevarse a tu instructor estrella con una mejor oferta.',
+    choices:[
+      { text:'Mejorarle el sueldo', hint:'Lo retenés. Tu equipo ve que valorás el talento.', money:-2, rep:1, xp:1 },
+      { text:'Contraoferta + bono de fidelidad', hint:'Lo blindás y suma alumnos nuevos.', money:-3, rep:2, members:1, xp:2 },
+      { text:'Dejarlo ir', hint:'🎲 Quizás encontrás uno mejor... o perdés a sus alumnos.', gamble:{ p:0.45, win:{ xp:1, rep:1 }, lose:{ rep:-2, members:-1 } } },
+    ]},
+  { id:'gym_dog', icon:'🐶', title:'La Mascota del Gym', minLevel:2,
+    desc:'Apareció un perro callejero que los miembros ya adoran.',
+    choices:[
+      { text:'Adoptarlo como mascota del gym', hint:'Se vuelve la estrella de las redes.', rep:2, members:1, xp:1 },
+      { text:'Buscarle un hogar', hint:'Lo correcto. La gente lo valora.', rep:1 },
+      { text:'Echarlo', hint:'⚠️ Mala onda, los miembros se decepcionan.', rep:-1 },
+    ]},
+  { id:'member_record', icon:'🏅', title:'Récord de un Miembro', minLevel:5,
+    desc:'Un socio rompió un récord de levantamiento y la prensa quiere cubrirlo.',
+    choices:[
+      { text:'Organizarle una fiesta', hint:'Foto en todos lados. Orgullo del gym.', money:-1, rep:3, members:1, xp:2 },
+      { text:'Postearlo en redes nomás', hint:'Gratis y efectivo.', rep:1, xp:1 },
+    ]},
+  { id:'junk_food_truck', icon:'🍔', title:'Foodtruck de Comida Chatarra', minLevel:4,
+    desc:'Se instaló un foodtruck enfrente que tienta a tus socios con hamburguesas.',
+    choices:[
+      { text:'Dar una charla de nutrición', hint:'Educás y te posicionás como referente.', money:-1, rep:2, xp:1 },
+      { text:'Hacer un convenio con ellos', hint:'🎲 Negocio raro: puede sumar o quedar mal.', gamble:{ p:0.5, win:{ money:2 }, lose:{ rep:-1 } } },
+      { text:'Ignorarlo', hint:'⚠️ Algunos socios aflojan la dieta y el ritmo.', members:-1 },
+    ]},
+  { id:'buyout_offer', icon:'🤝', title:'Oferta de Compra', minLevel:12,
+    desc:'Una cadena grande quiere comprar tu gym y sumarlo a su imperio.',
+    choices:[
+      { text:'Rechazar con orgullo', hint:'Tu marca no se vende. Los socios te aman por eso.', rep:3, xp:2 },
+      { text:'Negociar un acuerdo de imagen', hint:'Plata fuerte sin perder el control.', money:3, rep:1 },
+    ]},
+  { id:'posnet_down', icon:'💳', title:'Se Cayó el Posnet', minLevel:4,
+    desc:'No podés cobrar con tarjeta y la cola de gente crece.',
+    choices:[
+      { text:'Llamar al soporte urgente', hint:'Lo resolvés rápido, los socios lo valoran.', money:-1, rep:1 },
+      { text:'Cobrar solo en efectivo por hoy', hint:'🎲 Algunos zafan, otros se van sin pagar.', gamble:{ p:0.6, win:{ rep:1 }, lose:{ money:-1, members:-1 } } },
+    ]},
+  { id:'charity_event', icon:'❤️', title:'Evento Solidario', minLevel:6,
+    desc:'Te invitan a auspiciar una maratón benéfica del barrio.',
+    choices:[
+      { text:'Auspiciar fuerte', hint:'Tu gym queda como héroe local.', money:-2, rep:3, xp:2 },
+      { text:'Donar lo justo', hint:'Colaborás sin exagerar.', money:-1, rep:1 },
+      { text:'No participar', hint:'Oportunidad perdida.', },
+    ]},
+  { id:'influencer_surprise', icon:'🎬', title:'Influencer Sorpresa', minLevel:8,
+    desc:'Un tiktoker entra con la cámara prendida sin avisar. Todo lo que pase queda grabado.',
+    choices:[
+      { text:'Atenderlo de diez', hint:'🎲 Si todo sale bien, viral positivo enorme.', gamble:{ p:0.7, win:{ rep:3, members:2, xp:2 }, lose:{ rep:-1 } } },
+      { text:'Pedirle amablemente que se vaya', hint:'⚠️ Lo postea igual, medio picado.', rep:-1 },
+    ]},
+  { id:'pipe_burst', icon:'🚿', title:'Caño Roto', minLevel:5,
+    desc:'Se rompió un caño y se inundó el vestuario.',
+    choices:[
+      { text:'Plomero de urgencia', hint:'Caro pero lo resolvés ya.', money:-2, rep:1 },
+      { text:'Baldear y seguir abierto', hint:'🎲 Puede aguantar... o ser un desastre.', gamble:{ p:0.55, win:{ rep:1 }, lose:{ rep:-2, members:-1 } } },
+    ]},
+  { id:'outdoor_class', icon:'🌳', title:'Clase al Aire Libre', minLevel:4,
+    desc:'Proponen una mega clase abierta en la plaza para promocionar el gym.',
+    choices:[
+      { text:'Organizarla a lo grande', hint:'Demostración pública. Llueven inscripciones.', money:-1, members:2, rep:2, xp:2 },
+      { text:'Pasar esta vez', hint:'Sin riesgo, sin recompensa.', },
+    ]},
+  { id:'proposal_at_gym', icon:'💍', title:'Propuesta de Casamiento', minLevel:3,
+    desc:'Un socio quiere proponerle casamiento a su pareja en plena sala de musculación.',
+    choices:[
+      { text:'Ayudarlo a armar la sorpresa', hint:'Momentazo que recorre las redes.', rep:2, members:1, xp:1 },
+      { text:'Cobrarle un alquiler simbólico', hint:'Ganás algo y queda lindo igual.', money:1, rep:1 },
+    ]},
 ];
 
 const DAILY_MISSIONS_POOL = [
