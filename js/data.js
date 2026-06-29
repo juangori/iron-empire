@@ -144,14 +144,14 @@ const GYM_CLASSES = [
 ];
 
 const CLASS_INSTRUCTORS = [
-  { id: 'yoga',           name: 'Profe de Yoga',      icon: '🧘', hireCost: 300,   upgradeMult: 2.5, commission: 0.15, reqLevel: 2 },
-  { id: 'spinning',       name: 'Profe de Spinning',  icon: '🚴', hireCost: 600,   upgradeMult: 2.5, commission: 0.15, reqLevel: 3 },
-  { id: 'pilates',        name: 'Profe de Pilates',   icon: '🤸', hireCost: 1000,  upgradeMult: 2.5, commission: 0.15, reqLevel: 4 },
-  { id: 'zumba',          name: 'Profe de Zumba',     icon: '💃', hireCost: 1000,  upgradeMult: 2.5, commission: 0.15, reqLevel: 4 },
-  { id: 'hiit',           name: 'Profe de HIIT',      icon: '💥', hireCost: 2000,  upgradeMult: 2.5, commission: 0.15, reqLevel: 5 },
-  { id: 'boxing_class',   name: 'Profe de Boxeo',     icon: '🥊', hireCost: 5000,  upgradeMult: 2.5, commission: 0.15, reqLevel: 7 },
-  { id: 'crossfit_class', name: 'Profe de CrossFit',  icon: '🏋️', hireCost: 12000, upgradeMult: 2.5, commission: 0.15, reqLevel: 9 },
-  { id: 'swimming',       name: 'Profe de Natación',  icon: '🏊', hireCost: 25000, upgradeMult: 2.5, commission: 0.15, reqLevel: 11 },
+  { id: 'yoga',           name: 'Profe de Yoga',      icon: '🧘', hireCost: 300,   upgradeMult: 1.5, commission: 0.15, reqLevel: 2 },
+  { id: 'spinning',       name: 'Profe de Spinning',  icon: '🚴', hireCost: 600,   upgradeMult: 1.5, commission: 0.15, reqLevel: 3 },
+  { id: 'pilates',        name: 'Profe de Pilates',   icon: '🤸', hireCost: 1000,  upgradeMult: 1.5, commission: 0.15, reqLevel: 4 },
+  { id: 'zumba',          name: 'Profe de Zumba',     icon: '💃', hireCost: 1000,  upgradeMult: 1.5, commission: 0.15, reqLevel: 4 },
+  { id: 'hiit',           name: 'Profe de HIIT',      icon: '💥', hireCost: 2000,  upgradeMult: 1.5, commission: 0.15, reqLevel: 5 },
+  { id: 'boxing_class',   name: 'Profe de Boxeo',     icon: '🥊', hireCost: 5000,  upgradeMult: 1.5, commission: 0.15, reqLevel: 7 },
+  { id: 'crossfit_class', name: 'Profe de CrossFit',  icon: '🏋️', hireCost: 12000, upgradeMult: 1.5, commission: 0.15, reqLevel: 9 },
+  { id: 'swimming',       name: 'Profe de Natación',  icon: '🏊', hireCost: 25000, upgradeMult: 1.5, commission: 0.15, reqLevel: 11 },
 ];
 
 const MARKETING_CAMPAIGNS = [
@@ -477,7 +477,7 @@ const SKILL_TREE = {
       { id: 'eq_efficiency', name: 'Eficiencia', icon: '⚡', desc: '+25% ingresos de todo el equipamiento.', cost: 125000, reqLevel: 7, requires: 'eq_durability', effect: { equipIncomeMult: 1.25 } },
       { id: 'eq_premium', name: 'Línea Premium', icon: '💎', desc: '+50% capacidad de equipamiento.', cost: 750000, reqLevel: 12, requires: 'eq_efficiency', effect: { equipCapacityMult: 1.5 } },
       { id: 'eq_mastery', name: 'Maestría Total', icon: '👑', desc: '+100% ingresos de equipo y -25% costos.', cost: 5000000, reqLevel: 17, requires: 'eq_premium', effect: { equipIncomeMult: 2.0, equipCostMult: 0.75 } },
-      { id: 'eq_reinforced', name: 'Blindaje Industrial', icon: '🔰', desc: '-50% chance de rotura de equipos.', cost: 40000000, reqLevel: 22, requires: 'eq_mastery', effect: { breakdownChanceMult: 0.5 } },
+      { id: 'eq_reinforced', name: 'Blindaje Industrial', icon: '🔰', desc: '-50% rotura de equipos y +50% ingresos de equipamiento.', cost: 40000000, reqLevel: 22, requires: 'eq_mastery', effect: { breakdownChanceMult: 0.5, equipIncomeMult: 1.5 } },
     ]
   },
   marketing: {
@@ -487,7 +487,7 @@ const SKILL_TREE = {
     skills: [
       { id: 'mk_reach', name: 'Mayor Alcance', icon: '📡', desc: '+30% miembros de campañas.', cost: 25000, reqLevel: 4, effect: { campaignMembersMult: 1.3 } },
       { id: 'mk_viral', name: 'Viralización', icon: '🔥', desc: 'Campañas duran 50% más.', cost: 150000, reqLevel: 8, requires: 'mk_reach', effect: { campaignDurationMult: 1.5 } },
-      { id: 'mk_brand', name: 'Marca Fuerte', icon: '🏷️', desc: '+50% reputación de campañas.', cost: 1000000, reqLevel: 13, requires: 'mk_viral', effect: { campaignRepMult: 1.5 } },
+      { id: 'mk_brand', name: 'Marca Fuerte', icon: '🏷️', desc: '+50% reputación y +30% miembros de campañas.', cost: 1000000, reqLevel: 13, requires: 'mk_viral', effect: { campaignRepMult: 1.5, campaignMembersMult: 1.3 } },
       { id: 'mk_empire', name: 'Imperio Mediático', icon: '📺', desc: '-40% costo de campañas, +100% miembros.', cost: 7500000, reqLevel: 18, requires: 'mk_brand', effect: { campaignCostMult: 0.6, campaignMembersMult: 2.0 } },
       { id: 'mk_monopoly', name: 'Monopolio', icon: '🦈', desc: 'Rivales roban 50% menos miembros.', cost: 50000000, reqLevel: 23, requires: 'mk_empire', effect: { rivalStealMult: 0.5 } },
     ]
@@ -498,7 +498,7 @@ const SKILL_TREE = {
     color: 'var(--purple)',
     skills: [
       { id: 'st_training', name: 'Capacitación', icon: '📚', desc: '+30% efecto de todo el staff.', cost: 20000, reqLevel: 4, effect: { staffEffectMult: 1.3 } },
-      { id: 'st_motivation', name: 'Motivación', icon: '💪', desc: 'Staff genera +50% reputación.', cost: 200000, reqLevel: 9, requires: 'st_training', effect: { staffRepMult: 1.5 } },
+      { id: 'st_motivation', name: 'Motivación', icon: '💪', desc: 'Staff genera +50% reputación y rinde +15%.', cost: 200000, reqLevel: 9, requires: 'st_training', effect: { staffRepMult: 1.5, staffEffectMult: 1.15 } },
       { id: 'st_synergy', name: 'Sinergia', icon: '🤝', desc: 'Cada staff contratado da +5% ingreso extra.', cost: 1250000, reqLevel: 14, requires: 'st_motivation', effect: { staffSynergyBonus: 0.05 } },
       { id: 'st_legends', name: 'Staff Legendario', icon: '🌟', desc: '-30% costo staff, 2x auto-miembros.', cost: 10000000, reqLevel: 19, requires: 'st_synergy', effect: { staffCostMult: 0.7, autoMembersMult: 2.0 } },
       { id: 'st_resilience', name: 'Resiliencia', icon: '💊', desc: '-50% enfermedad, training 30% más rápido.', cost: 60000000, reqLevel: 24, requires: 'st_legends', effect: { sickChanceMult: 0.5, trainingSpeedMult: 0.7 } },
@@ -512,8 +512,8 @@ const SKILL_TREE = {
       { id: 'mb_welcome', name: 'Bienvenida', icon: '🤗', desc: '+20% miembros atraídos por equipo.', cost: 12500, reqLevel: 3, effect: { memberAttractionMult: 1.2 } },
       { id: 'mb_retention', name: 'Retención', icon: '🔒', desc: '+40% capacidad máxima.', cost: 175000, reqLevel: 8, requires: 'mb_welcome', effect: { capacityMult: 1.4 } },
       { id: 'mb_premium_tier', name: 'Membresía Premium', icon: '💳', desc: 'Cada miembro genera +100% ingreso.', cost: 900000, reqLevel: 13, requires: 'mb_retention', effect: { memberIncomeMult: 2.0 } },
-      { id: 'mb_loyalty', name: 'Lealtad Total', icon: '❤️', desc: '+200% rep por miembro, +50% capacidad.', cost: 6000000, reqLevel: 18, requires: 'mb_premium_tier', effect: { memberRepMult: 3.0, capacityMult: 1.5 } },
-      { id: 'mb_community', name: 'Comunidad', icon: '🏘️', desc: 'Clases 2x ingresos, VIPs +50% recompensa.', cost: 45000000, reqLevel: 23, requires: 'mb_loyalty', effect: { classIncomeMult: 2.0, vipRewardMult: 1.5 } },
+      { id: 'mb_loyalty', name: 'Lealtad Total', icon: '❤️', desc: '+200% rep/miembro, +50% capacidad y +50% ingreso por miembros.', cost: 6000000, reqLevel: 18, requires: 'mb_premium_tier', effect: { memberRepMult: 3.0, capacityMult: 1.5, memberIncomeMult: 1.5 } },
+      { id: 'mb_community', name: 'Comunidad', icon: '🏘️', desc: 'Clases 2x ingresos, VIPs +50%, +25% ingreso por miembros.', cost: 15000000, reqLevel: 23, requires: 'mb_loyalty', effect: { classIncomeMult: 2.0, vipRewardMult: 1.5, memberIncomeMult: 1.25 } },
     ]
   },
   infrastructure: {
@@ -525,7 +525,7 @@ const SKILL_TREE = {
       { id: 'inf_contractors', name: 'Contratistas', icon: '👷', desc: 'Mejoras de equipo 30% más rápidas.', cost: 250000, reqLevel: 10, requires: 'inf_planning', effect: { equipUpgradeSpeedMult: 0.7 } },
       { id: 'inf_logistics', name: 'Logística', icon: '📦', desc: '+1 mejora de equipo simultánea.', cost: 1750000, reqLevel: 15, requires: 'inf_contractors', effect: { extraConcurrentUpgrades: 1 } },
       { id: 'inf_engineering', name: 'Ingeniería', icon: '⚙️', desc: 'Construcciones 50% más rápidas, -20% costo zonas.', cost: 15000000, reqLevel: 20, requires: 'inf_logistics', effect: { zoneBuildSpeedMult: 0.5, zoneCostMult: 0.8 } },
-      { id: 'inf_megaproject', name: 'Megaproyectos', icon: '🏛️', desc: 'Reparaciones 50% más rápidas.', cost: 75000000, reqLevel: 25, requires: 'inf_engineering', effect: { repairSpeedMult: 0.5 } },
+      { id: 'inf_megaproject', name: 'Megaproyectos', icon: '🏛️', desc: 'Reparaciones y upgrades 40-50% más rápidos, +1 obra simultánea.', cost: 75000000, reqLevel: 25, requires: 'inf_engineering', effect: { repairSpeedMult: 0.5, equipUpgradeSpeedMult: 0.6, extraConcurrentUpgrades: 1 } },
     ]
   },
   competitions: {
@@ -536,7 +536,7 @@ const SKILL_TREE = {
       { id: 'comp_prep', name: 'Preparación', icon: '🎯', desc: '+15% chance de ganar competencias.', cost: 25000, reqLevel: 5, effect: { compWinChanceBonus: 0.15 } },
       { id: 'comp_strategy', name: 'Estrategia', icon: '🧠', desc: '-25% cooldown de competencias.', cost: 225000, reqLevel: 10, requires: 'comp_prep', effect: { compCooldownMult: 0.75 } },
       { id: 'comp_prize', name: 'Premios Mayores', icon: '💰', desc: '+50% premios de competencias.', cost: 1500000, reqLevel: 15, requires: 'comp_strategy', effect: { compRewardMult: 1.5 } },
-      { id: 'comp_reputation', name: 'Prestigio', icon: '🎖️', desc: '+100% rep de competencias.', cost: 12500000, reqLevel: 20, requires: 'comp_prize', effect: { compRepMult: 2.0 } },
+      { id: 'comp_reputation', name: 'Prestigio', icon: '🎖️', desc: '+100% rep y +50% premios de competencias.', cost: 12500000, reqLevel: 20, requires: 'comp_prize', effect: { compRepMult: 2.0, compRewardMult: 1.5 } },
       { id: 'comp_dynasty', name: 'Dinastía', icon: '🏰', desc: '-40% cooldown extra, competencias dan XP doble.', cost: 60000000, reqLevel: 25, requires: 'comp_reputation', effect: { compCooldownMult: 0.6, compXpMult: 2.0 } },
     ]
   }
@@ -634,13 +634,13 @@ const OPERATING_COSTS = {
 // ===== SUPPLEMENTS =====
 const SUPPLEMENTS = [
   { id: 'protein', name: 'Proteína en Polvo', icon: '🥤', desc: 'El clásico batido post-entreno. Boost de ingresos general.', cost: 300, duration: 180, effects: { incomeMult: 1.2 }, reqLevel: 2, combo: 'creatine' },
-  { id: 'creatine', name: 'Creatina', icon: '💊', desc: 'Más fuerza, más resistencia. El gym tiene más capacidad.', cost: 600, duration: 180, effects: { capacityBonus: 10 }, reqLevel: 4, combo: 'protein' },
+  { id: 'creatine', name: 'Creatina', icon: '💊', desc: 'Más fuerza y resistencia. Más capacidad y un envión de ingresos.', cost: 600, duration: 180, effects: { capacityBonus: 10, incomeMult: 1.08 }, reqLevel: 4, combo: 'protein' },
   { id: 'preworkout', name: 'Pre-Workout', icon: '⚡', desc: 'Energía explosiva antes de entrenar. Las clases rinden mucho más.', cost: 1000, duration: 240, effects: { classIncomeMult: 1.3 }, reqLevel: 6 },
-  { id: 'bcaa', name: 'BCAA', icon: '🧪', desc: 'Aminoácidos de cadena ramificada. Mejoran la reputación del gym.', cost: 2000, duration: 240, effects: { repBonus: 15, repPerMin: 5 }, reqLevel: 8 },
+  { id: 'bcaa', name: 'BCAA', icon: '🧪', desc: 'Aminoácidos que aceleran la recuperación. Más ingresos y algo de reputación.', cost: 2000, duration: 240, effects: { incomeMult: 1.15, repPerMin: 5 }, reqLevel: 8 },
   { id: 'omega3', name: 'Omega 3', icon: '🐟', desc: 'Ácidos grasos esenciales. Reduce inflamación y mejora el ambiente general.', cost: 3000, duration: 270, effects: { incomeMult: 1.15, repPerMin: 6 }, reqLevel: 9 },
-  { id: 'fatburner', name: 'Quemador de Grasa', icon: '🔥', desc: 'Termogénico potente. Tus campañas de marketing pegan más fuerte.', cost: 4000, duration: 300, effects: { marketingMult: 1.3 }, reqLevel: 10 },
+  { id: 'fatburner', name: 'Quemador de Grasa', icon: '🔥', desc: 'Termogénico potente. Marketing más fuerte y un plus de ingresos.', cost: 4000, duration: 300, effects: { marketingMult: 1.3, incomeMult: 1.1 }, reqLevel: 10 },
   { id: 'vitamina_d', name: 'Vitamina D3', icon: '☀️', desc: 'La vitamina del sol. Los equipos rinden mejor y el gym tiene más espacio.', cost: 6000, duration: 300, effects: { equipIncomeMult: 1.25, capacityBonus: 15 }, reqLevel: 12 },
-  { id: 'glutamine', name: 'Glutamina', icon: '💚', desc: 'Recuperación muscular acelerada. Más capacidad y ambiente de élite.', cost: 8000, duration: 300, effects: { capacityBonus: 20, repPerMin: 4 }, reqLevel: 13 },
+  { id: 'glutamine', name: 'Glutamina', icon: '💚', desc: 'Recuperación muscular acelerada. Más capacidad e ingresos de élite.', cost: 8000, duration: 300, effects: { capacityBonus: 20, incomeMult: 1.12 }, reqLevel: 13 },
   { id: 'zma', name: 'ZMA', icon: '🌙', desc: 'Zinc, Magnesio y B6. Las clases y la reputación van a otro nivel.', cost: 12000, duration: 360, effects: { classIncomeMult: 1.35, repPerMin: 8 }, reqLevel: 15 },
   { id: 'massgainer', name: 'Mass Gainer', icon: '🏋️', desc: 'Calorías y proteína masiva. El equipamiento trabaja al máximo.', cost: 15000, duration: 300, effects: { equipIncomeMult: 1.4 }, reqLevel: 16 },
   { id: 'collagen', name: 'Colágeno Marino', icon: '🦴', desc: 'Piel, articulaciones y tejidos top. El gym luce impecable y las campañas pegan más.', cost: 22000, duration: 420, effects: { incomeMult: 1.3, marketingMult: 1.2 }, reqLevel: 18 },
@@ -649,12 +649,12 @@ const SUPPLEMENTS = [
 
 // ===== RIVAL GYMS =====
 const RIVAL_GYMS = [
-  { id: 'barrio', name: 'Garage Gym del Barrio', icon: '🏚️', desc: 'El vecino armó un gym en su garage. Básico pero barato, te roba principiantes.', memberSteal: 2, promoCost: 500, promoDuration: 300, defeatCost: 5000, defeatBonus: { income: 8, capacity: 5 }, reqLevel: 3 },
-  { id: 'fitzone', name: 'FitZone Express', icon: '🏃', desc: 'Cadena low-cost con máquinas nuevas. Atrae a los que buscan precio.', memberSteal: 4, promoCost: 1500, promoDuration: 300, defeatCost: 15000, defeatBonus: { income: 12, capacity: 15 }, reqLevel: 5 },
-  { id: 'powerhouse', name: 'PowerHouse Gym', icon: '💪', desc: 'Gym hardcore para levantadores serios. Competencia directa.', memberSteal: 7, promoCost: 4000, promoDuration: 300, defeatCost: 40000, defeatBonus: { income: 20, capacity: 10 }, reqLevel: 8 },
-  { id: 'crossfit_box', name: 'CrossFit Box del Centro', icon: '🤸', desc: 'La moda del CrossFit. Comunidad fanática que arrastra miembros.', memberSteal: 12, promoCost: 10000, promoDuration: 300, defeatCost: 100000, defeatBonus: { income: 35, capacity: 25 }, reqLevel: 11 },
-  { id: 'megafit', name: 'MegaFit Premium', icon: '💎', desc: 'Gym premium con spa, pileta y todo. Difícil de competir.', memberSteal: 18, promoCost: 25000, promoDuration: 300, defeatCost: 250000, defeatBonus: { income: 75, capacity: 15 }, reqLevel: 15 },
-  { id: 'empire', name: 'Empire Fitness', icon: '🏛️', desc: 'Tu mayor rival. Una cadena enorme con recursos ilimitados. El jefe final.', memberSteal: 30, promoCost: 60000, promoDuration: 300, defeatCost: 600000, defeatBonus: { income: 150, capacity: 30 }, reqLevel: 18 },
+  { id: 'barrio', name: 'Garage Gym del Barrio', icon: '🏚️', desc: 'El vecino armó un gym en su garage. Básico pero barato, te roba principiantes.', memberSteal: 2, promoCost: 500, promoDuration: 900, defeatCost: 5000, defeatBonus: { income: 8, capacity: 5 }, reqLevel: 3 },
+  { id: 'fitzone', name: 'FitZone Express', icon: '🏃', desc: 'Cadena low-cost con máquinas nuevas. Atrae a los que buscan precio.', memberSteal: 4, promoCost: 1500, promoDuration: 900, defeatCost: 15000, defeatBonus: { income: 12, capacity: 15 }, reqLevel: 5 },
+  { id: 'powerhouse', name: 'PowerHouse Gym', icon: '💪', desc: 'Gym hardcore para levantadores serios. Competencia directa.', memberSteal: 7, promoCost: 4000, promoDuration: 900, defeatCost: 40000, defeatBonus: { income: 20, capacity: 10 }, reqLevel: 8 },
+  { id: 'crossfit_box', name: 'CrossFit Box del Centro', icon: '🤸', desc: 'La moda del CrossFit. Comunidad fanática que arrastra miembros.', memberSteal: 12, promoCost: 10000, promoDuration: 900, defeatCost: 100000, defeatBonus: { income: 35, capacity: 25 }, reqLevel: 11 },
+  { id: 'megafit', name: 'MegaFit Premium', icon: '💎', desc: 'Gym premium con spa, pileta y todo. Difícil de competir.', memberSteal: 18, promoCost: 25000, promoDuration: 900, defeatCost: 250000, defeatBonus: { income: 75, capacity: 15 }, reqLevel: 15 },
+  { id: 'empire', name: 'Empire Fitness', icon: '🏛️', desc: 'Tu mayor rival. Una cadena enorme con recursos ilimitados. El jefe final.', memberSteal: 30, promoCost: 60000, promoDuration: 900, defeatCost: 600000, defeatBonus: { income: 150, capacity: 30 }, reqLevel: 18 },
 ];
 
 // ===== CHAMPION SYSTEM =====

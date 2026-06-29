@@ -414,7 +414,11 @@ function upgradeInstructor(classId) {
 function getClassReward(gc) {
   var levelScale = 1 + (game.level - 1) * 0.2;
   var prestigeMult = 1 + (game.prestigeStars * 0.25);
-  var classMult = getSkillEffect('classIncomeMult');
+  var classMult = getSkillEffect('classIncomeMult') * getActiveSupplementEffects().classIncomeMult;
+  // Classes ride the economy (staff + members) so they don't go vestigial vs scaling equipment income
+  var classStaffMult = 1;
+  STAFF.forEach(function(s) { if (game.staff[s.id] && game.staff[s.id].hired && s.incomeMult) classStaffMult += getStaffTotalEffect(s, 'incomeMult') * getSkillEffect('staffEffectMult'); });
+  var economyMult = classStaffMult * Math.min(3, 1 + game.members * 0.002);
   // Quality bonus: equipment level + instructor level boost rewards
   var qualityBonus = 1;
   if (gc.reqEquipment) {
@@ -431,7 +435,7 @@ function getClassReward(gc) {
   var instData = CLASS_INSTRUCTORS.find(function(i) { return i.id === gc.id; });
   var commissionRate = instData ? instData.commission : 0;
   return {
-    income: Math.ceil(gc.income * levelScale * prestigeMult * classMult * qualityBonus),
+    income: Math.ceil(gc.income * levelScale * prestigeMult * classMult * qualityBonus * economyMult),
     xp: Math.ceil(gc.xp * levelScale * 0.5),
     rep: Math.ceil(gc.rep * levelScale * 0.5),
     qualityBonus: qualityBonus,
@@ -2635,7 +2639,7 @@ function renderChampion() {
     var cost = getChampionTrainingCost(stat);
     var duration = getChampionTrainingDuration(stat);
     var canAffordTrain = game.money >= cost;
-    var canTrain = !isTraining && canAffordTrain;
+    var canTrain = !isTraining && canAffordTrain && (game.champion.fatigue || 0) < CHAMPION_FATIGUE_THRESHOLD;
     var maxStatBar = Math.max(30, effective + 5);
     var barPct = Math.min(100, Math.round((effective / maxStatBar) * 100));
 
@@ -2755,12 +2759,12 @@ function renderChampion() {
     var mentalidad = getChampionEffectiveStat('mentalidad');
     var tecnica = getChampionEffectiveStat('tecnica');
     var resistencia = getChampionEffectiveStat('resistencia');
-    var statBonus = (fuerza * 0.008) + (velocidad * 0.012) + (mentalidad * 0.01);
+    var statBonus = (fuerza * 0.008) + (velocidad * 0.012) + (mentalidad * 0.01 * (1.5 - c.winChance));
     var fp = typeof getChampionFatiguePenalty === 'function' ? getChampionFatiguePenalty() : { mult: 1.0, chancePenalty: 0, label: null };
     var chance = Math.max(0.05, Math.min(0.95, c.winChance + statBonus + getSkillEffect('compWinChanceBonus', 0)) - fp.chancePenalty);
     var rewardMult = CHAMPION_REWARD_MULT * getSkillEffect('compRewardMult') * (1 + tecnica * 0.02) * (1 + fuerza * 0.01);
     var fatigueCost = Math.max(15, CHAMPION_FATIGUE_PER_COMPETE - Math.floor(resistencia * 0.5));
-    var canCompete = !locked && !onCooldown && !isTraining;
+    var canCompete = !locked && !onCooldown && !isTraining && (game.champion.fatigue || 0) < CHAMPION_FATIGUE_THRESHOLD;
 
     var chancePct = Math.round(chance * 100);
     var chanceColor = chancePct >= 70 ? 'var(--green)' : chancePct >= 40 ? 'var(--accent)' : 'var(--red)';

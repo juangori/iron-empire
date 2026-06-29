@@ -32,6 +32,14 @@ Documento VIVO. Toda pasada de balance (humano o agente) **lee esto primero** y 
   tensión del tycoon. Solución: un costo proporcional al ingreso ("servicios e impuestos", `overheadRate`)
   que escala solo a toda escala, reducible con el Gerente para mantener agencia. (Detectado por un jugador
   en vivo: Nv11, +$5.5K/s ingreso vs -$66/s gasto.)
+- **Patrones cross-sistema recurrentes** (encontrados por los 6 agentes en paralelo, valen para TODO sistema futuro):
+  1. *Efectos planos no escalan* → vestigiales tarde. autoMembers, capacityBonus, repBonus, premios fijos de
+     competencia/campeón. Regla: todo número que importa debe ser % (de ingreso, cap, o miembros), no un flat.
+  2. *La reputación casi no tiene valor económico* (solo gatea minRep de competencias, que se supera en minutos).
+     Todo lo que solo da "rep" es débil → emparejá con un efecto de ingreso, o repensá qué hace la rep. (Pendiente: darle valor real a la reputación.)
+  3. *Mecánicas fantasma*: cosas documentadas que el código no hace (gate de fatiga del campeón) o que un detalle
+     anula (robo de rivales absorbido por el surplus de atracción; classIncomeMult de suplementos nunca leído).
+     Verificá SIEMPRE que el efecto realmente ocurra, no solo que esté en la data.
 
 ## Status log
 | Sistema | Estado | Resumen |
@@ -42,12 +50,12 @@ Documento VIVO. Toda pasada de balance (humano o agente) **lee esto primero** y 
 | Cooldowns | ✅ | Competencias comprimidas (10m-6h), recuperación campeón, bono diario escala. |
 | Maquinarias | ✅ | Curva se autobalancea (ok). Fix: cap de miembros del barrio 500→2500 + mancuernas cap 0→2. |
 | Gastos vs ingreso | ✅ | Gastos eran ~1% del ingreso. Agregado overhead 18% del ingreso bruto (reducible con Gerente). |
-| Staff | ⏳ | Pendiente |
-| Clases | ⏳ | Pendiente |
-| Suplementos | ⏳ | Pendiente |
-| Skill tree | ⏳ | Pendiente |
-| Rivales | ⏳ | Pendiente |
-| Campeón | ⏳ | Pendiente |
+| Staff | ✅ | Sano en general. Fix: copias extra del Gerente ya no son trap (costReduction stackea+capea 60%). |
+| Clases | ✅ | Caían a ~1% del ingreso. Ahora escalan ×staff×miembros + bug classIncomeMult arreglado + mejora instructor 2.5→1.5. |
+| Suplementos | ✅ | 6/12 muertos. Pre-Workout/ZMA revividos (bug clases) + 4 suplementos planos ahora con incomeMult que escala. |
+| Skill tree | ✅ | 4 skills de reputación + capstones eran trampas. Riders de income agregados + XP de research escala con costo. |
+| Rivales | ✅ | memberSteal era cosmético (atracción > cap) y promo trampa. Robo ahora = % real de miembros + promo 300→900s. |
+| Campeón | ✅ | Gate de fatiga no existía en código (agregado) + mentalidad muerta ahora escala con dificultad + premio $ con piso por ingreso. |
 | UX (review en vivo con navegador) | ⏳ | Encolado para el final |
 
 ## Herramientas

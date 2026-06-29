@@ -291,9 +291,10 @@ function getSkillEffect(effectName, defaultVal) {
 // ===== COST CALCULATIONS =====
 function getEquipCost(equip, level) {
   let cost = equip.baseCost * Math.pow(equip.costMult, level);
-  if (game.staff.manager?.hired && !isStaffTraining('manager', 0)) {
+  if (game.staff.manager?.hired) {
     var mgrDef = STAFF.find(s => s.id === 'manager');
-    cost *= (1 - mgrDef.costReduction * getStaffLevelMult(game.staff.manager.level || 1));
+    // costReduction stacks across manager copies (skips sick/training) + scales with level, capped 60%
+    cost *= (1 - Math.min(0.6, getStaffTotalEffect(mgrDef, 'costReduction')));
   }
   cost *= getSkillEffect('equipCostMult');
   return Math.ceil(cost);
@@ -841,6 +842,7 @@ function getSkillResearchTime(cost) {
   if (cost <= 1000000) return 420;
   if (cost <= 5000000) return 900;
   if (cost <= 20000000) return 1800;
+  if (cost <= 50000000) return 2700;
   return 3600;
 }
 
@@ -861,7 +863,8 @@ function checkSkillResearchCompletion() {
 
     game.skills[skillId] = true;
     game.stats.skillsResearched++;
-    var xpGain = 80;
+    // XP scales with skill cost so endgame research stays meaningful for leveling (flat 80 was ~0.02% of an L25 level)
+    var xpGain = Math.max(80, Math.round((skillInfo ? skillInfo.cost : 0) / 50000));
     addXp(xpGain);
     game.dailyTracking.xpEarned += xpGain;
 
@@ -1328,9 +1331,10 @@ function getIncomeOverheadPerSecond() {
   var rate = OPERATING_COSTS.overheadRate || 0;
   if (rate <= 0) return 0;
   var overhead = getIncomePerSecond() * rate;
-  if (game.staff.manager && game.staff.manager.hired && !isStaffTraining('manager', 0) && !isStaffSick('manager', 0)) {
+  if (game.staff.manager && game.staff.manager.hired) {
     var mgrDef = STAFF.find(function(s) { return s.id === 'manager'; });
-    overhead *= Math.max(0, 1 - mgrDef.costReduction * getStaffLevelMult(game.staff.manager.level || 1));
+    // stacks across copies (skips sick/training) + scales with level, capped 60% — extra managers now matter
+    overhead *= Math.max(0, 1 - Math.min(0.6, getStaffTotalEffect(mgrDef, 'costReduction')));
   }
   return Math.max(0, overhead);
 }
@@ -1492,9 +1496,12 @@ function getMembersAttracted() {
       base += Math.ceil(mc.membersBoost * campaignMembersMult);
     }
   });
-  // Rival gyms steal members (reduced by skill)
-  base = Math.max(0, base - Math.ceil(getRivalMemberSteal() * getSkillEffect('rivalStealMult')));
-  return Math.min(base, getMaxMembers());
+  var capped = Math.min(base, getMaxMembers());
+  // Rivals steal a PERCENTAGE of your actual members. (Flat steal was absorbed by the attraction
+  // surplus over capacity → it never reduced members. Now it bites, so promo/defeat have real value.)
+  // Reduced by the rivalStealMult skill; capped so it can't wipe you. Defeating a rival removes its share.
+  var stealPct = Math.min(0.30, getRivalMemberSteal() * 0.0025 * getSkillEffect('rivalStealMult'));
+  return Math.max(0, Math.floor(capped * (1 - stealPct)));
 }
 
 // ===== GYM TIER =====
@@ -1829,6 +1836,10 @@ function trainChampion(stat) {
     showToast('❌', '¡Tu campeón ya está entrenando!');
     return;
   }
+  if ((game.champion.fatigue || 0) >= CHAMPION_FATIGUE_THRESHOLD) {
+    showToast('😴', '¡Tu campeón está agotado! Dejalo descansar antes de entrenar.');
+    return;
+  }
 
   var cost = getChampionTrainingCost(stat);
   if (game.money < cost) {
@@ -1881,6 +1892,10 @@ function championCompete(compId) {
   if (!game.competitions[compId]) game.competitions[compId] = { wins: 0, losses: 0, cooldownUntil: 0 };
   var state = game.competitions[compId];
   if (Date.now() < state.cooldownUntil) return;
+  if ((game.champion.fatigue || 0) >= CHAMPION_FATIGUE_THRESHOLD) {
+    showToast('😴', '¡Tu campeón está agotado! No puede competir hasta descansar.');
+    return;
+  }
 
   // Compute fatigue cost (resistencia reduces it slightly)
   var resistencia = getChampionEffectiveStat('resistencia');
@@ -1891,7 +1906,8 @@ function championCompete(compId) {
   var fuerza = getChampionEffectiveStat('fuerza');
   var velocidad = getChampionEffectiveStat('velocidad');
   var mentalidad = getChampionEffectiveStat('mentalidad');
-  var statBonus = (fuerza * 0.008) + (velocidad * 0.012) + (mentalidad * 0.01);
+  // mentalidad scales with difficulty (lower base winChance = harder) — matches its description
+  var statBonus = (fuerza * 0.008) + (velocidad * 0.012) + (mentalidad * 0.01 * (1.5 - c.winChance));
   var fatiguePenalty = getChampionFatiguePenalty();
   var chance = c.winChance + statBonus + getSkillEffect('compWinChanceBonus', 0);
   chance = Math.max(0.05, Math.min(chance, 0.95) - fatiguePenalty.chancePenalty);
@@ -1912,6 +1928,8 @@ function championCompete(compId) {
     var tecnica = getChampionEffectiveStat('tecnica');
     var rewardMult = CHAMPION_REWARD_MULT * getSkillEffect('compRewardMult') * (1 + tecnica * 0.02) * (1 + fuerza * 0.01) * (1 + getDecorationBonus('compReward'));
     var reward = Math.ceil(c.reward * rewardMult * fatiguePenalty.mult);
+    // Income-scaled floor so high-tier wins stay meaningful late game (tier weighted by xpReward)
+    reward = Math.max(reward, Math.ceil(getIncomePerSecond() * (c.xpReward / 50) * fatiguePenalty.mult));
     var compRepMult = getSkillEffect('compRepMult');
     var repGain = Math.ceil(c.repReward * compRepMult * (1 + tecnica * 0.01) * fatiguePenalty.mult);
     var compXpMult = getSkillEffect('compXpMult');
@@ -2265,10 +2283,11 @@ function gameTick() {
         var st = game.rivals[r.id];
         if (st && st.defeated) return;
         if (st && st.promoUntil && Date.now() < st.promoUntil) return;
-        stealerNames.push(r.name + ' (-' + r.memberSteal + ')');
+        stealerNames.push(r.name);
       });
-      if (stealerNames.length > 0) {
-        addLog('🏪 Rivales activos te roban capacidad: <span class="highlight">' + stealerNames.join(', ') + '</span>. Total: -' + stealTotal + ' del cap de miembros.');
+      var stealPct = Math.min(0.30, stealTotal * 0.0025 * getSkillEffect('rivalStealMult'));
+      if (stealerNames.length > 0 && stealPct > 0) {
+        addLog('🏪 Rivales activos te roban <span class="highlight">' + Math.round(stealPct * 100) + '% de tus miembros</span> (' + stealerNames.join(', ') + '). Hacé promo o derrotalos.');
       }
     }
   }

@@ -121,7 +121,10 @@ CNAME               - Custom domain config
 - Class costs scale +15%/level, rewards scale +20%/level with quality bonus
 - Instructor hire costs: $300 (yoga) to $25K (swimming), upgrade cost = hireCost * level * 2.5
 - Instructor commission: 15% of gross class income, deducted on completion
-- Champion fatigue recovery: `3 + floor(stamina * 0.6)` points per 30 ticks
+- Champion fatigue recovery: `3 + floor(stamina * 0.6)` points per 30 ticks. Fatigue gate (≥75 = no train/compete) is ENFORCED in `trainChampion`/`championCompete` + UI. `mentalidad` win bonus scales with difficulty: `×0.01×(1.5 - winChance)`. Champion comp money has an income-scaled floor (`income/s × xpReward/50`).
+- Classes income rides the economy (`getClassReward` multiplies by `staffMult × memberBonus` + supplement `classIncomeMult`) so it doesn't go vestigial vs scaling equipment income. Instructor upgrade cost mult 1.5.
+- Rivals: `memberSteal` drains a PERCENTAGE of actual members (`getRivalMemberSteal × 0.0025 × rivalStealMult`, capped 30%), applied in `getMembersAttracted` after the cap — flat steal used to be absorbed by the attraction surplus. Defeating a rival removes its share + gives an income/capacity bonus that's amplified by the full multiplier stack.
+- Manager `costReduction` stacks across copies (`getStaffTotalEffect`) + scales with level, capped 60%, applied to equipment cost + the income overhead. Several supplements/skills had flat (non-scaling) effects converted/augmented with `incomeMult` riders so they stay relevant late.
 - Neighborhood unlock costs: $0 (Palermo) → $500K (La Boca) → $800K (Caballito) → $1.5M (Belgrano) → $3M (Recoleta) → $5M (San Telmo)
 - Neighborhood rent multipliers: 0.6 (La Boca) to 1.8 (Recoleta)
 - Passive branch income: `unlockCost / 1500` per sec at level 1 (≈25 min payback), +25% per "Ampliar" level. Does NOT scale with franchise stars (avoids stars×branches runaway compounding). No chaos, no rent/utilities. Flows to global wallet online (every 10s) + offline.
@@ -174,7 +177,7 @@ CNAME               - Custom domain config
 ## Cache Busting
 - Script tags in index.html use `?v=XX` query string (e.g. `js/game.js?v=24`)
 - Increment the version number on every deploy that changes JS/CSS so browsers don't serve stale files
-- Current version: **v=39**
+- Current version: **v=40**
 - Update all 5 script tags together (data, game, ui, systems, auth)
 
 ## Planned Improvements (by priority)
