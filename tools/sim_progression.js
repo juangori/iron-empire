@@ -45,7 +45,7 @@ function run(cfg){
     let ez=0;for(const z of GYM_ZONES)if(z.id!=='ground_floor'&&S.zones[z.id])ez++;
     d+=ez*(12000+S.level*800); d+=eqLvls(S)*cfg.util;
     for(const s of STAFF){const st=S.staff[s.id];if(st)d+=s.salary*(1+((st.level||1)-1)*0.3);}
-    return d/600;};
+    return d/600 + inc(S)*(cfg.overheadRate||0);};
   const net=S=>inc(S)-opc(S);
   const xpNext=L=>Math.ceil(100*Math.pow(cfg.xpBase,L-1));
   const addXp=(S,a)=>{S.xp+=a*cfg.xpMult;while(S.xp>=S.xpToNext){S.xp-=S.xpToNext;S.level++;S.xpToNext=xpNext(S.level);}};
@@ -106,8 +106,8 @@ function report(name,cfg){
 // Knobs: contRent=continuous rent ramp (no cliff). graceLv/graceSlope=soft early rent.
 // rentPerLevel/baseRent/util=operating costs. xpBase=level curve exponent. starDiv/starCap/starBonus=franchise stars.
 // branchStar=do passive branches compound with stars. treadmillInc=treadmill income/level. repScale=competition XP level-scaling.
-const PRE_REBALANCE = {contRent:false,baseRent:8000,rentPerLevel:2500,util:150,graceLv:5,graceSlope:800,xpBase:1.55,xpMult:1,starDiv:2e6,starCap:Infinity,starBonus:0.25,branchStar:true,treadmillInc:1.6,repScale:0};
-const SHIPPED       = {contRent:true, baseRent:0,   rentPerLevel:2000,util:60, graceLv:5,graceSlope:800,xpBase:1.40,xpMult:1,starDiv:8e6,starCap:10,      starBonus:0.25,branchStar:false,treadmillInc:2.6,repScale:0.15};
+const PRE_REBALANCE = {contRent:false,baseRent:8000,rentPerLevel:2500,util:150,graceLv:5,graceSlope:800,xpBase:1.55,xpMult:1,starDiv:2e6,starCap:Infinity,starBonus:0.25,branchStar:true,treadmillInc:1.6,repScale:0,overheadRate:0};
+const SHIPPED       = {contRent:true, baseRent:0,   rentPerLevel:2000,util:60, graceLv:5,graceSlope:800,xpBase:1.40,xpMult:1,starDiv:8e6,starCap:10,      starBonus:0.25,branchStar:false,treadmillInc:2.6,repScale:0.15,overheadRate:0.18};
 report('PRE-REBALANCE (before)', PRE_REBALANCE);
 report('SHIPPED (current live values)', SHIPPED);
 

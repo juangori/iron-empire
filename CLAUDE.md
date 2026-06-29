@@ -103,6 +103,7 @@ CNAME               - Custom domain config
 ## Balance & Economy
 - XP curve: `100 * 1.40^(level-1)`. Repeatable XP scales with level to avoid a mid/late wall: classes use `levelScale = 1+0.2*(level-1)`; competitions (normal + champion, win + loss) use `1+0.15*(level-1)`; missions `1+0.2*(level-1)`.
 - Operating costs (per game day = 600s): CONTINUOUS rent ramp, no cliff. `level<=5 → level*800`; `level>5 → 5*800 + (level-5)*rentPerLevel` (rentPerLevel=2000). Plus extra-zone rent + utilities (`60/equip level/day`). Neighborhood rentMult applies (Palermo=1.0). `baseRent` constant is legacy/unused.
+- **Income overhead** (`getIncomeOverheadPerSecond`, in `getOperatingCostsPerSecond`): "servicios e impuestos" = `OPERATING_COSTS.overheadRate` (0.18) × gross income/s. This SCALES with income so expenses stay a meaningful fraction at every stage — flat rent/utilities/salaries are ~1% of income by mid-game otherwise. Reducible by the Manager (`costReduction × levelMult`). Flows into tick, home stats, offline, and the balance panel automatically via `getOperatingCostsPerSecond`.
 - Property purchase ($8M, lvl 18) eliminates rent
 - Equipment level capped at player level. Cost curve (costMult 1.85→2.5) is intentionally steep — players buy breadth (all tiers at low-mid level) and the income-per-$ equilibrium self-balances; not meant to be maxed to the level cap.
 - Member count is driven by CAPACITY (equipment capacityPerLevel + zones + staff + supplements), not by attraction (membersPerLevel is an intentional surplus that keeps you full). Palermo's `maxMembersCap` raised 500→2500 so capacity is the real driver and the member income bonus can reach its ×3 ceiling (≈1000 members). The old 500 cap was vestigial from the multi-branch design.
@@ -173,7 +174,7 @@ CNAME               - Custom domain config
 ## Cache Busting
 - Script tags in index.html use `?v=XX` query string (e.g. `js/game.js?v=24`)
 - Increment the version number on every deploy that changes JS/CSS so browsers don't serve stale files
-- Current version: **v=38**
+- Current version: **v=39**
 - Update all 5 script tags together (data, game, ui, systems, auth)
 
 ## Planned Improvements (by priority)

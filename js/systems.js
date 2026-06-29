@@ -3241,6 +3241,13 @@ function renderBalancePanel() {
     });
   }
 
+  // Servicios e impuestos (% del ingreso bruto) — escala con el ingreso
+  var overheadDaily = (typeof getIncomeOverheadPerSecond === 'function') ? getIncomeOverheadPerSecond() * D : 0;
+  if (overheadDaily > 0) {
+    expenseItems.push({ name: '🧾 Servicios e impuestos (' + Math.round((OPERATING_COSTS.overheadRate || 0) * 100) + '% ingresos)', value: overheadDaily });
+    totalExpenses += overheadDaily;
+  }
+
   // ===== NET =====
   var netDaily = finalIncomeDaily - totalExpenses;
   var netPerSec = netDaily / D;

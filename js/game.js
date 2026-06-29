@@ -1320,8 +1320,23 @@ function getOperatingCostsPerDay() {
   return daily;
 }
 
+// "Servicios e impuestos": costo que ESCALA con el ingreso bruto, para que el gasto siga siendo
+// una fracción relevante a toda escala (sin esto, el gasto flat queda en ~1% del ingreso a nivel
+// medio/alto y se pierde la tensión económica del tycoon). Reducible con el Gerente — agencia:
+// optimizás tu margen contratando/mejorando administración.
+function getIncomeOverheadPerSecond() {
+  var rate = OPERATING_COSTS.overheadRate || 0;
+  if (rate <= 0) return 0;
+  var overhead = getIncomePerSecond() * rate;
+  if (game.staff.manager && game.staff.manager.hired && !isStaffTraining('manager', 0) && !isStaffSick('manager', 0)) {
+    var mgrDef = STAFF.find(function(s) { return s.id === 'manager'; });
+    overhead *= Math.max(0, 1 - mgrDef.costReduction * getStaffLevelMult(game.staff.manager.level || 1));
+  }
+  return Math.max(0, overhead);
+}
+
 function getOperatingCostsPerSecond() {
-  return getOperatingCostsPerDay() / 600;
+  return getOperatingCostsPerDay() / 600 + getIncomeOverheadPerSecond();
 }
 
 function getCampaignCostsPerSecond() {

@@ -626,6 +626,7 @@ const OPERATING_COSTS = {
   rentPerExtraZone: 12000,     // additional rent per zone beyond ground floor
   rentZoneMultPerLevel: 800,   // extra zone rent scales: zone_rent + (playerLevel * this)
   utilitiesPerEquipLevel: 60,  // utilities cost per total equipment level per game day
+  overheadRate: 0.18,          // "servicios e impuestos": % del ingreso bruto/s — mantiene el gasto relevante a toda escala (reducible con Gerente)
   propertyPrice: 8000000,      // one-time purchase to eliminate rent
   propertyReqLevel: 18,
 };
