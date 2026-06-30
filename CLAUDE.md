@@ -31,6 +31,8 @@ js/systems.js       - Engagement: daily bonus, daily missions, random events, tu
                       city map (renderCityMap, openNewBranchModal, confirmNewBranch)
 js/auth.js          - Firebase auth: login/register (Google, Facebook, email/password), account settings,
                       cloud save, auth state management
+assets/             - Brand images: logo.png (transparent crest crown+shield, used in header + auth screen),
+                      icon.png (512px square, favicon/apple-touch/og:image), favicon.png (64px)
 CNAME               - Custom domain config
 ```
 
@@ -177,8 +179,8 @@ CNAME               - Custom domain config
 ## Cache Busting
 - Script tags in index.html use `?v=XX` query string (e.g. `js/game.js?v=24`)
 - Increment the version number on every deploy that changes JS/CSS so browsers don't serve stale files
-- Current version: **v=40**
-- Update all 5 script tags together (data, game, ui, systems, auth)
+- Current version: **v=41**
+- Update all 5 script tags together (data, game, ui, systems, auth) + the CSS link (`css/styles.css?v=XX`)
 
 ## Planned Improvements (by priority)
 ### Phase 4 - Social & Meta

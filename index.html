@@ -5,9 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Iron Empire - Gym Tycoon</title>
 <meta name="description" content="Construí tu imperio de gimnasios. Browser game idle/tycoon gratuito.">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏋️</text></svg>">
+<link rel="icon" type="image/png" sizes="64x64" href="assets/favicon.png?v=1">
+<link rel="icon" type="image/png" sizes="512x512" href="assets/icon.png?v=1">
+<link rel="apple-touch-icon" href="assets/icon.png?v=1">
+<meta property="og:title" content="Iron Empire - Gym Tycoon">
+<meta property="og:description" content="Construí tu imperio de gimnasios. Browser game idle/tycoon gratuito.">
+<meta property="og:image" content="https://ironempiregame.com/assets/icon.png?v=1">
+<meta property="og:url" content="https://ironempiregame.com">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://ironempiregame.com/assets/icon.png?v=1">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/styles.css?v=42">
 </head>
 <body>
 
@@ -15,7 +24,7 @@
 <div class="auth-screen" id="authScreen">
   <div class="auth-container">
     <div class="auth-logo">
-      <div style="font-size:56px;margin-bottom:8px;">🏋️</div>
+      <img src="assets/logo.png?v=1" alt="Iron Empire" class="auth-logo-img">
       <h1 class="auth-title">IRON EMPIRE</h1>
       <p class="auth-subtitle">Construí tu imperio de gimnasios</p>
     </div>
@@ -108,7 +117,7 @@
 <!-- NAME MODAL -->
 <div class="modal-overlay hidden" id="nameModal">
   <div class="modal">
-    <div style="font-size:48px;margin-bottom:12px;">🏋️</div>
+    <img src="assets/logo.png?v=1" alt="" style="height:80px;margin-bottom:12px;filter:drop-shadow(0 0 14px var(--accent-glow));">
     <h2>Iron Empire</h2>
     <p>Estás a punto de abrir tu propio gimnasio. ¿Cómo se va a llamar?</p>
     <input type="text" id="gymNameInput" placeholder="Nombre del gimnasio..." maxlength="24" autofocus>
@@ -186,7 +195,7 @@
 <header class="header">
   <div class="header-inner">
     <div class="logo" title="Iron Empire">
-      <span class="logo-icon">🏋️</span>
+      <img src="assets/logo.png?v=1" class="logo-icon-img" alt="">
       <span>IRON EMPIRE</span>
     </div>
     <span class="branch-indicator" id="branchIndicator" onclick="switchTab('prestige')" title="Ver mapa de ciudad"></span>
@@ -284,6 +293,7 @@
           <button class="sidebar-item" data-tab="marketing"><span class="item-icon">📢</span><span class="item-label">Marketing</span><span class="reminder-dot hidden" id="reminder-marketing"></span></button>
           <button class="sidebar-item" data-tab="expansion"><span class="item-icon">🏗️</span><span class="item-label">Instalaciones</span><span class="reminder-dot hidden" id="reminder-expansion"></span></button>
           <button class="sidebar-item" data-tab="skills"><span class="item-icon">🔬</span><span class="item-label">Mejoras</span><span class="reminder-dot hidden" id="reminder-skills"></span></button>
+          <button class="sidebar-item" data-tab="fame"><span class="item-icon">🌟</span><span class="item-label">Fama</span><span class="reminder-dot hidden" id="reminder-fame"></span></button>
         </div>
       </div>
       <!-- Competencia -->
@@ -453,6 +463,11 @@
     <div class="rival-grid" id="rivalsGrid"></div>
   </div>
 
+  <!-- FAME / PRESTIGE SHOP TAB -->
+  <div class="tab-content" id="tab-fame">
+    <div id="fameContainer"></div>
+  </div>
+
   <!-- SKILLS TAB -->
   <div class="tab-content" id="tab-skills">
     <div class="section-title">🔬 Árbol de Mejoras</div>
@@ -554,11 +569,11 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <!-- GAME SCRIPTS -->
-<script src="js/data.js?v=40"></script>
-<script src="js/game.js?v=40"></script>
-<script src="js/ui.js?v=40"></script>
-<script src="js/systems.js?v=40"></script>
-<script src="js/auth.js?v=40"></script>
+<script src="js/data.js?v=42"></script>
+<script src="js/game.js?v=42"></script>
+<script src="js/ui.js?v=42"></script>
+<script src="js/systems.js?v=42"></script>
+<script src="js/auth.js?v=42"></script>
 
 <!-- Profile refresh -->
 <script>
