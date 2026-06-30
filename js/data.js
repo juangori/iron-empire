@@ -119,6 +119,8 @@ const ACHIEVEMENTS = [
   { id: 'champion_bestia', name: 'La Bestia', icon: '💪', desc: 'Tu campeón llegó a etapa Bestia', check: () => game.champion && game.champion.recruited && (game.champion.stats.fuerza + game.champion.stats.resistencia + game.champion.stats.velocidad + game.champion.stats.tecnica) >= 200 },
   { id: 'champion_wins3', name: 'Racha Ganadora', icon: '🔥', desc: 'Ganá 3 competencias con tu campeón', check: () => game.stats.championWins >= 3 },
   { id: 'champion_equipped', name: 'Full Equipo', icon: '⚔️', desc: 'Equipá las 4 ranuras del campeón', check: () => game.champion && game.champion.equipment && game.champion.equipment.hands && game.champion.equipment.waist && game.champion.equipment.feet && game.champion.equipment.head },
+  { id: 'grand_first_win', name: 'El Golpe', icon: '🌎', desc: 'Ganá tu primer Gran Torneo', check: () => (game.stats.grandWins || 0) >= 1 },
+  { id: 'grand_mundial', name: 'Cima del Mundo', icon: '🌍', desc: 'Ganá el Mundial de Leyendas', check: () => game.grandTournaments && (game.grandTournaments.mundial_leyendas?.wins || 0) >= 1 },
   // Decoration & Profile
   { id: 'first_decoration', name: 'Decorador', icon: '🎨', desc: 'Comprá tu primera decoración', check: () => game.decoration && Object.keys(game.decoration.items || {}).length >= 1 },
   { id: 'five_decorations', name: 'Diseñador de Interiores', icon: '🏠', desc: 'Comprá 5 decoraciones', check: () => game.decoration && Object.keys(game.decoration.items || {}).length >= 5 },
@@ -723,6 +725,55 @@ const CHAMPION_FATIGUE_THRESHOLD = 75;   // 75+ = agotado, no entrena ni compite
 const CHAMPION_XP_PER_LEVEL = 100;
 const CHAMPION_REWARD_MULT = 2.0;
 
+// ===== GRANDES TORNEOS (Circuito de alto riesgo, estilo "golpe") =====
+// Eventos raros para el campeón: preparás (Preparación%) → competís → cooldown de DÍAS → riesgo de lesión.
+// El castigo fuerte es perder la inscripción + la prep + el cooldown largo; la lesión te deja "recomponerte"
+// unas horas (no podés competir ni entrenar). Bien preparado, rara vez salís malherido — pero nunca "morís".
+const GRAND_FATIGUE_PER_ATTEMPT = 55;     // un Grande exige más que una competencia normal
+const GRAND_READINESS_WIN_WEIGHT = 0.35;  // Preparación 100% suma +35% a la chance de ganar
+
+const GRAND_TOURNAMENTS = [
+  {
+    id: 'copa_elite', name: 'Copa Élite Sudamericana', icon: '🌎',
+    desc: 'Lo mejor de cada país sudamericano. Un golpe grande, una vez al día.',
+    cooldown: 86400,            // 24 h
+    entryFee: 250000,           // inscripción (se paga al competir)
+    minRep: 1500,
+    minStat: { resistencia: 12 },
+    champLevelReq: 6,
+    baseWinChance: 0.30,        // con Preparación 0% (los stats y la prep la suben)
+    concentracionSecs: 1800,    // 30 min de pretemporada
+    injury: { baseChance: 0.25, minChance: 0.06, maxHours: 4 },
+    reward: { money: 1200000, rep: 800, xp: 2500 },
+    floorSecs: 600,             // piso de premio = 10 min de ingreso (escala con la economía)
+    title: 'Rey de Sudamérica',
+  },
+  {
+    id: 'mundial_leyendas', name: 'Mundial de Leyendas', icon: '🌍',
+    desc: 'El pináculo absoluto. Preparate o no volvés a casa entero.',
+    cooldown: 259200,           // 3 días
+    entryFee: 1500000,
+    minRep: 5000,
+    minStat: { resistencia: 25 },
+    champLevelReq: 12,
+    baseWinChance: 0.22,
+    concentracionSecs: 3600,    // 1 h de pretemporada
+    injury: { baseChance: 0.40, minChance: 0.10, maxHours: 12 },
+    reward: { money: 6000000, rep: 3000, xp: 9000 },
+    floorSecs: 1800,            // piso = 30 min de ingreso
+    title: 'Leyenda Mundial',
+  },
+];
+
+// Ítems de preparación: se compran ANTES (estilo Omerta "tené las armas listas"). Suben Preparación%
+// y/o bajan la lesión. Se consumen al competir (ganes o pierdas). Costo = entryFee × costMult.
+const GRAND_PREP_ITEMS = [
+  { id: 'pasajes',      name: 'Pasajes y Visa',   icon: '✈️', desc: 'Logística para viajar. Sin esto no entrás.',          costMult: 0.20, readiness: 20, required: true },
+  { id: 'concentracion',name: 'Concentración',     icon: '🏕️', desc: 'Pretemporada dedicada. El campeón queda ocupado.',     costMult: 0.15, readiness: 40, timed: true },
+  { id: 'nutricion',    name: 'Plan Nutricional',  icon: '🥗', desc: 'Nutricionista de élite: peso y energía a punto.',      costMult: 0.10, readiness: 20 },
+  { id: 'medico',       name: 'Kit Médico',        icon: '🩺', desc: 'Cuerpo médico + seguro: reduce chance y gravedad de lesión.', costMult: 0.18, readiness: 20, halvesInjury: true },
+];
+
 // ===== PLAYER TITLES =====
 const PLAYER_TITLES = [
   { id: 'principiante', name: 'Principiante', icon: '🏋️', desc: 'Recién empezás', check: () => true },
@@ -732,6 +783,8 @@ const PLAYER_TITLES = [
   { id: 'franquiciado', name: 'Franquiciado', icon: '🏙️', desc: 'Tené 2 gyms en tu imperio', check: () => getTotalGymCount() >= 2 },
   { id: 'franquicia_estrella', name: 'Magnate', icon: '👑', desc: 'Tené 4 gyms en tu imperio', check: () => getTotalGymCount() >= 4 },
   { id: 'campeon_invicto', name: 'Campeón Invicto', icon: '🏆', desc: '20 champion wins', check: () => game.stats.championWins >= 20 },
+  { id: 'rey_sudamerica', name: 'Rey de Sudamérica', icon: '🌎', desc: 'Ganá la Copa Élite Sudamericana', check: () => game.grandTournaments && (game.grandTournaments.copa_elite?.wins || 0) >= 1 },
+  { id: 'leyenda_mundial', name: 'Leyenda Mundial', icon: '🌍', desc: 'Ganá el Mundial de Leyendas', check: () => game.grandTournaments && (game.grandTournaments.mundial_leyendas?.wins || 0) >= 1 },
   { id: 'completista', name: 'Completista', icon: '🎖️', desc: '40 achievements', check: () => Object.values(game.achievements).filter(Boolean).length >= 40 },
   { id: 'perfeccionista', name: 'Perfeccionista', icon: '💎', desc: 'Todos los achievements', check: () => Object.values(game.achievements).filter(Boolean).length >= ACHIEVEMENTS.length },
   { id: 'cientifico', name: 'Científico', icon: '🧬', desc: 'Todas las 30 skills', check: () => game.stats.skillsResearched >= 30 },
@@ -862,6 +915,7 @@ const TAB_WALKTHROUGHS = {
       '🕐 No se puede pagar para recuperarse — hay que esperar. La Stamina acelera la recuperación.',
       '🏅 Con campeón activo, ganás el doble en todas las competencias.',
       '🛡️ El equipamiento suma stats pasivos — compralo cuando puedas para potenciar al campeón.',
+      '🌟 Más adelante se abren los Grandes Torneos: golpes raros de premio enorme. Prepará al campeón antes (pasajes, concentración, kit médico) o arriesgate a una lesión.',
     ],
   },
   rivals: {
@@ -1088,6 +1142,21 @@ const WIKI_CONTENT = [
       '<li><strong>No hay forma de pagar para recuperarse</strong> — hay que esperar. La Stamina acelera la recuperación.</li>' +
       '<li>Recuperación: 2 + (Stamina × 0.5) puntos de fatiga cada 30 segundos.</li></ul>' +
       '<div class="wiki-tip-box">💡 Priorizá Stamina si querés entrenar y competir más seguido. Con alta Stamina, la fatiga baja mucho más rápido.</div>',
+  },
+  {
+    id: 'grand_tournaments', icon: '🌟', title: 'Grandes Torneos',
+    content: '<p>Los <strong>Grandes Torneos</strong> son golpes raros de altísima recompensa para tu campeón. A diferencia de las competencias normales, hay que <strong>prepararse antes</strong>, el riesgo es real (lesión) y el cooldown dura <strong>días</strong>.</p>' +
+      '<p><strong>El circuito:</strong></p>' +
+      '<ul><li>🌎 <strong>Copa Élite Sudamericana</strong> — cooldown 24 h. Campeón nivel 6, 1500 rep, Resistencia 12+.</li>' +
+      '<li>🌍 <strong>Mundial de Leyendas</strong> — cooldown 3 días. Campeón nivel 12, 5000 rep, Resistencia 25+.</li></ul>' +
+      '<p><strong>Preparación (estilo "tené todo listo antes"):</strong></p>' +
+      '<ul><li>✈️ <strong>Pasajes y Visa</strong> — obligatorio para entrar.</li>' +
+      '<li>🏕️ <strong>Concentración</strong> — pretemporada con timer real; el campeón queda ocupado mientras dura.</li>' +
+      '<li>🥗 <strong>Plan Nutricional</strong> — suma preparación.</li>' +
+      '<li>🩺 <strong>Kit Médico</strong> — suma preparación y <strong>reduce a la mitad</strong> la chance y gravedad de lesión.</li></ul>' +
+      '<p>Cada ítem sube tu <strong>Preparación%</strong>. Más Preparación = más chance de ganar (+35% al 100%) y menos riesgo de lesión. Podés entrar a medias (apostando) o esperar y entrar al 100%.</p>' +
+      '<p><strong>El intento:</strong> pagás la inscripción y arranca el cooldown (ganes o pierdas). La preparación se consume. Si ganás, premio enorme + reputación + título permanente. Si te lesionás, el campeón queda fuera de combate unas horas (no entrena ni compite) — solo el tiempo lo cura.</p>' +
+      '<div class="wiki-tip-box">💡 La Resistencia alta y el Kit Médico hacen que casi nunca salgas malherido. Bien preparado, un Gran Torneo es plata casi segura; mal preparado, es una ruleta.</div>',
   },
   {
     id: 'rivals', icon: '🏪', title: 'Rivales',

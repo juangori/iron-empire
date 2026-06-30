@@ -86,7 +86,13 @@ let game = {
     trainingStat: null,
     wins: 0,
     losses: 0,
+    injuredUntil: 0,
+    injurySeverity: 0,
   },
+
+  // Grandes Torneos (circuito de alto riesgo del campeón)
+  grandTournaments: {},   // { id: { wins, losses, cooldownUntil } }
+  grandPrep: {},          // { id: { pasajes, nutricion, medico, concentracionUntil } }
 
   // VIP members
   vipMembers: [],
@@ -543,10 +549,18 @@ function normalizeChampionData() {
   if (!game.champion.trainingStat) game.champion.trainingStat = null;
   if (!game.champion.wins) game.champion.wins = 0;
   if (!game.champion.losses) game.champion.losses = 0;
+  if (game.champion.injuredUntil === undefined) game.champion.injuredUntil = 0;
+  if (game.champion.injurySeverity === undefined) game.champion.injurySeverity = 0;
   if (!game.stats.championWins) game.stats.championWins = 0;
   if (!game.stats.championLosses) game.stats.championLosses = 0;
   if (!game.stats.championCompetitions) game.stats.championCompetitions = 0;
   if (!game.stats.championTrainings) game.stats.championTrainings = 0;
+  // Grandes Torneos
+  if (!game.grandTournaments) game.grandTournaments = {};
+  if (!game.grandPrep) game.grandPrep = {};
+  if (!game.stats.grandWins) game.stats.grandWins = 0;
+  if (!game.stats.grandLosses) game.stats.grandLosses = 0;
+  if (!game.stats.championInjuries) game.stats.championInjuries = 0;
 }
 
 function normalizeProfileData() {
@@ -1999,6 +2013,14 @@ function recruitChampion() {
 
 function trainChampion(stat) {
   if (!game.champion.recruited) return;
+  if (isChampionInjured()) {
+    showToast('🤕', '¡Tu campeón está lesionado! Esperá a que se recupere.');
+    return;
+  }
+  if (isChampionInCamp()) {
+    showToast('🏕️', '¡El campeón está en concentración! No puede entrenar ahora.');
+    return;
+  }
   if (game.champion.trainingUntil && Date.now() < game.champion.trainingUntil) {
     showToast('❌', '¡Tu campeón ya está entrenando!');
     return;
@@ -2047,6 +2069,14 @@ function checkChampionTraining() {
 
 function championCompete(compId) {
   if (!game.champion || !game.champion.recruited) return;
+  if (isChampionInjured()) {
+    showToast('🤕', '¡Tu campeón está lesionado! No puede competir hasta recuperarse.');
+    return;
+  }
+  if (isChampionInCamp()) {
+    showToast('🏕️', '¡El campeón está en concentración! No puede competir ahora.');
+    return;
+  }
   if (game.champion.trainingUntil && Date.now() < game.champion.trainingUntil) {
     showToast('⏳', '¡Tu campeón está entrenando, esperá que termine!');
     return;
@@ -2161,6 +2191,285 @@ function championFatigueTick() {
     var recovery = 3 + Math.floor(stamina * 0.6);
     game.champion.fatigue = Math.max(0, game.champion.fatigue - recovery);
   }
+}
+
+// ===== GRANDES TORNEOS (circuito de alto riesgo del campeón) =====
+function getGrandTournament(id) { return GRAND_TOURNAMENTS.find(function(t) { return t.id === id; }); }
+
+function getGrandPrep(id) {
+  if (!game.grandPrep) game.grandPrep = {};
+  if (!game.grandPrep[id]) game.grandPrep[id] = { pasajes: false, nutricion: false, medico: false, concentracionUntil: 0 };
+  return game.grandPrep[id];
+}
+
+function getGrandState(id) {
+  if (!game.grandTournaments) game.grandTournaments = {};
+  if (!game.grandTournaments[id]) game.grandTournaments[id] = { wins: 0, losses: 0, cooldownUntil: 0 };
+  return game.grandTournaments[id];
+}
+
+function getGrandPrepItemCost(t, item) { return Math.ceil(t.entryFee * item.costMult); }
+
+// concentración cuenta como "lista" sólo cuando terminó el timer; el resto son flags directos
+function isGrandPrepItemDone(t, itemId) {
+  var p = getGrandPrep(t.id);
+  if (itemId === 'concentracion') return p.concentracionUntil > 0 && Date.now() >= p.concentracionUntil;
+  return !!p[itemId];
+}
+
+function getGrandReadiness(t) {
+  var r = 0;
+  GRAND_PREP_ITEMS.forEach(function(it) { if (isGrandPrepItemDone(t, it.id)) r += it.readiness; });
+  return Math.min(100, r);
+}
+
+function isChampionInjured() {
+  return !!(game.champion && game.champion.injuredUntil && Date.now() < game.champion.injuredUntil);
+}
+
+function getChampionInjurySecondsLeft() {
+  if (!isChampionInjured()) return 0;
+  return Math.ceil((game.champion.injuredUntil - Date.now()) / 1000);
+}
+
+// "En concentración" = algún torneo con la pretemporada corriendo todavía (el campeón está afuera)
+function isChampionInCamp() {
+  if (!game.grandPrep) return false;
+  return Object.keys(game.grandPrep).some(function(id) {
+    var u = game.grandPrep[id].concentracionUntil;
+    return u > 0 && Date.now() < u;
+  });
+}
+
+// Estado de ocupación que bloquea entrenar / competir (normal y Grande)
+function getChampionBusyState() {
+  if (isChampionInjured()) return { busy: true, reason: 'injured', secs: getChampionInjurySecondsLeft() };
+  if (isChampionInCamp()) {
+    var until = 0;
+    Object.keys(game.grandPrep).forEach(function(id) { var u = game.grandPrep[id].concentracionUntil; if (u > until && Date.now() < u) until = u; });
+    return { busy: true, reason: 'camp', secs: Math.ceil((until - Date.now()) / 1000) };
+  }
+  if (game.champion && game.champion.trainingUntil && Date.now() < game.champion.trainingUntil) {
+    return { busy: true, reason: 'training', secs: Math.ceil((game.champion.trainingUntil - Date.now()) / 1000) };
+  }
+  return { busy: false, reason: null, secs: 0 };
+}
+
+function getGrandWinChance(t) {
+  var fuerza = getChampionEffectiveStat('fuerza');
+  var velocidad = getChampionEffectiveStat('velocidad');
+  var mentalidad = getChampionEffectiveStat('mentalidad');
+  var statBonus = (fuerza * 0.008) + (velocidad * 0.012) + (mentalidad * 0.01 * (1.5 - t.baseWinChance));
+  var readiness = getGrandReadiness(t) / 100;
+  var fp = getChampionFatiguePenalty();
+  var chance = t.baseWinChance + statBonus + readiness * GRAND_READINESS_WIN_WEIGHT + getSkillEffect('compWinChanceBonus', 0);
+  return Math.max(0.05, Math.min(0.95, chance) - fp.chancePenalty);
+}
+
+function getGrandInjuryChance(t) {
+  var readiness = getGrandReadiness(t) / 100;
+  var resist = getChampionEffectiveStat('resistencia');
+  var chance = t.injury.baseChance - readiness * (t.injury.baseChance - t.injury.minChance) - resist * 0.004;
+  if (isGrandPrepItemDone(t, 'medico')) chance *= 0.5;
+  return Math.max(0.02, Math.min(t.injury.baseChance, chance));
+}
+
+// ¿Por qué no puedo entrar? (null = puedo). No chequea cooldown ni pasajes/fee (eso lo informa el botón).
+function getGrandLockReason(t) {
+  if (!game.champion || !game.champion.recruited) return 'Reclutá un campeón primero';
+  if (game.champion.level < t.champLevelReq) return 'Campeón nivel ' + t.champLevelReq;
+  if (game.reputation < t.minRep) return t.minRep + ' de reputación';
+  if (t.minStat) {
+    var keys = Object.keys(t.minStat);
+    for (var i = 0; i < keys.length; i++) {
+      var k = keys[i];
+      if (getChampionEffectiveStat(k) < t.minStat[k]) return CHAMPION_STAT_NAMES[k] + ' ' + t.minStat[k] + '+';
+    }
+  }
+  return null;
+}
+
+function buyGrandPrep(tId, itemId) {
+  var t = getGrandTournament(tId);
+  if (!t || !game.champion || !game.champion.recruited) return;
+  if (isChampionInjured()) { showToast('🤕', '¡Tu campeón está lesionado! Esperá que se recupere.'); return; }
+  var it = GRAND_PREP_ITEMS.find(function(i) { return i.id === itemId; });
+  if (!it) return;
+  var p = getGrandPrep(tId);
+  var cost = getGrandPrepItemCost(t, it);
+
+  if (itemId === 'concentracion') {
+    if (isGrandPrepItemDone(t, 'concentracion')) { showToast('✅', 'La concentración ya está lista.'); return; }
+    if (p.concentracionUntil > 0 && Date.now() < p.concentracionUntil) { showToast('⏳', 'La concentración ya está en curso.'); return; }
+    var busy = getChampionBusyState();
+    if (busy.busy) { showToast('⏳', 'El campeón está ocupado, no puede ir a concentración ahora.'); return; }
+    if (game.money < cost) { showToast('❌', '¡No tenés suficiente plata!'); return; }
+    game.money -= cost;
+    p.concentracionUntil = Date.now() + t.concentracionSecs * 1000;
+    addLog('🏕️ El campeón entró en <span class="highlight">concentración</span> para ' + t.name + '.');
+    showToast('🏕️', 'Concentración iniciada');
+  } else {
+    if (p[itemId]) { showToast('✅', '¡Ya lo tenés!'); return; }
+    if (game.money < cost) { showToast('❌', '¡No tenés suficiente plata!'); return; }
+    game.money -= cost;
+    p[itemId] = true;
+    addLog('✅ Conseguiste <span class="highlight">' + it.name + '</span> para ' + t.name + '. (-' + fmtMoney(cost) + ')');
+    showToast(it.icon, it.name + ' listo');
+  }
+  renderChampion();
+  updateUI();
+  saveGame();
+}
+
+function attemptGrandTournament(tId) {
+  var t = getGrandTournament(tId);
+  if (!t || !game.champion || !game.champion.recruited) return;
+
+  var lock = getGrandLockReason(t);
+  if (lock) { showToast('🔒', 'Requisito: ' + lock); return; }
+
+  var busy = getChampionBusyState();
+  if (busy.busy) {
+    var msg = busy.reason === 'injured' ? '¡Tu campeón está lesionado!' : busy.reason === 'camp' ? '¡El campeón sigue en concentración!' : '¡El campeón está entrenando!';
+    showToast('⏳', msg);
+    return;
+  }
+  if ((game.champion.fatigue || 0) >= CHAMPION_FATIGUE_THRESHOLD) { showToast('😴', '¡Tu campeón está agotado! Dejalo descansar.'); return; }
+
+  var state = getGrandState(tId);
+  if (Date.now() < state.cooldownUntil) { showToast('⏱️', 'Todavía en cooldown.'); return; }
+
+  var p = getGrandPrep(tId);
+  if (!p.pasajes) { showToast('✈️', '¡Necesitás Pasajes y Visa para entrar!'); return; }
+  if (game.money < t.entryFee) { showToast('❌', 'No tenés para la inscripción (' + fmtMoney(t.entryFee) + ').'); return; }
+
+  // ---- Compromiso: se paga la inscripción, arranca el cooldown, sube la fatiga ----
+  game.money -= t.entryFee;
+  state.cooldownUntil = Date.now() + t.cooldown * 1000;
+  var fatigueCost = Math.max(30, GRAND_FATIGUE_PER_ATTEMPT - Math.floor(getChampionEffectiveStat('resistencia') * 0.5));
+  game.champion.fatigue = Math.min(CHAMPION_MAX_FATIGUE, (game.champion.fatigue || 0) + fatigueCost);
+
+  var winChance = getGrandWinChance(t);
+  var injuryChance = getGrandInjuryChance(t);
+  var won = Math.random() < winChance;
+  var injured = Math.random() < injuryChance;
+
+  var fp = getChampionFatiguePenalty();
+  var fuerza = getChampionEffectiveStat('fuerza');
+  var tecnica = getChampionEffectiveStat('tecnica');
+
+  var result = { tournament: t, won: won, injured: injured, money: 0, rep: 0, xp: 0, champXp: 0, injurySecs: 0, winChance: winChance, injuryChance: injuryChance, newTitle: null };
+
+  if (won) {
+    var rewardMult = getSkillEffect('compRewardMult') * (1 + tecnica * 0.02) * (1 + fuerza * 0.01) * (1 + getDecorationBonus('compReward'));
+    var money = Math.ceil(t.reward.money * rewardMult * fp.mult);
+    money = Math.max(money, Math.ceil(getIncomePerSecond() * t.floorSecs * fp.mult)); // piso escalado por economía
+    var rep = Math.ceil(t.reward.rep * getSkillEffect('compRepMult') * (1 + tecnica * 0.01) * fp.mult);
+    var xp = Math.ceil(t.reward.xp * getSkillEffect('compXpMult') * (1 + (game.level - 1) * 0.15));
+    var champXp = Math.ceil(t.reward.xp * 0.5);
+
+    var firstWin = state.wins === 0;
+    game.money += money;
+    game.totalMoneyEarned += money;
+    game.reputation += rep;
+    addXp(xp);
+    game.champion.xp += champXp;
+    state.wins++;
+    game.champion.wins++;
+    game.stats.grandWins = (game.stats.grandWins || 0) + 1;
+    game.stats.championWins++;
+    game.stats.competitionsWon = (game.stats.competitionsWon || 0) + 1;
+    game.dailyTracking.competitionsWon = (game.dailyTracking.competitionsWon || 0) + 1;
+    game.dailyTracking.moneyEarned += money;
+    game.dailyTracking.reputationGained += rep;
+    game.dailyTracking.xpEarned += xp;
+
+    result.money = money; result.rep = rep; result.xp = xp; result.champXp = champXp;
+    if (firstWin && t.title) result.newTitle = t.title;
+
+    addLog('🏆 ¡VICTORIA en <span class="highlight">' + t.name + '</span>! +<span class="money-log">' + fmtMoney(money) + '</span> +' + rep + '⭐', 'important');
+    showToast('🏆', '¡Ganaste ' + t.name + '!');
+    floatNumber('+' + fmtMoney(money));
+  } else {
+    var consolationRep = Math.ceil(t.reward.rep * 0.08 * (1 + (game.level - 1) * 0.1));
+    var consolationXp = Math.ceil(t.reward.xp * 0.15 * (1 + (game.level - 1) * 0.15));
+    game.reputation += consolationRep;
+    addXp(consolationXp);
+    game.champion.xp += Math.ceil(t.reward.xp * 0.1);
+    state.losses++;
+    game.champion.losses++;
+    game.stats.grandLosses = (game.stats.grandLosses || 0) + 1;
+    game.stats.championLosses++;
+    game.dailyTracking.xpEarned += consolationXp;
+    game.dailyTracking.reputationGained += consolationRep;
+
+    result.rep = consolationRep; result.xp = consolationXp;
+    addLog('😤 Derrota en <span class="highlight">' + t.name + '</span>. +' + consolationRep + '⭐ de consuelo.');
+    showToast('😤', 'Derrota en ' + t.name);
+  }
+
+  // ---- Lesión (la cola rara; mitigada por prep + médico + resistencia) ----
+  if (injured) {
+    var inj = applyChampionInjury(t);
+    result.injurySecs = inj.secs;
+    game.stats.championInjuries = (game.stats.championInjuries || 0) + 1;
+    addLog('🤕 ¡Tu campeón quedó lesionado! Fuera de combate ~' + fmtTime(inj.secs) + '.', 'important');
+  }
+
+  // ---- La preparación se consume (ganes o pierdas) ----
+  game.grandPrep[tId] = { pasajes: false, nutricion: false, medico: false, concentracionUntil: 0 };
+
+  game.stats.championCompetitions++;
+  checkChampionLevelUp();
+  checkLevelUp();
+  checkAchievements();
+  checkMissionProgress();
+  if (typeof showGrandResult === 'function') showGrandResult(result);
+  renderChampion();
+  updateUI();
+  saveGame();
+}
+
+function applyChampionInjury(t) {
+  var resist = getChampionEffectiveStat('resistencia');
+  var severity = 0.3 + Math.random() * 0.7;                 // 0.3 - 1.0
+  if (isGrandPrepItemDone(t, 'medico')) severity *= 0.6;    // el kit médico aliviana
+  severity *= Math.max(0.4, 1 - resist * 0.01);             // la resistencia aliviana
+  severity = Math.max(0.15, Math.min(1, severity));
+  var secs = Math.ceil(severity * t.injury.maxHours * 3600);
+  game.champion.injuredUntil = Date.now() + secs * 1000;
+  game.champion.injurySeverity = severity;
+  return { severity: severity, secs: secs };
+}
+
+// Tick: avisa cuando el campeón se recupera de una lesión
+function checkChampionInjury() {
+  if (!game.champion || !game.champion.recruited) return;
+  if (game.champion._wasInjured && !isChampionInjured()) {
+    game.champion._wasInjured = false;
+    game.champion.injurySeverity = 0;
+    addLog('💚 ¡Tu campeón se recuperó de la lesión! Listo para volver a la acción.', 'important');
+    showToast('💚', '¡Campeón recuperado!');
+    renderChampion();
+  } else if (isChampionInjured()) {
+    game.champion._wasInjured = true;
+  }
+}
+
+// Tick: avisa cuando termina una concentración
+function checkGrandConcentracion() {
+  if (!game.grandPrep) return;
+  Object.keys(game.grandPrep).forEach(function(id) {
+    var p = game.grandPrep[id];
+    if (p.concentracionUntil > 0 && !p._campDone && Date.now() >= p.concentracionUntil) {
+      p._campDone = true;
+      var t = getGrandTournament(id);
+      addLog('🏕️ Terminó la concentración para <span class="highlight">' + (t ? t.name : 'el torneo') + '</span>. Preparación lista.');
+      renderChampion();
+    } else if (p.concentracionUntil > 0 && Date.now() < p.concentracionUntil) {
+      p._campDone = false;
+    }
+  });
 }
 
 function equipChampion(eqId) {
@@ -2411,6 +2720,8 @@ function gameTick() {
   checkStaffIllness();
   checkChampionTraining();
   championFatigueTick();
+  checkChampionInjury();
+  checkGrandConcentracion();
   autoMemberTick();
   campaignAlwaysOnTick();
   campaignBurstTick();

@@ -2716,6 +2716,9 @@ function renderChampion() {
 
   var now = Date.now();
   var isTraining = !!(game.champion.trainingUntil && now < game.champion.trainingUntil);
+  var injured = isChampionInjured();
+  var inCamp = isChampionInCamp();
+  var champBusy = isTraining || injured || inCamp;
   var fatigue = game.champion.fatigue || 0;
   var isExhausted = fatigue >= CHAMPION_FATIGUE_THRESHOLD;
   var fatigePct = Math.round((fatigue / CHAMPION_MAX_FATIGUE) * 100);
@@ -2765,7 +2768,7 @@ function renderChampion() {
     var cost = getChampionTrainingCost(stat);
     var duration = getChampionTrainingDuration(stat);
     var canAffordTrain = game.money >= cost;
-    var canTrain = !isTraining && canAffordTrain && (game.champion.fatigue || 0) < CHAMPION_FATIGUE_THRESHOLD;
+    var canTrain = !champBusy && canAffordTrain && (game.champion.fatigue || 0) < CHAMPION_FATIGUE_THRESHOLD;
     var maxStatBar = Math.max(30, effective + 5);
     var barPct = Math.min(100, Math.round((effective / maxStatBar) * 100));
 
@@ -2806,6 +2809,22 @@ function renderChampion() {
 
   // ===== ESTADO FÍSICO (FATIGA) =====
   html += '<div class="champ-section-title">⚡ Estado Físico</div>';
+  // Banner de lesión (recomponerse tras un Gran Torneo) o concentración
+  if (injured) {
+    var injSecs = getChampionInjurySecondsLeft();
+    html += '<div class="champ-injury-banner">' +
+      '<span style="font-size:22px;">🤕</span>' +
+      '<div><div style="font-weight:700;color:var(--red);">LESIONADO</div>' +
+      '<div style="font-size:12px;color:var(--text-dim);">Recuperándose ~' + fmtTime(injSecs) + '. No puede entrenar ni competir. Mejorá Resistencia y llevá el Kit Médico para reducir el riesgo.</div></div>' +
+    '</div>';
+  } else if (inCamp) {
+    var camp = getChampionBusyState();
+    html += '<div class="champ-camp-banner">' +
+      '<span style="font-size:22px;">🏕️</span>' +
+      '<div><div style="font-weight:700;color:var(--cyan);">EN CONCENTRACIÓN</div>' +
+      '<div style="font-size:12px;color:var(--text-dim);">Pretemporada en curso ~' + fmtTime(camp.secs) + '. Al terminar suma Preparación para el Gran Torneo.</div></div>' +
+    '</div>';
+  }
   html += '<div class="champ-fatigue-panel">';
   var stateLabel, stateColor;
   if (isExhausted) { stateLabel = '⚠️ AGOTADO'; stateColor = 'var(--red)'; }
@@ -2890,7 +2909,7 @@ function renderChampion() {
     var chance = Math.max(0.05, Math.min(0.95, c.winChance + statBonus + getSkillEffect('compWinChanceBonus', 0)) - fp.chancePenalty);
     var rewardMult = CHAMPION_REWARD_MULT * getSkillEffect('compRewardMult') * (1 + tecnica * 0.02) * (1 + fuerza * 0.01);
     var fatigueCost = Math.max(15, CHAMPION_FATIGUE_PER_COMPETE - Math.floor(resistencia * 0.5));
-    var canCompete = !locked && !onCooldown && !isTraining && (game.champion.fatigue || 0) < CHAMPION_FATIGUE_THRESHOLD;
+    var canCompete = !locked && !onCooldown && !champBusy && (game.champion.fatigue || 0) < CHAMPION_FATIGUE_THRESHOLD;
 
     var chancePct = Math.round(chance * 100);
     var chanceColor = chancePct >= 70 ? 'var(--green)' : chancePct >= 40 ? 'var(--accent)' : 'var(--red)';
@@ -2927,9 +2946,160 @@ function renderChampion() {
     '</div>';
   });
   html += '</div>'; // champion-comp-list
+
+  // ===== GRANDES TORNEOS (circuito de alto riesgo) =====
+  html += renderGrandTournaments(champBusy, injured, inCamp, now);
+
   html += '</div>'; // champ-sheet
 
   container.innerHTML = html;
+}
+
+// Sección del circuito de Grandes Torneos: prep (Preparación%) → competir → cooldown de días → lesión
+function renderGrandTournaments(champBusy, injured, inCamp, now) {
+  var html = '';
+  html += '<div class="champ-section-title">🌟 Grandes Torneos <span style="font-size:13px;color:var(--cyan);font-weight:400;">— golpes grandes: prepará, arriesgá, esperá días</span></div>';
+  html += '<p style="font-size:12px;color:var(--text-muted);margin:0 0 12px;">Eventos raros de altísima recompensa. Juntá la preparación antes de entrar: más Preparación = más chance de ganar y menos riesgo de lesión.</p>';
+  html += '<div class="grand-list">';
+
+  GRAND_TOURNAMENTS.forEach(function(t) {
+    var state = getGrandState(t.id);
+    var lockReason = getGrandLockReason(t);
+    var locked = !!lockReason;
+    var onCooldown = now < state.cooldownUntil;
+    var prep = getGrandPrep(t.id);
+    var readiness = getGrandReadiness(t);
+    var hasPasajes = !!prep.pasajes;
+    var winChance = getGrandWinChance(t);
+    var injuryChance = getGrandInjuryChance(t);
+    var rewardMoney = Math.max(Math.ceil(t.reward.money), Math.ceil(getIncomePerSecond() * t.floorSecs));
+
+    var winColor = winChance >= 0.7 ? 'var(--green)' : winChance >= 0.45 ? 'var(--accent)' : 'var(--red)';
+    var injColor = injuryChance <= 0.08 ? 'var(--green)' : injuryChance <= 0.2 ? 'var(--accent)' : 'var(--red)';
+
+    html += '<div class="grand-card' + (locked ? ' locked' : '') + '">';
+
+    // Header
+    html += '<div class="grand-head">';
+    html += '<span class="grand-icon">' + t.icon + '</span>';
+    html += '<div class="grand-head-info">';
+    html += '<div class="grand-name">' + t.name + '</div>';
+    html += '<div class="grand-desc">' + t.desc + '</div>';
+    html += '<div class="grand-meta">⏱️ Cooldown ' + fmtTime(t.cooldown) + ' · 🎫 Inscripción ' + fmtMoney(t.entryFee) +
+      (state.wins + state.losses > 0 ? ' · 🏆 ' + state.wins + 'V·' + state.losses + 'D' : '') + '</div>';
+    html += '</div>';
+    html += '</div>';
+
+    if (locked) {
+      html += '<div class="grand-locked-msg">🔒 Requisito: <strong>' + lockReason + '</strong></div>';
+      html += '</div>'; // grand-card
+      return;
+    }
+
+    // Reward + odds row
+    html += '<div class="grand-stats-row">';
+    html += '<div class="grand-stat"><span class="grand-stat-lbl">Premio (victoria)</span><span class="grand-stat-val" style="color:var(--accent);">' + fmtMoney(rewardMoney) + ' · +' + Math.ceil(t.reward.rep) + '⭐</span></div>';
+    html += '<div class="grand-stat"><span class="grand-stat-lbl">Chance de ganar</span><span class="grand-stat-val" style="color:' + winColor + ';">' + Math.round(winChance * 100) + '%</span></div>';
+    html += '<div class="grand-stat"><span class="grand-stat-lbl">Riesgo de lesión</span><span class="grand-stat-val" style="color:' + injColor + ';">' + Math.round(injuryChance * 100) + '%</span></div>';
+    html += '</div>';
+
+    // Readiness bar
+    var readyColor = readiness >= 80 ? 'var(--green)' : readiness >= 40 ? 'var(--accent)' : 'var(--red)';
+    html += '<div class="grand-ready-row">';
+    html += '<span style="font-size:12px;color:var(--text-dim);">Preparación</span>';
+    html += '<div class="grand-ready-bar"><div class="grand-ready-fill" style="width:' + readiness + '%;background:' + readyColor + ';"></div></div>';
+    html += '<span style="font-size:12px;font-weight:700;color:' + readyColor + ';">' + readiness + '%</span>';
+    html += '</div>';
+
+    // Prep items
+    html += '<div class="grand-prep-grid">';
+    GRAND_PREP_ITEMS.forEach(function(it) {
+      var done = isGrandPrepItemDone(t, it.id);
+      var cost = getGrandPrepItemCost(t, it);
+      var isCampRunning = it.id === 'concentracion' && prep.concentracionUntil > 0 && now < prep.concentracionUntil;
+      var canAfford = game.money >= cost;
+      var statusHtml;
+      if (done) {
+        statusHtml = '<span class="grand-prep-done">✅ Listo</span>';
+      } else if (isCampRunning) {
+        var left = Math.ceil((prep.concentracionUntil - now) / 1000);
+        statusHtml = '<span class="grand-prep-running">⏳ ' + fmtTime(left) + '</span>';
+      } else {
+        var disabled = (!canAfford || injured || (it.id === 'concentracion' && champBusy)) ? 'disabled' : '';
+        statusHtml = '<button class="btn btn-small btn-buy grand-prep-btn" ' + disabled +
+          ' onclick="buyGrandPrep(\'' + t.id + '\',\'' + it.id + '\')">' + fmtMoney(cost) + '</button>';
+      }
+      html += '<div class="grand-prep-item' + (done ? ' done' : '') + '">' +
+        '<div class="grand-prep-top"><span>' + it.icon + ' <strong>' + it.name + '</strong>' + (it.required ? ' <span style="color:var(--red);font-size:10px;">*obligatorio</span>' : '') + '</span>' +
+        '<span style="font-size:11px;color:var(--cyan);">+' + it.readiness + '%</span></div>' +
+        '<div class="grand-prep-desc">' + it.desc + '</div>' +
+        '<div class="grand-prep-action">' + statusHtml + '</div>' +
+      '</div>';
+    });
+    html += '</div>'; // grand-prep-grid
+
+    // Compete button / status
+    html += '<div class="grand-compete-row">';
+    if (onCooldown) {
+      var cd = Math.ceil((state.cooldownUntil - now) / 1000);
+      html += '<div class="grand-cooldown">⏱️ Próximo intento en <strong>' + fmtTime(cd) + '</strong></div>';
+    } else if (injured) {
+      html += '<div class="grand-cooldown" style="color:var(--red);">🤕 Tu campeón está lesionado</div>';
+    } else if (inCamp) {
+      html += '<div class="grand-cooldown" style="color:var(--cyan);">🏕️ Esperá a que termine la concentración</div>';
+    } else {
+      var canEnter = hasPasajes && game.money >= t.entryFee && !champBusy && (game.champion.fatigue || 0) < CHAMPION_FATIGUE_THRESHOLD;
+      var hint = !hasPasajes ? '✈️ Necesitás Pasajes y Visa' : game.money < t.entryFee ? '💸 Falta inscripción (' + fmtMoney(t.entryFee) + ')' : (game.champion.fatigue || 0) >= CHAMPION_FATIGUE_THRESHOLD ? '😴 Campeón agotado' : '';
+      html += '<button class="btn btn-buy grand-compete-btn" ' + (canEnter ? '' : 'disabled') +
+        ' onclick="attemptGrandTournament(\'' + t.id + '\')">🥊 COMPETIR — ' + fmtMoney(t.entryFee) + '</button>';
+      if (hint) html += '<span class="grand-hint">' + hint + '</span>';
+    }
+    html += '</div>';
+
+    html += '</div>'; // grand-card
+  });
+
+  html += '</div>'; // grand-list
+  return html;
+}
+
+// Modal de resultado de un Gran Torneo (reusa el overlay de eventos)
+function showGrandResult(r) {
+  var overlay = document.getElementById('eventOverlay');
+  var card = document.getElementById('eventCard');
+  if (!overlay || !card) return;
+  var t = r.tournament;
+
+  var headIcon, headTitle, headColor;
+  if (r.won && !r.injured) { headIcon = '🏆'; headTitle = '¡VICTORIA GLORIOSA!'; headColor = 'var(--green)'; }
+  else if (r.won && r.injured) { headIcon = '🏆🤕'; headTitle = '¡Ganaste, pero quedaste lesionado!'; headColor = 'var(--accent)'; }
+  else if (!r.won && r.injured) { headIcon = '🤕'; headTitle = 'Derrota con lesión'; headColor = 'var(--red)'; }
+  else { headIcon = '😤'; headTitle = 'Derrota digna'; headColor = 'var(--accent)'; }
+
+  var lines = [];
+  if (r.money) lines.push('<div class="grand-result-line">💰 <strong style="color:var(--accent);">+' + fmtMoney(r.money) + '</strong></div>');
+  if (r.rep) lines.push('<div class="grand-result-line">⭐ +' + r.rep + ' reputación</div>');
+  if (r.xp) lines.push('<div class="grand-result-line">✨ +' + r.xp + ' XP</div>');
+  if (r.champXp) lines.push('<div class="grand-result-line">🏅 +' + r.champXp + ' XP de campeón</div>');
+  if (r.injured) lines.push('<div class="grand-result-line" style="color:var(--red);">🤕 Lesionado: fuera de combate ~' + fmtTime(r.injurySecs) + '</div>');
+  if (r.newTitle) lines.push('<div class="grand-result-line" style="color:var(--cyan);">👑 ¡Título desbloqueado: <strong>' + r.newTitle + '</strong>!</div>');
+  if (!lines.length) lines.push('<div class="grand-result-line" style="color:var(--text-dim);">Sin recompensas esta vez.</div>');
+
+  card.innerHTML =
+    '<div class="event-icon">' + headIcon + '</div>' +
+    '<div class="event-title" style="color:' + headColor + ';">' + headTitle + '</div>' +
+    '<div class="event-desc">' + t.icon + ' ' + t.name + '</div>' +
+    '<div class="grand-result-lines">' + lines.join('') + '</div>' +
+    '<div class="event-choices"><div class="event-choice" onclick="closeGrandResult()"><div class="event-choice-main"><span class="event-choice-text">Continuar</span></div></div></div>';
+
+  overlay.classList.remove('hidden');
+  window._grandResultOpen = true;
+}
+
+function closeGrandResult() {
+  var overlay = document.getElementById('eventOverlay');
+  if (overlay) overlay.classList.add('hidden');
+  window._grandResultOpen = false;
 }
 
 // Show/hide rename form

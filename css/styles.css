@@ -4776,3 +4776,97 @@ body::before {
 }
 .income-trend.up   { color: var(--green); }
 .income-trend.down { color: var(--red); }
+
+/* ===== GRANDES TORNEOS (circuito de alto riesgo) ===== */
+.champ-injury-banner,
+.champ-camp-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+.champ-injury-banner { background: #ef444418; border: 1px solid #ef444455; }
+.champ-camp-banner   { background: #06b6d418; border: 1px solid #06b6d455; }
+
+.grand-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 8px; }
+
+.grand-card {
+  background: linear-gradient(160deg, #1a1320, var(--bg-card));
+  border: 1px solid #4a3a16;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 0 0 1px #f59e0b11;
+}
+.grand-card.locked { opacity: 0.6; filter: grayscale(0.4); }
+
+.grand-head { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+.grand-icon { font-size: 38px; line-height: 1; }
+.grand-head-info { flex: 1; }
+.grand-name { font-size: 18px; font-weight: 800; color: var(--text); }
+.grand-desc { font-size: 12px; color: var(--text-dim); margin: 2px 0 4px; }
+.grand-meta { font-size: 11px; color: var(--text-muted); }
+.grand-locked-msg { font-size: 13px; color: var(--text-dim); padding: 6px 0; }
+
+.grand-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.grand-stat {
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.grand-stat-lbl { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; }
+.grand-stat-val { font-size: 15px; font-weight: 700; }
+
+.grand-ready-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.grand-ready-bar {
+  flex: 1; height: 10px; border-radius: 6px;
+  background: var(--bg-dark); border: 1px solid var(--border); overflow: hidden;
+}
+.grand-ready-fill { height: 100%; border-radius: 6px; transition: width 0.3s; }
+
+.grand-prep-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.grand-prep-item {
+  background: var(--bg-dark);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.grand-prep-item.done { border-color: #22c55e66; background: #22c55e0d; }
+.grand-prep-top { display: flex; justify-content: space-between; align-items: center; font-size: 13px; gap: 6px; }
+.grand-prep-desc { font-size: 11px; color: var(--text-muted); line-height: 1.3; }
+.grand-prep-action { margin-top: 2px; }
+.grand-prep-btn { width: 100%; }
+.grand-prep-done { color: var(--green); font-weight: 700; font-size: 12px; }
+.grand-prep-running { color: var(--cyan); font-weight: 700; font-size: 12px; }
+
+.grand-compete-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.grand-compete-btn { font-size: 15px; padding: 12px 22px; }
+.grand-hint { font-size: 12px; color: var(--text-dim); }
+.grand-cooldown { font-size: 13px; color: var(--text-dim); }
+
+.grand-result-lines {
+  display: flex; flex-direction: column; gap: 6px;
+  margin: 14px 0; text-align: left;
+  background: var(--bg-dark); border: 1px solid var(--border);
+  border-radius: 10px; padding: 14px;
+}
+.grand-result-line { font-size: 15px; }
+
+@media (max-width: 600px) {
+  .grand-stats-row { grid-template-columns: 1fr; }
+  .grand-prep-grid { grid-template-columns: 1fr; }
+}
