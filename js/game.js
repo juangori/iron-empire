@@ -1344,6 +1344,24 @@ function getRivalMemberSteal() {
   return total;
 }
 
+// Robo de rivales como % REAL de socios (espejo de getMembersAttracted), para mostrarlo coherente.
+// El robo NO es un número plano: es un % del pool de socios, capeado al 30%, reducido por Lealtad de Marca.
+function getRivalStealInfo() {
+  var totalSteal = getRivalMemberSteal();
+  var stealMult = getSkillEffect('rivalStealMult');
+  var retention = (typeof getFamePerkEffect === 'function') ? getFamePerkEffect('retention') : 0;
+  var pct = Math.min(0.30, totalSteal * 0.0025 * stealMult) * (1 - retention);
+  var members = game.members || 0;
+  return { totalSteal: totalSteal, pct: pct, lost: Math.round(members * pct), members: members, capped: (totalSteal * 0.0025 * stealMult) > 0.30 };
+}
+
+// % de socios que roba UN rival puntual (standalone, sin el cap del total) — para la tarjeta.
+function getRivalStealPct(rival) {
+  var stealMult = getSkillEffect('rivalStealMult');
+  var retention = (typeof getFamePerkEffect === 'function') ? getFamePerkEffect('retention') : 0;
+  return (rival.memberSteal || 0) * 0.0025 * stealMult * (1 - retention);
+}
+
 function getRivalIncomeBonus() {
   var total = 0;
   RIVAL_GYMS.forEach(function(r) {

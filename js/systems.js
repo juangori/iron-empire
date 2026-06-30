@@ -1212,6 +1212,7 @@ function renderRivals() {
   if (!grid) return;
 
   var totalSteal = getRivalMemberSteal();
+  var rivalInfo = (typeof getRivalStealInfo === 'function') ? getRivalStealInfo() : { lost: 0, pct: 0, capped: false };
   var defeatedCount = RIVAL_GYMS.filter(function(r) {
     var state = game.rivals[r.id];
     return state && state.defeated;
@@ -1233,8 +1234,8 @@ function renderRivals() {
           '<span class="rival-summary-value" style="color:var(--green);">' + defeatedCount + ' / ' + RIVAL_GYMS.length + '</span>' +
         '</div>' +
         '<div class="rival-summary-stat">' +
-          '<span class="rival-summary-label">Miembros perdidos</span>' +
-          '<span class="rival-summary-value" style="color:' + (totalSteal > 0 ? 'var(--red)' : 'var(--green)') + ';">' + (totalSteal > 0 ? '-' + totalSteal : '0') + '</span>' +
+          '<span class="rival-summary-label">Socios robados</span>' +
+          '<span class="rival-summary-value" style="color:' + (rivalInfo.lost > 0 ? 'var(--red)' : 'var(--green)') + ';">' + (rivalInfo.lost > 0 ? '-' + rivalInfo.lost + ' (' + (rivalInfo.pct * 100).toFixed(1) + '%)' : '0') + '</span>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -1272,8 +1273,9 @@ function renderRivals() {
       '</div>';
       actionsHTML = '<button class="btn btn-red" ' + (game.money >= defeatCost ? '' : 'disabled') + ' onclick="defeatRival(\'' + r.id + '\')">🏆 SUPERAR — ' + fmtMoney(defeatCost) + '</button>';
     } else {
+      var rPct = (typeof getRivalStealPct === 'function') ? getRivalStealPct(r) * 100 : 0;
       statusHTML = '<div style="text-align:center;margin-bottom:8px;">' +
-        '<span class="rival-badge threat">AMENAZA — -' + r.memberSteal + ' miembros</span>' +
+        '<span class="rival-badge threat">AMENAZA — roba ' + rPct.toFixed(1) + '% de tus socios</span>' +
       '</div>';
       actionsHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
         '<button class="btn btn-cyan" style="flex:1;" ' + (game.money >= promoCost ? '' : 'disabled') + ' onclick="launchRivalPromo(\'' + r.id + '\')">📣 PROMO — ' + fmtMoney(promoCost) + '</button>' +
@@ -1289,7 +1291,7 @@ function renderRivals() {
         '<div class="rival-name">' + r.name + '</div>' +
         '<div class="rival-desc">' + r.desc + '</div>' +
         (!locked && !defeated ? '<div class="rival-stats">' +
-          '<div class="rival-stat">👥 <span class="val">-' + r.memberSteal + ' miembros</span></div>' +
+          '<div class="rival-stat">👥 <span class="val">roba ' + (getRivalStealPct(r) * 100).toFixed(1) + '% de socios</span></div>' +
           '<div class="rival-stat">⏱️ <span class="val">Promo: ' + fmtTime(r.promoDuration) + '</span></div>' +
         '</div>' : '') +
         statusHTML +

@@ -462,8 +462,8 @@ function updateUI() {
   }
   var rivalStealEl = document.getElementById('rivalStealSub');
   if (rivalStealEl) {
-    var steal = typeof getRivalMemberSteal === 'function' ? getRivalMemberSteal() : 0;
-    rivalStealEl.textContent = steal > 0 ? '-' + steal + ' cap por rivales' : '';
+    var rs = typeof getRivalStealInfo === 'function' ? getRivalStealInfo() : { lost: 0, pct: 0 };
+    rivalStealEl.textContent = rs.lost > 0 ? '-' + rs.lost + ' socios por rivales (' + (rs.pct * 100).toFixed(1) + '%)' : '';
   }
   el = document.getElementById('repBig');
   if (el) {
