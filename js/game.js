@@ -63,6 +63,12 @@ let game = {
   // Skill tree
   skills: {},
 
+  // Fama / tienda de prestigio (la reputación se gasta acá)
+  reputationSpent: 0,   // total de rep gastada — lifetime = reputation + reputationSpent
+  famePerks: {},        // { perkId: level }
+  fameBoosts: {},       // { boostId: expiresAtTimestamp }
+  fameUnlocks: {},      // { unlockId: true }
+
   // Gym zones
   zones: { ground_floor: true },
   zoneBuilding: {},
@@ -297,6 +303,8 @@ function getEquipCost(equip, level) {
     cost *= (1 - Math.min(0.6, getStaffTotalEffect(mgrDef, 'costReduction')));
   }
   cost *= getSkillEffect('equipCostMult');
+  // Fama: perk "Proveedores Premium" reduce costos
+  cost *= (1 - getFameCostReduction());
   return Math.ceil(cost);
 }
 
@@ -1033,7 +1041,8 @@ function getIncomePerSecond() {
   const totalIncome = (base + zoneIncome + rivalIncome) * mult * memberBonus * prestigeMult;
   // Decoration income bonus
   var decoIncome = getDecorationBonus('income');
-  return totalIncome * suppEffects.incomeMult * (1 + decoIncome);
+  // Fama: piso pasivo (lifetime) × perks × unlocks × boost activo
+  return totalIncome * suppEffects.incomeMult * (1 + decoIncome) * getFameIncomeMult();
 }
 
 // ===== SUPPLEMENT EFFECTS =====
@@ -1064,6 +1073,158 @@ function getActiveSupplementEffects() {
   var creatineActive = game.supplements['creatine'] && now < game.supplements['creatine'].activeUntil;
   if (proteinActive && creatineActive) effects.incomeMult *= 1.1;
   return effects;
+}
+
+// ===== FAMA / REPUTATION SPENDING =====
+// La reputación pasa de número muerto a moneda. lifetime = balance gastable + gastado,
+// así gastar NO baja el "piso pasivo" (que mide tu fama acumulada de toda la vida).
+
+function getReputationLifetime() {
+  return (game.reputation || 0) + (game.reputationSpent || 0);
+}
+
+// Ritmo real de generación de rep (espejo de repTick). Base de pricing de la tienda.
+function getReputationPerSecond() {
+  var r = (game.members || 0) * 0.02 * getSkillEffect('memberRepMult');
+  STAFF.forEach(function(s) {
+    if (game.staff[s.id] && game.staff[s.id].hired && s.repMult) {
+      r *= (1 + getStaffTotalEffect(s, 'repMult') * getSkillEffect('staffRepMult'));
+    }
+  });
+  r *= (1 + getDecorationBonus('reputation'));
+  return r;
+}
+
+// Piso pasivo: bonus de ingreso logarítmico por tu fama ACUMULADA (lifetime).
+// Crece parejo de 1K a 20M+ sin saturar. Techo +15% (o +30% con la Leyenda).
+function getReputationFloorBonus() {
+  var life = getReputationLifetime();
+  if (life <= 0) return 0;
+  var cap = (game.fameUnlocks && game.fameUnlocks.unlock_legacy) ? 0.30 : 0.15;
+  return Math.min(cap, 0.0125 * (Math.log(1 + life / 1000) / Math.log(2)));
+}
+
+function getFamePerkLevel(id) {
+  return (game.famePerks && game.famePerks[id]) || 0;
+}
+
+// Suma aditiva de perks permanentes para una clave de efecto (income/cost/capacity/retention/vipspeed)
+function getFamePerkEffect(key) {
+  var total = 0;
+  if (typeof FAME_SHOP === 'undefined') return 0;
+  FAME_SHOP.perks.forEach(function(p) {
+    if (p.effect && p.effect.key === key) total += (p.effect.perLevel || 0) * getFamePerkLevel(p.id);
+  });
+  return total;
+}
+
+// Multiplicadores de boosts temporales activos
+function getActiveFameBoosts() {
+  var b = { incomeMult: 1, repMult: 1, classMult: 1, memberAttractMult: 1 };
+  if (typeof FAME_SHOP === 'undefined' || !game.fameBoosts) return b;
+  var now = Date.now();
+  FAME_SHOP.boosts.forEach(function(bo) {
+    var until = game.fameBoosts[bo.id];
+    if (until && now < until && bo.effect) {
+      if (bo.effect.incomeMult) b.incomeMult *= bo.effect.incomeMult;
+      if (bo.effect.repMult) b.repMult *= bo.effect.repMult;
+      if (bo.effect.classMult) b.classMult *= bo.effect.classMult;
+      if (bo.effect.memberAttractMult) b.memberAttractMult *= bo.effect.memberAttractMult;
+    }
+  });
+  return b;
+}
+
+function getFameUnlockIncome() {
+  var m = 0;
+  if (game.fameUnlocks) {
+    if (game.fameUnlocks.unlock_sponsor) m += 0.15;
+    if (game.fameUnlocks.unlock_legacy) m += 0.10;
+  }
+  return m;
+}
+
+// Multiplicador de ingreso total de Fama: piso pasivo × perks × unlocks × boost activo
+function getFameIncomeMult() {
+  return (1 + getReputationFloorBonus())
+    * (1 + getFamePerkEffect('income'))
+    * (1 + getFameUnlockIncome())
+    * getActiveFameBoosts().incomeMult;
+}
+
+// Reducción de costos por el perk Proveedores Premium (capeada por seguridad)
+function getFameCostReduction() {
+  return Math.min(0.5, getFamePerkEffect('cost'));
+}
+
+// ----- Costos de la tienda (escalan con la generación real de rep) -----
+function getFameRate() {
+  return Math.max(1, getReputationPerSecond());
+}
+function getFameBoostCost(b) {
+  return Math.ceil(getFameRate() * b.costSeconds);
+}
+function getFamePerkCost(p) {
+  var lvl = getFamePerkLevel(p.id); // costo del PRÓXIMO nivel
+  return Math.ceil(getFameRate() * p.baseSeconds * Math.pow(p.growth, lvl));
+}
+function getFameUnlockCost(u) {
+  return Math.ceil(getFameRate() * u.costSeconds);
+}
+
+// ----- Compras (gastan reputación) -----
+function spendReputation(amount) {
+  game.reputation = Math.max(0, game.reputation - amount);
+  game.reputationSpent = (game.reputationSpent || 0) + amount;
+}
+
+function buyFameBoost(id) {
+  var b = FAME_SHOP.boosts.find(function(x) { return x.id === id; });
+  if (!b) return;
+  var now = Date.now();
+  if (game.fameBoosts[id] && now < game.fameBoosts[id]) { showToast('⏳', '¡' + b.name + ' ya está activo!'); return; }
+  var cost = getFameBoostCost(b);
+  if (game.reputation < cost) { showToast('❌', '¡Te falta reputación!'); return; }
+  spendReputation(cost);
+  game.fameBoosts[id] = now + b.duration * 1000;
+  addLog('🌟 Activaste <span class="highlight">' + b.name + '</span> (' + fmtTime(b.duration) + ') — costó ' + fmt(cost) + ' de fama.', 'important');
+  showToast(b.icon, '¡' + b.name + ' activado!');
+  updateUI(); renderFameShop(); saveGame();
+}
+
+function buyFamePerk(id) {
+  var p = FAME_SHOP.perks.find(function(x) { return x.id === id; });
+  if (!p) return;
+  var lvl = getFamePerkLevel(id);
+  if (lvl >= p.maxLevel) { showToast('✅', '¡' + p.name + ' al máximo!'); return; }
+  var cost = getFamePerkCost(p);
+  if (game.reputation < cost) { showToast('❌', '¡Te falta reputación!'); return; }
+  spendReputation(cost);
+  game.famePerks[id] = lvl + 1;
+  addLog('🌟 Mejoraste <span class="highlight">' + p.name + '</span> a nivel ' + (lvl + 1) + ' — costó ' + fmt(cost) + ' de fama.', 'important');
+  showToast(p.icon, '¡' + p.name + ' Nv' + (lvl + 1) + '!');
+  updateUI(); renderFameShop(); saveGame();
+}
+
+function buyFameUnlock(id) {
+  var u = FAME_SHOP.unlocks.find(function(x) { return x.id === id; });
+  if (!u) return;
+  if (game.fameUnlocks[id]) { showToast('✅', '¡Ya lo tenés!'); return; }
+  if (getReputationLifetime() < u.reqLifetime) { showToast('🔒', 'Necesitás ' + fmt(u.reqLifetime) + ' de fama acumulada.'); return; }
+  var cost = getFameUnlockCost(u);
+  if (game.reputation < cost) { showToast('❌', '¡Te falta reputación!'); return; }
+  spendReputation(cost);
+  game.fameUnlocks[id] = true;
+  addLog('👑 Desbloqueaste <span class="highlight">' + u.name + '</span> — costó ' + fmt(cost) + ' de fama.', 'important');
+  showToast(u.icon, '¡' + u.name + ' desbloqueado!');
+  updateUI(); renderFameShop(); saveGame();
+}
+
+function normalizeFameData() {
+  if (typeof game.reputationSpent !== 'number') game.reputationSpent = 0;
+  if (!game.famePerks) game.famePerks = {};
+  if (!game.fameBoosts) game.fameBoosts = {};
+  if (!game.fameUnlocks) game.fameUnlocks = {};
 }
 
 function getSupplementCost(sup) {
@@ -1336,6 +1497,8 @@ function getIncomeOverheadPerSecond() {
     // stacks across copies (skips sick/training) + scales with level, capped 60% — extra managers now matter
     overhead *= Math.max(0, 1 - Math.min(0.6, getStaffTotalEffect(mgrDef, 'costReduction')));
   }
+  // Fama: perk "Proveedores Premium" también reduce el overhead de servicios e impuestos
+  overhead *= (1 - getFameCostReduction());
   return Math.max(0, overhead);
 }
 
@@ -1463,6 +1626,8 @@ function getMaxMembers() {
   cap += getRivalCapacityBonus();
   // Skill: capacity mult
   cap *= getSkillEffect('capacityMult');
+  // Fama: perk "Gimnasio de Moda" (+5% cap/nivel)
+  cap *= (1 + getFamePerkEffect('capacity'));
   // Decoration capacity bonus
   cap += getDecorationBonus('capacity');
   // Neighborhood max members cap
@@ -1488,6 +1653,8 @@ function getMembersAttracted() {
     base += eq.membersPerLevel * lvl;
   });
   base *= getSkillEffect('memberAttractionMult');
+  // Fama: boost temporal "Jornada Abierta" (+50% atracción)
+  base *= getActiveFameBoosts().memberAttractMult;
   // Marketing boost
   var campaignMembersMult = getSkillEffect('campaignMembersMult');
   MARKETING_CAMPAIGNS.forEach(mc => {
@@ -1500,7 +1667,7 @@ function getMembersAttracted() {
   // Rivals steal a PERCENTAGE of your actual members. (Flat steal was absorbed by the attraction
   // surplus over capacity → it never reduced members. Now it bites, so promo/defeat have real value.)
   // Reduced by the rivalStealMult skill; capped so it can't wipe you. Defeating a rival removes its share.
-  var stealPct = Math.min(0.30, getRivalMemberSteal() * 0.0025 * getSkillEffect('rivalStealMult'));
+  var stealPct = Math.min(0.30, getRivalMemberSteal() * 0.0025 * getSkillEffect('rivalStealMult')) * (1 - getFamePerkEffect('retention'));
   return Math.max(0, Math.floor(capped * (1 - stealPct)));
 }
 
@@ -2080,6 +2247,8 @@ function repTick() {
   });
   // Decoration reputation bonus
   repGain *= (1 + getDecorationBonus('reputation'));
+  // Fama: boost temporal "Viral en Redes" duplica la generación
+  repGain *= getActiveFameBoosts().repMult;
   if (repGain > 0) {
     game.reputation += repGain;
     game.dailyTracking.reputationGained += repGain;
@@ -2285,7 +2454,7 @@ function gameTick() {
         if (st && st.promoUntil && Date.now() < st.promoUntil) return;
         stealerNames.push(r.name);
       });
-      var stealPct = Math.min(0.30, stealTotal * 0.0025 * getSkillEffect('rivalStealMult'));
+      var stealPct = Math.min(0.30, stealTotal * 0.0025 * getSkillEffect('rivalStealMult')) * (1 - getFamePerkEffect('retention'));
       if (stealerNames.length > 0 && stealPct > 0) {
         addLog('🏪 Rivales activos te roban <span class="highlight">' + Math.round(stealPct * 100) + '% de tus miembros</span> (' + stealerNames.join(', ') + '). Hacé promo o derrotalos.');
       }
@@ -2834,6 +3003,7 @@ function renderAll() {
   normalizeEquipmentData();
   normalizeChampionData();
   normalizeProfileData();
+  normalizeFameData();
   applyTheme();
   renderEquipment();
   renderStaff();
@@ -2842,6 +3012,7 @@ function renderAll() {
   renderMarketing();
   renderSupplements();
   renderRivals();
+  renderFameShop();
   renderDailyMissions();
   renderDailyBonus();
   renderSkillTree();
@@ -2898,6 +3069,7 @@ const TAB_UNLOCK_LEVELS = {
   classes: 3,
   rivals: 4,
   supplements: 5,
+  fame: 5,
   skills: 5,
   expansion: 6,
   vip: 6,
@@ -2960,6 +3132,7 @@ function switchTab(tabId) {
 
   // Tab-specific actions
   if (tabId === 'prestige') { renderCityMap(); renderLeaderboard(); }
+  if (tabId === 'fame') renderFameShop();
   if (tabId === 'wiki') renderWiki();
   if (tabId === 'achievements') {
     game._lastSeenAchievementCount = ACHIEVEMENTS.filter(function(a) { return game.achievements[a.id]; }).length;

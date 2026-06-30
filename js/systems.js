@@ -414,7 +414,7 @@ function upgradeInstructor(classId) {
 function getClassReward(gc) {
   var levelScale = 1 + (game.level - 1) * 0.2;
   var prestigeMult = 1 + (game.prestigeStars * 0.25);
-  var classMult = getSkillEffect('classIncomeMult') * getActiveSupplementEffects().classIncomeMult;
+  var classMult = getSkillEffect('classIncomeMult') * getActiveSupplementEffects().classIncomeMult * getActiveFameBoosts().classMult;
   // Classes ride the economy (staff + members) so they don't go vestigial vs scaling equipment income
   var classStaffMult = 1;
   STAFF.forEach(function(s) { if (game.staff[s.id] && game.staff[s.id].hired && s.incomeMult) classStaffMult += getStaffTotalEffect(s, 'incomeMult') * getSkillEffect('staffEffectMult'); });
@@ -949,6 +949,128 @@ var TOLERANCE_LABELS = [
   { label: 'Tolerancia moderada', color: 'orange', pct: 65, warn: true },
   { label: 'Tolerancia máxima', color: 'var(--red)', pct: 45, warn: true },
 ];
+
+// ===== FAMA / TIENDA DE PRESTIGIO =====
+function fameePerkEffectText(perk, level) {
+  var pct = Math.round((perk.effect.perLevel || 0) * level * 100);
+  switch (perk.effect.key) {
+    case 'income':    return '+' + pct + '% ingreso';
+    case 'cost':      return '-' + pct + '% costos';
+    case 'retention': return '-' + pct + '% robo de rivales';
+    case 'capacity':  return '+' + pct + '% capacidad';
+    case 'vipspeed':  return 'VIPs +' + pct + '% más seguido';
+    default:          return '+' + pct + '%';
+  }
+}
+
+function renderFameShop() {
+  var container = document.getElementById('fameContainer');
+  if (!container || typeof FAME_SHOP === 'undefined') return;
+  if (typeof normalizeFameData === 'function') normalizeFameData();
+
+  var now = Date.now();
+  var rep = Math.floor(game.reputation || 0);
+  var rate = getReputationPerSecond();
+  var floor = getReputationFloorBonus();
+  var lifetime = getReputationLifetime();
+
+  // ---- Header ----
+  var html = '<div class="section-title">🌟 Fama y Prestigio</div>';
+  html += '<p class="section-subtitle">Tu reputación es una moneda: gastala en boosts, mejoras permanentes y desbloqueos. Tu fama acumulada te da además un ingreso pasivo.</p>';
+
+  html += '<div class="fame-header">' +
+    '<div class="fame-header-box"><div class="fame-hb-label">Reputación disponible</div><div class="fame-hb-value" style="color:var(--accent);">🌟 ' + fmt(rep) + '</div></div>' +
+    '<div class="fame-header-box"><div class="fame-hb-label">Generás</div><div class="fame-hb-value" style="color:var(--cyan);">+' + (rate >= 10 ? fmt(Math.round(rate)) : rate.toFixed(1)) + '/seg</div></div>' +
+    '<div class="fame-header-box"><div class="fame-hb-label">Piso pasivo de ingreso</div><div class="fame-hb-value" style="color:var(--green);">+' + (floor * 100).toFixed(1) + '%</div><div class="fame-hb-sub">por ' + fmt(Math.floor(lifetime)) + ' de fama acumulada</div></div>' +
+    '</div>';
+
+  // ---- Boosts activos ----
+  var activeBoosts = FAME_SHOP.boosts.filter(function(b) { return game.fameBoosts[b.id] && now < game.fameBoosts[b.id]; });
+  if (activeBoosts.length > 0) {
+    html += '<div class="fame-active">';
+    html += '<div class="fame-active-title">⚡ Boosts activos</div>';
+    activeBoosts.forEach(function(b) {
+      var left = Math.ceil((game.fameBoosts[b.id] - now) / 1000);
+      html += '<div class="fame-active-item"><span>' + b.icon + ' ' + b.name + '</span><span style="color:var(--text-dim);">⏱️ ' + fmtTime(left) + '</span></div>';
+    });
+    html += '</div>';
+  }
+
+  // ---- Boosts ----
+  html += '<div class="fame-cat-title">⚡ Boosts temporales <span class="fame-cat-hint">— premio de juego activo</span></div>';
+  html += '<div class="fame-grid">';
+  FAME_SHOP.boosts.forEach(function(b) {
+    var cost = getFameBoostCost(b);
+    var active = game.fameBoosts[b.id] && now < game.fameBoosts[b.id];
+    var canAfford = rep >= cost;
+    var btn;
+    if (active) {
+      var left = Math.ceil((game.fameBoosts[b.id] - now) / 1000);
+      btn = '<button class="btn btn-small" disabled style="opacity:.6;">⏱️ ACTIVO — ' + fmtTime(left) + '</button>';
+    } else {
+      btn = '<button class="btn btn-buy btn-small" ' + (canAfford ? '' : 'disabled') + ' onclick="buyFameBoost(\'' + b.id + '\')">ACTIVAR — 🌟 ' + fmt(cost) + '</button>';
+    }
+    html += '<div class="fame-card' + (active ? ' fame-card-active' : '') + '">' +
+      '<div class="fame-card-head"><span class="fame-card-icon">' + b.icon + '</span><span class="fame-card-name">' + b.name + '</span></div>' +
+      '<div class="fame-card-desc">' + b.desc + '</div>' +
+      '<div class="fame-card-meta">Dura ' + fmtTime(b.duration) + '</div>' +
+      btn +
+    '</div>';
+  });
+  html += '</div>';
+
+  // ---- Perks permanentes ----
+  html += '<div class="fame-cat-title">📈 Mejoras permanentes <span class="fame-cat-hint">— suben de nivel, sink de largo plazo</span></div>';
+  html += '<div class="fame-grid">';
+  FAME_SHOP.perks.forEach(function(p) {
+    var lvl = getFamePerkLevel(p.id);
+    var maxed = lvl >= p.maxLevel;
+    var cost = getFamePerkCost(p);
+    var canAfford = rep >= cost;
+    var pips = '';
+    for (var i = 0; i < p.maxLevel; i++) pips += '<span class="fame-pip' + (i < lvl ? ' on' : '') + '"></span>';
+    var btn;
+    if (maxed) {
+      btn = '<button class="btn btn-small" disabled style="opacity:.6;">✅ MÁXIMO</button>';
+    } else {
+      btn = '<button class="btn btn-buy btn-small" ' + (canAfford ? '' : 'disabled') + ' onclick="buyFamePerk(\'' + p.id + '\')">MEJORAR (Nv ' + (lvl + 1) + ') — 🌟 ' + fmt(cost) + '</button>';
+    }
+    html += '<div class="fame-card">' +
+      '<div class="fame-card-head"><span class="fame-card-icon">' + p.icon + '</span><span class="fame-card-name">' + p.name + '</span></div>' +
+      '<div class="fame-card-desc">' + p.desc + '</div>' +
+      '<div class="fame-pips">' + pips + ' <span class="fame-card-meta">Nv ' + lvl + '/' + p.maxLevel + '</span></div>' +
+      (lvl > 0 ? '<div class="fame-card-current">Actual: ' + fameePerkEffectText(p, lvl) + '</div>' : '') +
+      btn +
+    '</div>';
+  });
+  html += '</div>';
+
+  // ---- Unlocks ----
+  html += '<div class="fame-cat-title">👑 Desbloqueos <span class="fame-cat-hint">— hitos únicos, objetivos aspiracionales</span></div>';
+  html += '<div class="fame-grid">';
+  FAME_SHOP.unlocks.forEach(function(u) {
+    var owned = !!game.fameUnlocks[u.id];
+    var cost = getFameUnlockCost(u);
+    var gated = lifetime < u.reqLifetime;
+    var canAfford = rep >= cost;
+    var btn;
+    if (owned) {
+      btn = '<div class="fame-owned">✓ DESBLOQUEADO</div>';
+    } else if (gated) {
+      btn = '<button class="btn btn-small" disabled style="opacity:.6;">🔒 Requiere 🌟 ' + fmt(u.reqLifetime) + ' de fama acumulada</button>';
+    } else {
+      btn = '<button class="btn btn-buy btn-small" ' + (canAfford ? '' : 'disabled') + ' onclick="buyFameUnlock(\'' + u.id + '\')">DESBLOQUEAR — 🌟 ' + fmt(cost) + '</button>';
+    }
+    html += '<div class="fame-card' + (owned ? ' fame-card-owned' : '') + '">' +
+      '<div class="fame-card-head"><span class="fame-card-icon">' + u.icon + '</span><span class="fame-card-name">' + u.name + '</span></div>' +
+      '<div class="fame-card-desc">' + u.desc + '</div>' +
+      btn +
+    '</div>';
+  });
+  html += '</div>';
+
+  container.innerHTML = html;
+}
 
 function renderSupplements() {
   var grid = document.getElementById('supplementsGrid');
@@ -2071,6 +2193,8 @@ function checkVipSpawn() {
   // Neighborhood VIP chance multiplier (higher mult = shorter wait)
   var hood = typeof getActiveNeighborhood === 'function' ? getActiveNeighborhood() : null;
   if (hood && hood.vipChanceMult > 0) baseVipTimer = Math.floor(baseVipTimer / hood.vipChanceMult);
+  // Fama: perk "Imán de Famosos" acelera la aparición de VIPs (+15%/nivel)
+  baseVipTimer = Math.floor(baseVipTimer / (1 + getFamePerkEffect('vipspeed')));
   game.nextVipIn = Math.max(60, baseVipTimer); // minimum 1 min
 
   // Filter VIPs by what the player can satisfy
@@ -2155,7 +2279,9 @@ function acceptVip(vipId) {
   vipState.accepted = true;
 
   const prestigeMult = 1 + (game.prestigeStars * 0.25);
-  const vipMult = getSkillEffect('vipRewardMult');
+  // Fama: unlock "Salón VIP Exclusivo" → +50% a todo lo que rinde el VIP
+  const salonMult = (game.fameUnlocks && game.fameUnlocks.unlock_vipsalon) ? 1.5 : 1;
+  const vipMult = getSkillEffect('vipRewardMult') * salonMult;
   const moneyReward = Math.ceil(vipDef.reward.money * prestigeMult * vipMult);
 
   game.money += moneyReward;

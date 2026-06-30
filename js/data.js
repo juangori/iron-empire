@@ -647,6 +647,34 @@ const SUPPLEMENTS = [
   { id: 'multivitamin', name: 'Multivitamínico Premium', icon: '🌟', desc: 'El suplemento definitivo. Mejora ingresos y reputación constantemente.', cost: 30000, duration: 360, effects: { incomeMult: 1.25, repPerMin: 5 }, reqLevel: 20 },
 ];
 
+// ===== FAMA / TIENDA DE PRESTIGIO =====
+// La reputación se GASTA acá (antes era un número muerto que solo gateaba competencias).
+// Precios escalan con la generación REAL de rep del jugador (getReputationPerSecond),
+// así son relevantes a todo nivel — mismo principio que el overhead/eventos/clases.
+//   - boosts: temporales, premio de juego activo. costo = repRate × costSeconds.
+//   - perks: permanentes y por niveles, el sink de largo plazo. costo(L) = repRate × baseSeconds × growth^L.
+//   - unlocks: hitos one-shot, saltos cualitativos (los objetivos aspiracionales).
+const FAME_SHOP = {
+  boosts: [
+    { id: 'boost_press',      name: 'Prensa Deportiva', icon: '📰', desc: 'Salís en todos lados: x2 ingreso del gimnasio.', duration: 1800, costSeconds: 2400, effect: { incomeMult: 2 } },
+    { id: 'boost_viral',      name: 'Viral en Redes',   icon: '📱', desc: 'Todos hablan de vos: x2 generación de reputación.', duration: 1200, costSeconds: 600,  effect: { repMult: 2 } },
+    { id: 'boost_masterclass',name: 'Clase Magistral',  icon: '🧘', desc: 'Un crack da una clase única: x2 ingreso de clases.', duration: 1800, costSeconds: 1000, effect: { classMult: 2 } },
+    { id: 'boost_openday',    name: 'Jornada Abierta',  icon: '🚪', desc: 'Puertas abiertas al barrio: +50% atracción de miembros.', duration: 1200, costSeconds: 900,  effect: { memberAttractMult: 1.5 } },
+  ],
+  perks: [
+    { id: 'perk_brand',     name: 'Marca Reconocida',   icon: '™️', desc: '+6% ingreso permanente por nivel.',           maxLevel: 5, baseSeconds: 1800, growth: 1.8, effect: { key: 'income',    perLevel: 0.06 } },
+    { id: 'perk_suppliers', name: 'Proveedores Premium', icon: '🤝', desc: '-4% en todos los costos por nivel.',           maxLevel: 5, baseSeconds: 1500, growth: 1.8, effect: { key: 'cost',      perLevel: 0.04 } },
+    { id: 'perk_loyalty',   name: 'Lealtad de Marca',   icon: '❤️', desc: 'Tus miembros son fieles: -12% robo de rivales por nivel.', maxLevel: 3, baseSeconds: 1500, growth: 1.9, effect: { key: 'retention', perLevel: 0.12 } },
+    { id: 'perk_capacity',  name: 'Gimnasio de Moda',   icon: '🔥', desc: 'Todos quieren entrar: +5% capacidad de miembros por nivel.', maxLevel: 5, baseSeconds: 1500, growth: 1.8, effect: { key: 'capacity',  perLevel: 0.05 } },
+    { id: 'perk_magnet',    name: 'Imán de Famosos',    icon: '😎', desc: 'Los VIP aparecen 15% más seguido por nivel.',  maxLevel: 3, baseSeconds: 1200, growth: 1.8, effect: { key: 'vipspeed',  perLevel: 0.15 } },
+  ],
+  unlocks: [
+    { id: 'unlock_sponsor',  name: 'Patrocinio Nacional', icon: '🏅', desc: 'Una gran marca te banca: +15% ingreso permanente.',                          costSeconds: 7200,  reqLifetime: 50000 },
+    { id: 'unlock_vipsalon', name: 'Salón VIP Exclusivo', icon: '🥂', desc: 'Atención de lujo: los miembros VIP rinden +50% (plata, rep y XP).',         costSeconds: 9000,  reqLifetime: 150000 },
+    { id: 'unlock_legacy',   name: 'Leyenda del Fitness', icon: '👑', desc: 'Tu fama es eterna: +10% ingreso y el piso pasivo sube de +15% a +30%.',     costSeconds: 18000, reqLifetime: 500000 },
+  ]
+};
+
 // ===== RIVAL GYMS =====
 const RIVAL_GYMS = [
   { id: 'barrio', name: 'Garage Gym del Barrio', icon: '🏚️', desc: 'El vecino armó un gym en su garage. Básico pero barato, te roba principiantes.', memberSteal: 2, promoCost: 500, promoDuration: 900, defeatCost: 5000, defeatBonus: { income: 8, capacity: 5 }, reqLevel: 3 },

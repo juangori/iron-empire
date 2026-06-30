@@ -19,15 +19,16 @@ index.html          - Main HTML structure, auth screen, account modal, loads all
 css/styles.css      - All styles (CSS variables, responsive, auth styles)
 js/data.js          - Game data: equipment, staff, competitions, achievements, classes, class instructors,
                       marketing, events, missions, tutorial, daily bonus, skill tree, zones, neighborhoods,
-                      VIP members, supplements, rivals, champion, TAB_WALKTHROUGHS, WIKI_CONTENT, player titles, gym decoration
+                      VIP members, supplements, rivals, champion, FAME_SHOP (fama/prestigio), TAB_WALKTHROUGHS, WIKI_CONTENT, player titles, gym decoration
 js/game.js          - Core engine: game state, save/load, tick loop, game actions, utility functions,
                       skill/zone calculations, chaos mechanics, construction timers, champion logic,
                       branch system (passive franchise: getBranchPassiveIncome/getBranchUpgradeCost/migrateBranchesToPassive), franchise stars,
+                      fame system (reputation spending: getReputationPerSecond/getReputationFloorBonus/getFamePerkEffect/getActiveFameBoosts/buyFame*),
                       offline progression (calculateOfflineProgress + showOfflineReport)
 js/ui.js            - UI rendering: equipment, staff, competitions, achievements, log, updateUI
 js/systems.js       - Engagement: daily bonus, daily missions, random events, tutorial, tab walkthroughs,
                       wiki, classes (+ instructor hire/upgrade), marketing, skill tree, expansion, VIP members,
-                      supplements, rivals, champion, tab notifications, reminders, player profile, balance panel,
+                      supplements, rivals, champion, fama (renderFameShop), tab notifications, reminders, player profile, balance panel,
                       city map (renderCityMap, openNewBranchModal, confirmNewBranch)
 js/auth.js          - Firebase auth: login/register (Google, Facebook, email/password), account settings,
                       cloud save, auth state management
@@ -69,7 +70,7 @@ CNAME               - Custom domain config
 - Required Firebase services: Authentication, Firestore
 - Firestore collections: `users` (profiles), `saves` (game data)
 
-## Key Game Systems (25 total)
+## Key Game Systems (26 total)
 1. **Máquinas/Equipment** (12 items) - Buy/upgrade, each gives income/members/capacity. Level cap = player level. Can break down randomly.
 2. **Staff** (8 types) - Hire + train levels. Passive bonuses. Can get sick randomly. Multiple copies via extras.
 3. **Competitions** (6 tiers) - Unified in champion tab. Normal competitions before recruiting, 2x rewards with champion. Shared cooldowns.
@@ -95,6 +96,7 @@ CNAME               - Custom domain config
 23. **Wiki** - In-game knowledge base tab (📖). 17 collapsible sections covering all game systems. Full-text search. Accessible from walkthroughs or directly from sidebar. `renderWiki()` + `searchWiki()` + `toggleWikiSection()` in systems.js.
 24. **Offline Progression** - `calculateOfflineProgress()` in game.js. Cap 8 hours. Processes: net income, all timer completions, marketing campaigns, passive rep, auto-members, champion fatigue recovery. Shows detailed modal (`showOfflineReport()`) with economy/construction/marketing/growth/champion sections.
 25. **Balance Panel** - SimCity-style financial overview modal. `openBalancePanel()` / `renderBalancePanel()` in systems.js. Shows: income breakdown per equipment/zone/rival, all multipliers (skills, staff, members, prestige, supplements, decoration), expense breakdown per staff salary/rent/utilities/campaigns, net income /s, daily projection.
+26. **Fama / Tienda de Prestigio** (🌟 Fama tab, unlock lvl 5) - Reputation is now a SPENDABLE currency (was a dead number that only gated competitions). `FAME_SHOP` in data.js: **4 boosts** (temp: x2 income, x2 rep, x2 class income, +50% member attraction), **5 perks** (permanent leveled: +6% income, -4% costs, -12% rival steal, +5% capacity, +15% VIP spawn speed), **3 unlocks** (one-shot milestones gated by `reqLifetime`: Patrocinio +15% income, Salón VIP +50% VIP rewards, Leyenda +10% income & raises passive floor cap 15%→30%). All in `renderFameShop()` (systems.js). **Pricing is rate-based** (`getFameBoostCost`/`getFamePerkCost`/`getFameUnlockCost` = `getReputationPerSecond() × seconds`) so cost stays ~constant in "minutes of fame" at every level — no flat numbers going vestigial. Perks escalate ×1.8/level. **Passive floor**: `getReputationFloorBonus()` = logarithmic income bonus from LIFETIME rep (`getReputationLifetime() = reputation + reputationSpent`, so spending never lowers the floor), capped +15% (+30% with Leyenda). State: `game.reputationSpent`, `game.famePerks{id:lvl}`, `game.fameBoosts{id:expiresAt}`, `game.fameUnlocks{id:true}`. Hooks: `getFameIncomeMult` in getIncomePerSecond; `getFamePerkEffect` in getMaxMembers/getEquipCost/overhead/getMembersAttracted; `getActiveFameBoosts` in repTick/getClassReward/getMembersAttracted; VIP spawn+reward in systems.js. Migration-safe (deepMerge defaults + `normalizeFameData`); pure buff for existing players (their accumulated rep becomes spendable + gives a floor).
 
 ## Home Tab Stats
 - Stats grid shows 6 boxes: Ingreso Neto /seg, Gastos Totales /seg, Miembros (actual/cap), Reputación, Total Ganado, Categoría
@@ -132,6 +134,7 @@ CNAME               - Custom domain config
 - Passive branch income: `unlockCost / 1500` per sec at level 1 (≈25 min payback), +25% per "Ampliar" level. Does NOT scale with franchise stars (avoids stars×branches runaway compounding). No chaos, no rent/utilities. Flows to global wallet online (every 10s) + offline.
 - Branch upgrade ("Ampliar") cost: `unlockCost * 0.5 * currentLevel`
 - Franchise stars: `min(10, floor(sqrt(game.totalMoneyEarned / 8000000)))` (global total, includes passive; capped at 10), each star = +25% income mult (applies to active gym only, not passive branches)
+- **Reputation = spendable currency** (Fama system #26). Generated ~97-100% passively (`members × 0.02/s` via `repTick`). It used to be a dead number (its only uses — competition `minRep` gate + a `×0.0001` win-chance bonus — saturate within minutes). Now it's spent in the Fama shop. **Pricing scales with `getReputationPerSecond()`** so items cost a ~constant "minutes of fame" at every level (boosts 10-40min, perks 20-30min L1 ×1.8/lvl, unlocks 2-5h + lifetime gates). The **passive income floor** (`getReputationFloorBonus`, log of lifetime rep, cap +15%/+30%) keeps rep useful even if you don't engage with the shop and rewards the idle loop. `reputationLifetime = reputation + reputationSpent` (spending never lowers the floor). Validate with `tools/sim_reputation.js` + `tools/test_fame.js`.
 
 ## Skill Tree Branches (6)
 1. **Equipment** (🔧) - Cost reduction, income boost, capacity, mastery, breakdown resistance
@@ -141,7 +144,7 @@ CNAME               - Custom domain config
 5. **Infrastructure** (🏗️) - Zone cost, build speed, repair speed, equip upgrade speed, concurrent upgrades
 6. **Competitions** (🏆) - Win chance, cooldown, rewards, rep from comps, XP from comps
 
-## Sidebar Tabs (17)
+## Sidebar Tabs (18)
 | Category | Tab ID | Label |
 |----------|--------|-------|
 | General | gym | 🏠 Gimnasio |
@@ -155,6 +158,7 @@ CNAME               - Custom domain config
 | Crecimiento | marketing | 📢 Marketing |
 | Crecimiento | expansion | 🏗️ Instalaciones |
 | Crecimiento | skills | 🔬 Mejoras |
+| Crecimiento | fame | 🌟 Fama |
 | Competencia | champion | 🏆 Competencias |
 | Competencia | rivals | 🏪 Rivales |
 | Competencia | vip | ⭐ VIP |
@@ -179,7 +183,7 @@ CNAME               - Custom domain config
 ## Cache Busting
 - Script tags in index.html use `?v=XX` query string (e.g. `js/game.js?v=24`)
 - Increment the version number on every deploy that changes JS/CSS so browsers don't serve stale files
-- Current version: **v=41**
+- Current version: **v=43**
 - Update all 5 script tags together (data, game, ui, systems, auth) + the CSS link (`css/styles.css?v=XX`)
 
 ## Planned Improvements (by priority)
