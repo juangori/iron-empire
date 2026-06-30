@@ -121,6 +121,8 @@ const ACHIEVEMENTS = [
   { id: 'champion_equipped', name: 'Full Equipo', icon: '⚔️', desc: 'Equipá las 4 ranuras del campeón', check: () => game.champion && game.champion.equipment && game.champion.equipment.hands && game.champion.equipment.waist && game.champion.equipment.feet && game.champion.equipment.head },
   { id: 'grand_first_win', name: 'El Golpe', icon: '🌎', desc: 'Ganá tu primer Gran Torneo', check: () => (game.stats.grandWins || 0) >= 1 },
   { id: 'grand_mundial', name: 'Cima del Mundo', icon: '🌍', desc: 'Ganá el Mundial de Leyendas', check: () => game.grandTournaments && (game.grandTournaments.mundial_leyendas?.wins || 0) >= 1 },
+  { id: 'opp_first_win', name: 'Negociante', icon: '💼', desc: 'Cerrá tu primer negocio arriesgado', check: () => (game.stats.oppWins || 0) >= 1 },
+  { id: 'opp_inmobiliaria', name: 'El Tiburón', icon: '🦈', desc: 'Ganá una Inversión Inmobiliaria', check: () => game.opportunities && (game.opportunities.inmobiliaria?.wins || 0) >= 1 },
   // Decoration & Profile
   { id: 'first_decoration', name: 'Decorador', icon: '🎨', desc: 'Comprá tu primera decoración', check: () => game.decoration && Object.keys(game.decoration.items || {}).length >= 1 },
   { id: 'five_decorations', name: 'Diseñador de Interiores', icon: '🏠', desc: 'Comprá 5 decoraciones', check: () => game.decoration && Object.keys(game.decoration.items || {}).length >= 5 },
@@ -774,6 +776,49 @@ const GRAND_PREP_ITEMS = [
   { id: 'medico',       name: 'Kit Médico',        icon: '🩺', desc: 'Cuerpo médico + seguro: reduce chance y gravedad de lesión.', costMult: 0.18, readiness: 20, halvesInjury: true },
 ];
 
+// ===== OPORTUNIDADES / NEGOCIOS ARRIESGADOS (mismo loop que los Grandes Torneos, pero a nivel GIMNASIO) =====
+// No dependen del campeón: el que arriesga es el negocio. Si sale mal, el "daño" es un SETBACK temporal
+// (mala prensa / redada / escándalo) que baja tus ingresos unas horas — te tenés que recomponer. Misma
+// filosofía: bien preparado rara vez sale mal, el castigo real es el cooldown largo + perder la entrada.
+const OPP_READINESS_WIN_WEIGHT = 0.35;  // Preparación 100% suma +35% a la chance de éxito
+
+const OPP_PREP_ITEMS = [
+  { id: 'permisos',     name: 'Papeleo y Permisos', icon: '📋', desc: 'Habilitaciones en regla. Sin esto no entrás.',                costMult: 0.20, readiness: 20, required: true },
+  { id: 'duediligence', name: 'Due Diligence',      icon: '🔍', desc: 'Investigación previa con timer. Baja mucho el riesgo.',         costMult: 0.15, readiness: 40, timed: true },
+  { id: 'contactos',    name: 'Contactos',          icon: '🤝', desc: 'Palanca y conexiones que inclinan la balanza a tu favor.',     costMult: 0.10, readiness: 20 },
+  { id: 'seguro',       name: 'Seguro',             icon: '🛡️', desc: 'Cobertura ante reveses: reduce chance y gravedad del setback.', costMult: 0.18, readiness: 20, halvesBackfire: true },
+];
+
+const OPPORTUNITIES = [
+  {
+    id: 'torneo_clandestino', name: 'Torneo Clandestino', icon: '🥊',
+    desc: 'Apuestas fuertes en un torneo sin reglas. Plata rápida… si no aparece la policía.',
+    reqLevel: 10, reqRepLifetime: 500,
+    cooldown: 43200, entryFee: 100000,         // 12 h
+    baseSuccessChance: 0.42, dueDiligenceSecs: 1200,
+    reward: { money: 500000, rep: 250, membersPct: 0 }, floorSecs: 400,
+    backfire: { name: 'Redada policial', icon: '🚔', baseChance: 0.30, minChance: 0.08, maxHours: 3, incomePenalty: 0.30 },
+  },
+  {
+    id: 'patrocinio', name: 'Patrocinio Millonario', icon: '💼',
+    desc: 'Una marca quiere asociarse con tu gym. Si sale bien, lluvia de plata y socios. Si sale mal, escándalo.',
+    reqLevel: 16, reqRepLifetime: 3000,
+    cooldown: 172800, entryFee: 600000,        // 2 días
+    baseSuccessChance: 0.38, dueDiligenceSecs: 1800,
+    reward: { money: 4000000, rep: 1200, membersPct: 0.10 }, floorSecs: 1200,
+    backfire: { name: 'Escándalo de marca', icon: '📉', baseChance: 0.38, minChance: 0.10, maxHours: 8, incomePenalty: 0.30 },
+  },
+  {
+    id: 'inmobiliaria', name: 'Inversión Inmobiliaria', icon: '🏗️',
+    desc: 'Comprás un complejo en pozo para revenderlo. La jugada más grande del tablero.',
+    reqLevel: 22, reqRepLifetime: 8000,
+    cooldown: 259200, entryFee: 2000000,       // 3 días
+    baseSuccessChance: 0.35, dueDiligenceSecs: 2400,
+    reward: { money: 12000000, rep: 2000, membersPct: 0.15 }, floorSecs: 1800,
+    backfire: { name: 'Crisis financiera', icon: '💸', baseChance: 0.42, minChance: 0.12, maxHours: 12, incomePenalty: 0.35 },
+  },
+];
+
 // ===== PLAYER TITLES =====
 const PLAYER_TITLES = [
   { id: 'principiante', name: 'Principiante', icon: '🏋️', desc: 'Recién empezás', check: () => true },
@@ -1157,6 +1202,18 @@ const WIKI_CONTENT = [
       '<p>Cada ítem sube tu <strong>Preparación%</strong>. Más Preparación = más chance de ganar (+35% al 100%) y menos riesgo de lesión. Podés entrar a medias (apostando) o esperar y entrar al 100%.</p>' +
       '<p><strong>El intento:</strong> pagás la inscripción y arranca el cooldown (ganes o pierdas). La preparación se consume. Si ganás, premio enorme + reputación + título permanente. Si te lesionás, el campeón queda fuera de combate unas horas (no entrena ni compite) — solo el tiempo lo cura.</p>' +
       '<div class="wiki-tip-box">💡 La Resistencia alta y el Kit Médico hacen que casi nunca salgas malherido. Bien preparado, un Gran Torneo es plata casi segura; mal preparado, es una ruleta.</div>',
+  },
+  {
+    id: 'opportunities', icon: '💼', title: 'Negocios Arriesgados',
+    content: '<p>Los <strong>Negocios Arriesgados</strong> (pestaña Ciudad) son el mismo loop que los Grandes Torneos, pero a nivel <strong>gimnasio</strong>: no necesitás campeón. Prepará el terreno, arriesgá, y si sale mal tu gym se come un <strong>revés temporal</strong>.</p>' +
+      '<p><strong>Las oportunidades:</strong></p>' +
+      '<ul><li>🥊 <strong>Torneo Clandestino</strong> — nivel 10, cooldown 12 h. El más accesible.</li>' +
+      '<li>💼 <strong>Patrocinio Millonario</strong> — nivel 16, cooldown 2 días. Da plata y socios.</li>' +
+      '<li>🏗️ <strong>Inversión Inmobiliaria</strong> — nivel 22, cooldown 3 días. La jugada más grande.</li></ul>' +
+      '<p><strong>Preparación:</strong> 📋 Papeleo y Permisos (obligatorio), 🔍 Due Diligence (timer, baja mucho el riesgo), 🤝 Contactos, 🛡️ Seguro (reduce a la mitad chance y gravedad del revés). Cada ítem sube tu <strong>Preparación%</strong> = más chance de éxito (+35% al 100%) y menos riesgo.</p>' +
+      '<p>Tu <strong>fama acumulada</strong> (reputación de toda la vida) también mejora las chances: más standing en la ciudad, mejores negocios.</p>' +
+      '<p><strong>El revés (si sale mal):</strong> mala prensa / redada / escándalo bajan tus <strong>ingresos un % por unas horas</strong> y frenan tu reputación. Solo el tiempo lo cura. Afecta únicamente a tu gym principal, no a las sucursales pasivas.</p>' +
+      '<div class="wiki-tip-box">💡 El Seguro es clave: baja la chance del revés Y acorta su duración. Para la Inmobiliaria, andá full preparación: el golpe de una crisis financiera duele.</div>',
   },
   {
     id: 'rivals', icon: '🏪', title: 'Rivales',

@@ -94,6 +94,11 @@ let game = {
   grandTournaments: {},   // { id: { wins, losses, cooldownUntil } }
   grandPrep: {},          // { id: { pasajes, nutricion, medico, concentracionUntil } }
 
+  // Oportunidades / negocios arriesgados (mismo loop, a nivel gimnasio)
+  opportunities: {},      // { id: { wins, losses, cooldownUntil } }
+  oppPrep: {},            // { id: { permisos, contactos, seguro, duediligenceUntil } }
+  gymSetback: { active: false, name: '', icon: '', until: 0, incomeMult: 1 },
+
   // VIP members
   vipMembers: [],
   lastVipTime: 0,
@@ -561,6 +566,17 @@ function normalizeChampionData() {
   if (!game.stats.grandWins) game.stats.grandWins = 0;
   if (!game.stats.grandLosses) game.stats.grandLosses = 0;
   if (!game.stats.championInjuries) game.stats.championInjuries = 0;
+}
+
+function normalizeOpportunityData() {
+  if (!game.opportunities) game.opportunities = {};
+  if (!game.oppPrep) game.oppPrep = {};
+  if (!game.gymSetback || typeof game.gymSetback !== 'object') game.gymSetback = { active: false, name: '', icon: '', until: 0, incomeMult: 1 };
+  if (game.gymSetback.active === undefined) game.gymSetback.active = false;
+  if (!game.stats) game.stats = {};
+  if (!game.stats.oppWins) game.stats.oppWins = 0;
+  if (!game.stats.oppLosses) game.stats.oppLosses = 0;
+  if (!game.stats.gymSetbacks) game.stats.gymSetbacks = 0;
 }
 
 function normalizeProfileData() {
@@ -1055,8 +1071,9 @@ function getIncomePerSecond() {
   const totalIncome = (base + zoneIncome + rivalIncome) * mult * memberBonus * prestigeMult;
   // Decoration income bonus
   var decoIncome = getDecorationBonus('income');
-  // Fama: piso pasivo (lifetime) × perks × unlocks × boost activo
-  return totalIncome * suppEffects.incomeMult * (1 + decoIncome) * getFameIncomeMult();
+  // Fama: piso pasivo (lifetime) × perks × unlocks × boost activo. Setback: penalty temporal si un
+  // negocio salió mal (mala prensa / redada). Sólo afecta al gym activo, no a las sucursales pasivas.
+  return totalIncome * suppEffects.incomeMult * (1 + decoIncome) * getFameIncomeMult() * getGymSetbackIncomeMult();
 }
 
 // ===== SUPPLEMENT EFFECTS =====
@@ -2490,6 +2507,211 @@ function checkGrandConcentracion() {
   });
 }
 
+// ===== OPORTUNIDADES / NEGOCIOS ARRIESGADOS (mismo motor, a nivel gimnasio) =====
+function getOpportunity(id) { return OPPORTUNITIES.find(function(o) { return o.id === id; }); }
+
+function getOppPrep(id) {
+  if (!game.oppPrep) game.oppPrep = {};
+  if (!game.oppPrep[id]) game.oppPrep[id] = { permisos: false, contactos: false, seguro: false, duediligenceUntil: 0 };
+  return game.oppPrep[id];
+}
+
+function getOppState(id) {
+  if (!game.opportunities) game.opportunities = {};
+  if (!game.opportunities[id]) game.opportunities[id] = { wins: 0, losses: 0, cooldownUntil: 0 };
+  return game.opportunities[id];
+}
+
+function getOppPrepItemCost(o, item) { return Math.ceil(o.entryFee * item.costMult); }
+
+function isOppPrepItemDone(o, itemId) {
+  var p = getOppPrep(o.id);
+  if (itemId === 'duediligence') return p.duediligenceUntil > 0 && Date.now() >= p.duediligenceUntil;
+  return !!p[itemId];
+}
+
+function getOppReadiness(o) {
+  var r = 0;
+  OPP_PREP_ITEMS.forEach(function(it) { if (isOppPrepItemDone(o, it.id)) r += it.readiness; });
+  return Math.min(100, r);
+}
+
+function getOppSuccessChance(o) {
+  var readiness = getOppReadiness(o) / 100;
+  var repBonus = Math.min(0.25, getReputationLifetime() * 0.00002); // tu standing/conexiones ayudan
+  return Math.max(0.05, Math.min(0.95, o.baseSuccessChance + readiness * OPP_READINESS_WIN_WEIGHT + repBonus));
+}
+
+function getOppBackfireChance(o) {
+  var readiness = getOppReadiness(o) / 100;
+  var repFactor = Math.min(0.10, getReputationLifetime() * 0.000008);
+  var chance = o.backfire.baseChance - readiness * (o.backfire.baseChance - o.backfire.minChance) - repFactor;
+  if (isOppPrepItemDone(o, 'seguro')) chance *= 0.5;
+  return Math.max(0.02, Math.min(o.backfire.baseChance, chance));
+}
+
+function getOppLockReason(o) {
+  if (game.level < o.reqLevel) return 'Nivel ' + o.reqLevel;
+  if (getReputationLifetime() < o.reqRepLifetime) return o.reqRepLifetime + ' de fama (rep acumulada)';
+  return null;
+}
+
+// ---- Setback del gimnasio (el "daño" cuando un negocio sale mal) ----
+function isGymSetbackActive() {
+  return !!(game.gymSetback && game.gymSetback.active && Date.now() < game.gymSetback.until);
+}
+function getGymSetbackSecondsLeft() {
+  return isGymSetbackActive() ? Math.ceil((game.gymSetback.until - Date.now()) / 1000) : 0;
+}
+function getGymSetbackIncomeMult() {
+  return isGymSetbackActive() ? (game.gymSetback.incomeMult || 1) : 1;
+}
+function getGymSetbackRepMult() {
+  return isGymSetbackActive() ? 0.5 : 1; // la mala prensa también frena la generación de reputación
+}
+
+function buyOppPrep(oId, itemId) {
+  var o = getOpportunity(oId);
+  if (!o) return;
+  var it = OPP_PREP_ITEMS.find(function(i) { return i.id === itemId; });
+  if (!it) return;
+  var p = getOppPrep(oId);
+  var cost = getOppPrepItemCost(o, it);
+
+  if (itemId === 'duediligence') {
+    if (isOppPrepItemDone(o, 'duediligence')) { showToast('✅', 'La due diligence ya está lista.'); return; }
+    if (p.duediligenceUntil > 0 && Date.now() < p.duediligenceUntil) { showToast('⏳', 'La due diligence ya está en curso.'); return; }
+    if (game.money < cost) { showToast('❌', '¡No tenés suficiente plata!'); return; }
+    game.money -= cost;
+    p.duediligenceUntil = Date.now() + o.dueDiligenceSecs * 1000;
+    addLog('🔍 Arrancó la <span class="highlight">due diligence</span> para ' + o.name + '.');
+    showToast('🔍', 'Due diligence iniciada');
+  } else {
+    if (p[itemId]) { showToast('✅', '¡Ya lo tenés!'); return; }
+    if (game.money < cost) { showToast('❌', '¡No tenés suficiente plata!'); return; }
+    game.money -= cost;
+    p[itemId] = true;
+    addLog('✅ Conseguiste <span class="highlight">' + it.name + '</span> para ' + o.name + '. (-' + fmtMoney(cost) + ')');
+    showToast(it.icon, it.name + ' listo');
+  }
+  renderCityMap();
+  updateUI();
+  saveGame();
+}
+
+function attemptOpportunity(oId) {
+  var o = getOpportunity(oId);
+  if (!o) return;
+
+  var lock = getOppLockReason(o);
+  if (lock) { showToast('🔒', 'Requisito: ' + lock); return; }
+
+  var state = getOppState(oId);
+  if (Date.now() < state.cooldownUntil) { showToast('⏱️', 'Todavía en cooldown.'); return; }
+
+  var p = getOppPrep(oId);
+  if (!p.permisos) { showToast('📋', '¡Necesitás Papeleo y Permisos para entrar!'); return; }
+  if (game.money < o.entryFee) { showToast('❌', 'No tenés para la entrada (' + fmtMoney(o.entryFee) + ').'); return; }
+
+  // ---- Compromiso: se paga la entrada y arranca el cooldown (salga como salga) ----
+  game.money -= o.entryFee;
+  state.cooldownUntil = Date.now() + o.cooldown * 1000;
+
+  var successChance = getOppSuccessChance(o);
+  var backfireChance = getOppBackfireChance(o);
+  var success = Math.random() < successChance;
+  var backfired = Math.random() < backfireChance;
+
+  var result = { opportunity: o, success: success, backfired: backfired, money: 0, rep: 0, members: 0, setbackSecs: 0, setback: o.backfire, successChance: successChance, backfireChance: backfireChance, newTitle: null };
+
+  if (success) {
+    var money = Math.max(Math.ceil(o.reward.money), Math.ceil(getIncomePerSecond() * o.floorSecs));
+    var rep = Math.ceil(o.reward.rep);
+    var members = o.reward.membersPct ? Math.ceil(getMaxMembers() * o.reward.membersPct) : 0;
+    game.money += money;
+    game.totalMoneyEarned += money;
+    game.reputation += rep;
+    if (members) game.members = Math.min(getMaxMembers(), game.members + members);
+    state.wins++;
+    game.stats.oppWins = (game.stats.oppWins || 0) + 1;
+    game.dailyTracking.moneyEarned += money;
+    game.dailyTracking.reputationGained += rep;
+    result.money = money; result.rep = rep; result.members = members;
+
+    addLog('💼 ¡ÉXITO en <span class="highlight">' + o.name + '</span>! +<span class="money-log">' + fmtMoney(money) + '</span>' + (members ? ' +' + members + ' socios' : ''), 'important');
+    showToast('💰', '¡' + o.name + ' salió bien!');
+    floatNumber('+' + fmtMoney(money));
+  } else {
+    var consolationRep = Math.ceil(o.reward.rep * 0.05);
+    game.reputation += consolationRep;
+    state.losses++;
+    game.stats.oppLosses = (game.stats.oppLosses || 0) + 1;
+    game.dailyTracking.reputationGained += consolationRep;
+    result.rep = consolationRep;
+
+    addLog('💼 <span class="highlight">' + o.name + '</span> no prosperó. Perdiste la entrada.');
+    showToast('😞', o.name + ' falló');
+  }
+
+  // ---- Backfire: setback temporal del gimnasio (mitigado por prep + seguro + fama) ----
+  if (backfired) {
+    var sb = applyGymSetback(o);
+    result.setbackSecs = sb.secs;
+    game.stats.gymSetbacks = (game.stats.gymSetbacks || 0) + 1;
+    addLog('🚨 <span class="highlight">' + o.backfire.name + '</span>: ingresos -' + Math.round(o.backfire.incomePenalty * 100) + '% por ~' + fmtTime(sb.secs) + '.', 'important');
+  }
+
+  // La preparación se consume
+  game.oppPrep[oId] = { permisos: false, contactos: false, seguro: false, duediligenceUntil: 0 };
+
+  checkLevelUp();
+  checkAchievements();
+  checkMissionProgress();
+  if (typeof showOpportunityResult === 'function') showOpportunityResult(result);
+  if (typeof renderCityMap === 'function') renderCityMap();
+  updateUI();
+  saveGame();
+}
+
+function applyGymSetback(o) {
+  var severity = 0.4 + Math.random() * 0.6;                 // 0.4 - 1.0 (escala la DURACIÓN)
+  if (isOppPrepItemDone(o, 'seguro')) severity *= 0.6;     // el seguro acorta el golpe
+  severity = Math.max(0.2, Math.min(1, severity));
+  var secs = Math.ceil(severity * o.backfire.maxHours * 3600);
+  game.gymSetback = {
+    active: true, name: o.backfire.name, icon: o.backfire.icon,
+    until: Date.now() + secs * 1000, incomeMult: 1 - o.backfire.incomePenalty,
+  };
+  return { secs: secs, severity: severity };
+}
+
+// Tick: avisa cuando el gimnasio se recupera del setback
+function checkGymSetback() {
+  if (game.gymSetback && game.gymSetback.active && Date.now() >= game.gymSetback.until) {
+    var name = game.gymSetback.name;
+    game.gymSetback = { active: false, name: '', icon: '', until: 0, incomeMult: 1 };
+    addLog('💚 Tu gimnasio se recuperó de "' + name + '". Ingresos normalizados.', 'important');
+    showToast('💚', '¡Gimnasio recuperado!');
+    if (typeof renderCityMap === 'function') renderCityMap();
+  }
+}
+
+// Tick: avisa cuando termina una due diligence
+function checkOppDueDiligence() {
+  if (!game.oppPrep) return;
+  Object.keys(game.oppPrep).forEach(function(id) {
+    var p = game.oppPrep[id];
+    if (p.duediligenceUntil > 0 && !p._ddDone && Date.now() >= p.duediligenceUntil) {
+      p._ddDone = true;
+      var o = getOpportunity(id);
+      addLog('🔍 Terminó la due diligence de <span class="highlight">' + (o ? o.name : 'la oportunidad') + '</span>. Preparación lista.');
+      if (typeof renderCityMap === 'function') renderCityMap();
+    } else if (p.duediligenceUntil > 0 && Date.now() < p.duediligenceUntil) {
+      p._ddDone = false;
+    }
+  });
+}
+
 function equipChampion(eqId) {
   if (!game.champion || !game.champion.recruited) return;
   var eq = CHAMPION_EQUIPMENT.find(function(e) { return e.id === eqId; });
@@ -2576,6 +2798,8 @@ function repTick() {
   repGain *= (1 + getDecorationBonus('reputation'));
   // Fama: boost temporal "Viral en Redes" duplica la generación
   repGain *= getActiveFameBoosts().repMult;
+  // Setback: la mala prensa también frena la reputación mientras dura
+  repGain *= getGymSetbackRepMult();
   if (repGain > 0) {
     game.reputation += repGain;
     game.dailyTracking.reputationGained += repGain;
@@ -2740,6 +2964,8 @@ function gameTick() {
   championFatigueTick();
   checkChampionInjury();
   checkGrandConcentracion();
+  checkGymSetback();
+  checkOppDueDiligence();
   autoMemberTick();
   campaignAlwaysOnTick();
   campaignBurstTick();
@@ -2817,6 +3043,7 @@ function gameTick() {
     renderExpansion();
     renderChampion();
     renderSkillTree();
+    if (activeTab === 'prestige') renderCityMap();
   }
 
   // Refresh gym scene every 10 ticks (people count may change)
@@ -3331,6 +3558,7 @@ function renderAll() {
   normalizeStaffData();
   normalizeEquipmentData();
   normalizeChampionData();
+  normalizeOpportunityData();
   normalizeProfileData();
   normalizeFameData();
   applyTheme();
@@ -3457,6 +3685,13 @@ function switchTab(tabId) {
   if (item) {
     var category = item.closest('.sidebar-category');
     if (category) category.classList.remove('collapsed-cat');
+  }
+
+  // Daily bonus banner: solo en Home (recupera espacio vertical en los demás tabs)
+  var dbc = document.getElementById('dailyBonusContainer');
+  if (dbc) {
+    if (tabId === 'gym') renderDailyBonus(); // renderDailyBonus se auto-oculta si ya reclamaste
+    else dbc.style.display = 'none';
   }
 
   // Tab-specific actions

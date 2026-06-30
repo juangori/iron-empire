@@ -88,7 +88,7 @@ function renderEquipment() {
     } else if (locked) {
       btnHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;margin-top:8px;">🔒 Requiere Nivel ' + eq.reqLevel + '</div>';
     } else if (atLevelCap && state.level > 0) {
-      btnHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;margin-top:8px;">⚠️ Máx. nivel del equipo = tu nivel (' + game.level + ')</div>';
+      btnHTML = '<div style="text-align:center;color:var(--text-dim);font-size:12px;margin-top:8px;">🔝 Tope para tu nivel · subí de nivel para mejorar</div>';
     } else {
       var buyTitle = canAfford ? '' : ' title="Necesitás ' + fmtMoney(cost - game.money) + ' más"';
       btnHTML = '<button class="btn ' + (isNew ? 'btn-buy' : 'btn-upgrade') + '" ' +

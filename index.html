@@ -16,7 +16,7 @@
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://ironempiregame.com/assets/icon.png?v=1">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=44">
+<link rel="stylesheet" href="css/styles.css?v=45">
 </head>
 <body>
 
@@ -109,7 +109,8 @@
 
     <!-- Footer -->
     <div class="auth-guest">
-      <p class="auth-guest-note">Tu progreso se guarda en la nube automáticamente</p>
+      <button class="auth-guest-btn" onclick="playAsGuest()">🎮 Jugar como invitado</button>
+      <p class="auth-guest-note">Probá el juego sin cuenta — tu progreso se guarda en este dispositivo. Creá una cuenta cuando quieras para sincronizarlo en la nube.</p>
     </div>
   </div>
 </div>
@@ -502,6 +503,8 @@
     </div>
     <div class="city-grid" id="cityGrid"></div>
 
+    <div id="opportunitiesContainer"></div>
+
     <div class="leaderboard-section">
       <div class="section-title">🏆 Ranking Global</div>
       <p class="section-subtitle">Los mejores imperios del mundo. Tu progreso se sincroniza automáticamente.</p>
@@ -569,11 +572,11 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <!-- GAME SCRIPTS -->
-<script src="js/data.js?v=44"></script>
-<script src="js/game.js?v=44"></script>
-<script src="js/ui.js?v=44"></script>
-<script src="js/systems.js?v=44"></script>
-<script src="js/auth.js?v=44"></script>
+<script src="js/data.js?v=45"></script>
+<script src="js/game.js?v=45"></script>
+<script src="js/ui.js?v=45"></script>
+<script src="js/systems.js?v=45"></script>
+<script src="js/auth.js?v=45"></script>
 
 <!-- Profile refresh -->
 <script>

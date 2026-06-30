@@ -1399,6 +1399,153 @@ function renderCityMap() {
   });
 
   gridEl.innerHTML = html;
+
+  renderOpportunities();
+}
+
+// ===== OPORTUNIDADES / NEGOCIOS ARRIESGADOS =====
+function renderOpportunities() {
+  var container = document.getElementById('opportunitiesContainer');
+  if (!container) return;
+  var now = Date.now();
+
+  var html = '';
+  html += '<div class="section-title" style="margin-top:24px;">💼 Negocios Arriesgados <span style="font-size:13px;color:var(--cyan);font-weight:400;">— golpes grandes, sin campeón</span></div>';
+  html += '<p class="section-subtitle" style="margin-bottom:12px;">Oportunidades de altísima recompensa con riesgo real. Prepará el terreno antes de entrar: si sale mal, tu gimnasio se come un revés temporal.</p>';
+
+  // Banner de setback activo
+  if (isGymSetbackActive()) {
+    var sbLeft = getGymSetbackSecondsLeft();
+    var penaltyPct = Math.round((1 - (game.gymSetback.incomeMult || 1)) * 100);
+    html += '<div class="opp-setback-banner">' +
+      '<span style="font-size:22px;">' + (game.gymSetback.icon || '🚨') + '</span>' +
+      '<div><div style="font-weight:700;color:var(--red);">' + (game.gymSetback.name || 'Revés') + '</div>' +
+      '<div style="font-size:12px;color:var(--text-dim);">Ingresos -' + penaltyPct + '% y reputación frenada · se recupera en ~' + fmtTime(sbLeft) + ' (solo con tiempo).</div></div>' +
+    '</div>';
+  }
+
+  html += '<div class="grand-list">';
+
+  OPPORTUNITIES.forEach(function(o) {
+    var state = getOppState(o.id);
+    var lockReason = getOppLockReason(o);
+    var locked = !!lockReason;
+    var onCooldown = now < state.cooldownUntil;
+    var prep = getOppPrep(o.id);
+    var readiness = getOppReadiness(o);
+    var hasPermisos = !!prep.permisos;
+    var successChance = getOppSuccessChance(o);
+    var backfireChance = getOppBackfireChance(o);
+    var rewardMoney = Math.max(Math.ceil(o.reward.money), Math.ceil(getIncomePerSecond() * o.floorSecs));
+
+    var winColor = successChance >= 0.7 ? 'var(--green)' : successChance >= 0.45 ? 'var(--accent)' : 'var(--red)';
+    var bfColor = backfireChance <= 0.08 ? 'var(--green)' : backfireChance <= 0.2 ? 'var(--accent)' : 'var(--red)';
+
+    html += '<div class="grand-card' + (locked ? ' locked' : '') + '">';
+
+    html += '<div class="grand-head">';
+    html += '<span class="grand-icon">' + o.icon + '</span>';
+    html += '<div class="grand-head-info">';
+    html += '<div class="grand-name">' + o.name + '</div>';
+    html += '<div class="grand-desc">' + o.desc + '</div>';
+    html += '<div class="grand-meta">⏱️ Cooldown ' + fmtTime(o.cooldown) + ' · 🎫 Entrada ' + fmtMoney(o.entryFee) +
+      (state.wins + state.losses > 0 ? ' · ✅ ' + state.wins + '·❌ ' + state.losses : '') + '</div>';
+    html += '</div>';
+    html += '</div>';
+
+    if (locked) {
+      html += '<div class="grand-locked-msg">🔒 Requisito: <strong>' + lockReason + '</strong></div>';
+      html += '</div>';
+      return;
+    }
+
+    html += '<div class="grand-stats-row">';
+    html += '<div class="grand-stat"><span class="grand-stat-lbl">Premio (éxito)</span><span class="grand-stat-val" style="color:var(--accent);">' + fmtMoney(rewardMoney) + (o.reward.membersPct ? ' +socios' : '') + '</span></div>';
+    html += '<div class="grand-stat"><span class="grand-stat-lbl">Chance de éxito</span><span class="grand-stat-val" style="color:' + winColor + ';">' + Math.round(successChance * 100) + '%</span></div>';
+    html += '<div class="grand-stat"><span class="grand-stat-lbl">Riesgo (' + o.backfire.name + ')</span><span class="grand-stat-val" style="color:' + bfColor + ';">' + Math.round(backfireChance * 100) + '%</span></div>';
+    html += '</div>';
+
+    var readyColor = readiness >= 80 ? 'var(--green)' : readiness >= 40 ? 'var(--accent)' : 'var(--red)';
+    html += '<div class="grand-ready-row">';
+    html += '<span style="font-size:12px;color:var(--text-dim);">Preparación</span>';
+    html += '<div class="grand-ready-bar"><div class="grand-ready-fill" style="width:' + readiness + '%;background:' + readyColor + ';"></div></div>';
+    html += '<span style="font-size:12px;font-weight:700;color:' + readyColor + ';">' + readiness + '%</span>';
+    html += '</div>';
+
+    html += '<div class="grand-prep-grid">';
+    OPP_PREP_ITEMS.forEach(function(it) {
+      var done = isOppPrepItemDone(o, it.id);
+      var cost = getOppPrepItemCost(o, it);
+      var ddRunning = it.id === 'duediligence' && prep.duediligenceUntil > 0 && now < prep.duediligenceUntil;
+      var canAfford = game.money >= cost;
+      var statusHtml;
+      if (done) {
+        statusHtml = '<span class="grand-prep-done">✅ Listo</span>';
+      } else if (ddRunning) {
+        var left = Math.ceil((prep.duediligenceUntil - now) / 1000);
+        statusHtml = '<span class="grand-prep-running">⏳ ' + fmtTime(left) + '</span>';
+      } else {
+        statusHtml = '<button class="btn btn-small btn-buy grand-prep-btn" ' + (canAfford ? '' : 'disabled') +
+          ' onclick="buyOppPrep(\'' + o.id + '\',\'' + it.id + '\')">' + fmtMoney(cost) + '</button>';
+      }
+      html += '<div class="grand-prep-item' + (done ? ' done' : '') + '">' +
+        '<div class="grand-prep-top"><span>' + it.icon + ' <strong>' + it.name + '</strong>' + (it.required ? ' <span style="color:var(--red);font-size:10px;">*obligatorio</span>' : '') + '</span>' +
+        '<span style="font-size:11px;color:var(--cyan);">+' + it.readiness + '%</span></div>' +
+        '<div class="grand-prep-desc">' + it.desc + '</div>' +
+        '<div class="grand-prep-action">' + statusHtml + '</div>' +
+      '</div>';
+    });
+    html += '</div>';
+
+    html += '<div class="grand-compete-row">';
+    if (onCooldown) {
+      var cd = Math.ceil((state.cooldownUntil - now) / 1000);
+      html += '<div class="grand-cooldown">⏱️ Próximo intento en <strong>' + fmtTime(cd) + '</strong></div>';
+    } else {
+      var canEnter = hasPermisos && game.money >= o.entryFee;
+      var hint = !hasPermisos ? '📋 Necesitás Papeleo y Permisos' : game.money < o.entryFee ? '💸 Falta la entrada (' + fmtMoney(o.entryFee) + ')' : '';
+      html += '<button class="btn btn-buy grand-compete-btn" ' + (canEnter ? '' : 'disabled') +
+        ' onclick="attemptOpportunity(\'' + o.id + '\')">🎲 ARRIESGAR — ' + fmtMoney(o.entryFee) + '</button>';
+      if (hint) html += '<span class="grand-hint">' + hint + '</span>';
+    }
+    html += '</div>';
+
+    html += '</div>'; // grand-card
+  });
+
+  html += '</div>'; // grand-list
+  container.innerHTML = html;
+}
+
+// Modal de resultado de una oportunidad (reusa el overlay de eventos)
+function showOpportunityResult(r) {
+  var overlay = document.getElementById('eventOverlay');
+  var card = document.getElementById('eventCard');
+  if (!overlay || !card) return;
+  var o = r.opportunity;
+
+  var headIcon, headTitle, headColor;
+  if (r.success && !r.backfired) { headIcon = '💰'; headTitle = '¡NEGOCIO REDONDO!'; headColor = 'var(--green)'; }
+  else if (r.success && r.backfired) { headIcon = '💰🚨'; headTitle = '¡Saliste ganando, pero con coletazo!'; headColor = 'var(--accent)'; }
+  else if (!r.success && r.backfired) { headIcon = '🚨'; headTitle = 'Salió mal… y encima hubo lío'; headColor = 'var(--red)'; }
+  else { headIcon = '😞'; headTitle = 'El negocio no prosperó'; headColor = 'var(--accent)'; }
+
+  var lines = [];
+  if (r.money) lines.push('<div class="grand-result-line">💰 <strong style="color:var(--accent);">+' + fmtMoney(r.money) + '</strong></div>');
+  if (r.members) lines.push('<div class="grand-result-line">👥 +' + r.members + ' socios</div>');
+  if (r.rep) lines.push('<div class="grand-result-line">⭐ +' + r.rep + ' reputación</div>');
+  if (r.backfired) lines.push('<div class="grand-result-line" style="color:var(--red);">' + (r.setback.icon || '🚨') + ' ' + r.setback.name + ': ingresos -' + Math.round(r.setback.incomePenalty * 100) + '% por ~' + fmtTime(r.setbackSecs) + '</div>');
+  if (!lines.length) lines.push('<div class="grand-result-line" style="color:var(--text-dim);">Perdiste la entrada. A la próxima.</div>');
+
+  card.innerHTML =
+    '<div class="event-icon">' + headIcon + '</div>' +
+    '<div class="event-title" style="color:' + headColor + ';">' + headTitle + '</div>' +
+    '<div class="event-desc">' + o.icon + ' ' + o.name + '</div>' +
+    '<div class="grand-result-lines">' + lines.join('') + '</div>' +
+    '<div class="event-choices"><div class="event-choice" onclick="closeGrandResult()"><div class="event-choice-main"><span class="event-choice-text">Continuar</span></div></div></div>';
+
+  overlay.classList.remove('hidden');
+  window._grandResultOpen = true;
 }
 
 function upgradeBranch(branchId) {
@@ -1840,6 +1987,9 @@ var _walkthroughTabId = null;
 function showTabWalkthrough(tabId) {
   var wt = TAB_WALKTHROUGHS[tabId];
   if (!wt) return;
+  // No encimar: si ya hay un walkthrough abierto, no lo reemplaces (este tab queda sin ver y reaparece en la próxima visita)
+  var existingOv = document.getElementById('tabWalkthroughOverlay');
+  if (existingOv && !existingOv.classList.contains('hidden')) return;
   _walkthroughTabId = tabId;
 
   var tipsHTML = wt.tips.map(function(t) {
