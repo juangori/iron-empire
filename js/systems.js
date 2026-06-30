@@ -64,8 +64,8 @@ function claimDailyBonus() {
   game.dailyBonus.lastClaim = getDateString();
   game.dailyBonus.claimedToday = true;
 
-  addLog('🎁 Bonus diario (día ' + game.dailyBonus.streak + '): +<span class="money-log">' + fmtMoney(moneyReward) + '</span> +' + reward.xp + ' XP', 'important');
-  showToast('🎁', '¡Bonus día ' + game.dailyBonus.streak + '! +' + fmtMoney(moneyReward));
+  addLog('🎁 Daily bonus (day ' + game.dailyBonus.streak + '): +<span class="money-log">' + fmtMoney(moneyReward) + '</span> +' + reward.xp + ' XP', 'important');
+  showToast('🎁', 'Day ' + game.dailyBonus.streak + ' bonus! +' + fmtMoney(moneyReward));
   floatNumber('+' + fmtMoney(moneyReward));
 
   renderDailyBonus();
@@ -96,7 +96,7 @@ function renderDailyBonus() {
     if (i < streakDay || (i === streakDay && claimed)) cls += ' claimed';
     if (i === streakDay && !claimed) cls += ' today';
     const reward = DAILY_BONUS_REWARDS[i];
-    dotsHTML += '<div class="' + cls + '" title="Día ' + (i + 1) + ': ' + reward.label + '">' + (i + 1) + '</div>';
+    dotsHTML += '<div class="' + cls + '" title="Day ' + (i + 1) + ': ' + reward.label + '">' + (i + 1) + '</div>';
   }
 
   container.innerHTML =
@@ -104,12 +104,12 @@ function renderDailyBonus() {
       '<div class="daily-bonus-info">' +
         '<div class="daily-bonus-icon">' + (claimed ? '✅' : '🎁') + '</div>' +
         '<div class="daily-bonus-text">' +
-          '<h3>' + (claimed ? 'BONUS RECLAMADO' : 'BONUS DIARIO DISPONIBLE') + '</h3>' +
-          '<p>' + (claimed ? 'Streak: ' + game.dailyBonus.streak + ' día(s). ¡Volvé mañana!' : '¡Reclamá tu bonus de hoy! Streak: ' + game.dailyBonus.streak + ' día(s)') + '</p>' +
+          '<h3>' + (claimed ? 'BONUS CLAIMED' : 'DAILY BONUS AVAILABLE') + '</h3>' +
+          '<p>' + (claimed ? 'Streak: ' + game.dailyBonus.streak + ' day(s). Come back tomorrow!' : 'Claim your bonus for today! Streak: ' + game.dailyBonus.streak + ' day(s)') + '</p>' +
         '</div>' +
       '</div>' +
       '<div class="streak-dots">' + dotsHTML + '</div>' +
-      (!claimed ? '<button class="btn btn-purple btn-small" onclick="claimDailyBonus()">🎁 RECLAMAR</button>' : '') +
+      (!claimed ? '<button class="btn btn-purple btn-small" onclick="claimDailyBonus()">🎁 CLAIM</button>' : '') +
     '</div>';
 }
 
@@ -133,7 +133,7 @@ function generateDailyMissions() {
     selected.push({
       ...mission,
       target: target,
-      desc: mission.desc.replace('${target}', target.toLocaleString('es-AR')),
+      desc: mission.desc.replace('${target}', target.toLocaleString('en-US')),
       claimed: false,
     });
   }
@@ -183,8 +183,8 @@ function claimMission(index) {
   game.dailyTracking.moneyEarned += moneyReward;
   game.dailyTracking.xpEarned += xpReward;
 
-  addLog('📋 Misión completada: <span class="highlight">' + mission.name + '</span> +<span class="money-log">' + fmtMoney(moneyReward) + '</span>', 'important');
-  showToast('📋', '¡Misión: ' + mission.name + '!');
+  addLog('📋 Mission completed: <span class="highlight">' + mission.name + '</span> +<span class="money-log">' + fmtMoney(moneyReward) + '</span>', 'important');
+  showToast('📋', 'Mission: ' + mission.name + '!');
   floatNumber('+' + fmtMoney(moneyReward));
 
   // Check if all missions are claimed - bonus!
@@ -194,8 +194,8 @@ function claimMission(index) {
     game.money += bonusMoney;
     game.totalMoneyEarned += bonusMoney;
     addXp(100);
-    addLog('⭐ ¡Todas las misiones del día completadas! BONUS: +<span class="money-log">' + fmtMoney(bonusMoney) + '</span> +100 XP', 'critical');
-    showToast('⭐', '¡Todas las misiones completas! BONUS');
+    addLog('⭐ All daily missions completed! BONUS: +<span class="money-log">' + fmtMoney(bonusMoney) + '</span> +100 XP', 'critical');
+    showToast('⭐', 'All missions complete! BONUS');
     floatNumber('+' + fmtMoney(bonusMoney), 'var(--purple)');
   }
 
@@ -213,7 +213,7 @@ function renderDailyMissions() {
   const missions = game.dailyMissions.missions || [];
 
   if (missions.length === 0) {
-    container.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:20px;">Cargando misiones...</p>';
+    container.innerHTML = '<p style="color:var(--text-dim);text-align:center;padding:20px;">Loading missions...</p>';
     return;
   }
 
@@ -239,8 +239,8 @@ function renderDailyMissions() {
           '<div class="mission-reward-text">💰 ' + fmtMoney(Math.ceil(m.rewards.money * (1 + (game.level - 1) * 0.5))) + '</div>' +
           '<div class="mission-reward-text">✨ ' + Math.ceil(m.rewards.xp * (1 + (game.level - 1) * 0.2)) + ' XP</div>' +
           (m.completed && !m.claimed ?
-            '<button class="btn btn-green btn-small" onclick="claimMission(' + i + ')">RECLAMAR</button>' :
-            (m.claimed ? '<span style="color:var(--green);font-size:12px;">✅ Hecho</span>' : '')
+            '<button class="btn btn-green btn-small" onclick="claimMission(' + i + ')">CLAIM</button>' :
+            (m.claimed ? '<span style="color:var(--green);font-size:12px;">✅ Done</span>' : '')
           ) +
         '</div>' +
       '</div>';
@@ -281,7 +281,7 @@ function eventChoiceLabels(choice) {
     };
   }
   var d = resolveEventSpec(choice);
-  var cost = d.money ? ((d.money > 0 ? '+' : '-') + fmtMoney(Math.abs(d.money))) : 'Gratis';
+  var cost = d.money ? ((d.money > 0 ? '+' : '-') + fmtMoney(Math.abs(d.money))) : 'Free';
   var outcome = fmtEventDeltas({ money: 0, rep: d.rep, xp: d.xp, members: d.members }, choice.special);
   return { cost: cost, outcome: outcome };
 }
@@ -300,7 +300,7 @@ function showRandomEvent(event) {
           '<span class="event-choice-cost">' + lbl.cost + '</span>' +
         '</div>' +
         (choice.hint ? '<div class="event-choice-hint">' + choice.hint + '</div>' : '') +
-        (lbl.outcome && lbl.outcome !== 'Nada' ? '<div class="event-choice-hint" style="color:var(--cyan);">' + lbl.outcome + '</div>' : '') +
+        (lbl.outcome && lbl.outcome !== 'Nothing' ? '<div class="event-choice-hint" style="color:var(--cyan);">' + lbl.outcome + '</div>' : '') +
       '</div>';
   });
 
@@ -324,7 +324,7 @@ function handleEventChoice(eventId, choiceIndex) {
   // almost never blocks; it only protects a very-low-cash player from going to zero on the floor.
   if (!choice.gamble && choice.money && choice.money < 0) {
     var plannedCost = -evMoney(choice.money);
-    if (plannedCost > game.money) { showToast('❌', '¡No tenés suficiente plata!'); return; }
+    if (plannedCost > game.money) { showToast('❌', 'Not enough cash!'); return; }
   }
 
   var d, special, resultLabel;
@@ -342,7 +342,7 @@ function handleEventChoice(eventId, choiceIndex) {
   game.stats.eventsHandled++;
   game.dailyTracking.eventsHandled++;
 
-  addLog('⚡ Evento: <span class="highlight">' + event.title + '</span> → ' + choice.text + ' (' + resultLabel + ')');
+  addLog('⚡ Event: <span class="highlight">' + event.title + '</span> → ' + choice.text + ' (' + resultLabel + ')');
   showToast(event.icon, resultLabel);
 
   document.getElementById('eventOverlay').classList.add('hidden');
@@ -369,19 +369,19 @@ function hireInstructor(classId) {
   var inst = CLASS_INSTRUCTORS.find(function(i) { return i.id === classId; });
   if (!inst) return;
   if (game.level < inst.reqLevel) {
-    showToast('❌', '¡Necesitás nivel ' + inst.reqLevel + '!');
+    showToast('❌', 'Requires level ' + inst.reqLevel + '!');
     return;
   }
   if (game.instructors[classId]?.hired) return;
   if (game.money < inst.hireCost) {
-    showToast('❌', '¡No tenés suficiente plata!');
+    showToast('❌', 'Not enough cash!');
     return;
   }
   game.money -= inst.hireCost;
   game.instructors[classId] = { hired: true, level: 1 };
   game.stats.instructorsHired = (game.stats.instructorsHired || 0) + 1;
-  addLog('👨‍🏫 Contrataste a <span class="highlight">' + inst.name + '</span>! (-' + fmtMoney(inst.hireCost) + ')');
-  showToast(inst.icon, '¡' + inst.name + ' contratado!');
+  addLog('👨‍🏫 You hired <span class="highlight">' + inst.name + '</span>! (-' + fmtMoney(inst.hireCost) + ')');
+  showToast(inst.icon, inst.name + ' hired!');
   renderClasses();
   checkAchievements();
   saveGame();
@@ -393,19 +393,19 @@ function upgradeInstructor(classId) {
   var state = game.instructors[classId];
   if (!state?.hired) return;
   if (state.level >= 5) {
-    showToast('⚠️', '¡Ya está al máximo nivel!');
+    showToast('⚠️', 'Already at max level!');
     return;
   }
   var cost = getInstructorUpgradeCost(inst, state.level);
   if (game.money < cost) {
-    showToast('❌', '¡No tenés suficiente plata!');
+    showToast('❌', 'Not enough cash!');
     return;
   }
   game.money -= cost;
   state.level++;
   game.stats.instructorUpgrades = (game.stats.instructorUpgrades || 0) + 1;
-  addLog('👨‍🏫 <span class="highlight">' + inst.name + '</span> subió a nivel ' + state.level + '! (-' + fmtMoney(cost) + ')');
-  showToast('⬆️', inst.name + ' Nv.' + state.level);
+  addLog('👨‍🏫 <span class="highlight">' + inst.name + '</span> leveled up to level ' + state.level + '! (-' + fmtMoney(cost) + ')');
+  showToast('⬆️', inst.name + ' Lv.' + state.level);
   renderClasses();
   checkAchievements();
   saveGame();
@@ -450,7 +450,7 @@ function startClass(id) {
   // Check instructor hired
   var instState = game.instructors[gc.id];
   if (!instState?.hired) {
-    showToast('❌', '¡Necesitás contratar un instructor!');
+    showToast('❌', 'You need to hire an instructor!');
     return;
   }
 
@@ -459,7 +459,7 @@ function startClass(id) {
     var eqLevel = game.equipment[gc.reqEquipment]?.level || 0;
     if (eqLevel <= 0 || isEquipmentBroken(gc.reqEquipment)) {
       var eqData = EQUIPMENT.find(function(e) { return e.id === gc.reqEquipment; });
-      showToast('❌', '¡Necesitás ' + (eqData ? eqData.name : gc.reqEquipment) + ' funcionando!');
+      showToast('❌', 'You need a working ' + (eqData ? eqData.name : gc.reqEquipment) + '!');
       return;
     }
   }
@@ -473,7 +473,7 @@ function startClass(id) {
   // Check cost
   var classCost = getClassCost(gc);
   if (classCost > 0 && game.money < classCost) {
-    showToast('❌', '¡No tenés suficiente plata!');
+    showToast('❌', 'Not enough cash!');
     return;
   }
 
@@ -487,8 +487,8 @@ function startClass(id) {
     autoRestart: prevAutoRestart
   };
 
-  addLog('🧘 Clase <span class="highlight">' + gc.name + '</span> iniciada! Costo: ' + fmtMoney(classCost) + ' (' + fmtTime(gc.duration) + ')');
-  showToast(gc.icon, '¡Clase ' + gc.name + ' en curso!');
+  addLog('🧘 Class <span class="highlight">' + gc.name + '</span> started! Cost: ' + fmtMoney(classCost) + ' (' + fmtTime(gc.duration) + ')');
+  showToast(gc.icon, gc.name + ' class in progress!');
 
   renderClasses();
   saveGame();
@@ -512,10 +512,10 @@ function renderClasses() {
     var skillPct = Math.round((skillMult - 1) * 100);
     var decBonus = Math.round(getDecorationBonus('classQuality') * 100);
     var parts = [];
-    if (hiredCount > 0) parts.push('👨‍🏫 ' + hiredCount + '/' + GYM_CLASSES.length + ' instructores contratados');
-    if (skillPct > 0) parts.push('🔬 Árbol: +' + skillPct + '% ingresos');
-    if (decBonus > 0) parts.push('🎨 Decoración: +' + decBonus + '% calidad');
-    if (hiredCount === 0) parts.push('💡 Contratá instructores para desbloquear clases');
+    if (hiredCount > 0) parts.push('👨‍🏫 ' + hiredCount + '/' + GYM_CLASSES.length + ' instructors hired');
+    if (skillPct > 0) parts.push('🔬 Tree: +' + skillPct + '% income');
+    if (decBonus > 0) parts.push('🎨 Decoration: +' + decBonus + '% quality');
+    if (hiredCount === 0) parts.push('💡 Hire instructors to unlock classes');
     banner.innerHTML = parts.length ? '<span>' + parts.join(' &nbsp;·&nbsp; ') + '</span>' : '';
     banner.style.display = parts.length ? '' : 'none';
   }
@@ -551,7 +551,7 @@ function renderClasses() {
       instructorHTML = '<div class="class-instructor-section no-instructor">' +
         '<div class="instructor-label">👨‍🏫 ' + inst.name + '</div>' +
         '<button class="btn btn-buy btn-small" ' + (canHire ? '' : 'disabled') + ' onclick="hireInstructor(\'' + gc.id + '\')">' +
-          'CONTRATAR — ' + fmtMoney(inst.hireCost) +
+          'HIRE — ' + fmtMoney(inst.hireCost) +
         '</button>' +
       '</div>';
     } else {
@@ -563,7 +563,7 @@ function renderClasses() {
         var upgCost = getInstructorUpgradeCost(inst, instLevel);
         var canUpgrade = game.money >= upgCost;
         upgradeHTML = '<button class="btn btn-buy btn-small" ' + (canUpgrade ? '' : 'disabled') + ' onclick="upgradeInstructor(\'' + gc.id + '\')">' +
-          '⬆️ MEJORAR — ' + fmtMoney(upgCost) +
+          '⬆️ UPGRADE — ' + fmtMoney(upgCost) +
         '</button>';
       } else {
         upgradeHTML = '<span class="instructor-maxed">MAX</span>';
@@ -574,7 +574,7 @@ function renderClasses() {
           '<span class="instructor-stars">' + stars + '</span>' +
         '</div>' +
         '<div class="instructor-details">' +
-          '<span class="instructor-commission">Comisión: ' + Math.round(inst.commission * 100) + '% (-' + fmtMoney(commissionAmt) + ')</span>' +
+          '<span class="instructor-commission">Commission: ' + Math.round(inst.commission * 100) + '% (-' + fmtMoney(commissionAmt) + ')</span>' +
           upgradeHTML +
         '</div>' +
       '</div>';
@@ -596,21 +596,21 @@ function renderClasses() {
     let btnHTML = '';
 
     if (locked) {
-      btnHTML = '<div style="color:var(--text-muted);font-size:12px;">🔒 Requiere Nivel ' + gc.reqLevel + '</div>';
+      btnHTML = '<div style="color:var(--text-muted);font-size:12px;">🔒 Requires Level ' + gc.reqLevel + '</div>';
     } else if (!hasInstructor) {
-      btnHTML = '<div style="color:var(--text-muted);font-size:12px;">Contratá un instructor para desbloquear</div>';
+      btnHTML = '<div style="color:var(--text-muted);font-size:12px;">Hire an instructor to unlock</div>';
     } else if (missingEquip) {
-      btnHTML = '<button class="btn btn-buy" disabled>🎯 INICIAR — ' + fmtMoney(classCost) + '</button>';
+      btnHTML = '<button class="btn btn-buy" disabled>🎯 START — ' + fmtMoney(classCost) + '</button>';
     } else if (isRunning) {
       const timeLeft = Math.ceil((state.runningUntil - Date.now()) / 1000);
       timerText = '<div class="class-timer">⏳ ' + fmtTime(timeLeft) + '</div>';
-      btnHTML = '<button class="btn btn-green" disabled>EN CURSO...</button>';
+      btnHTML = '<button class="btn btn-green" disabled>IN PROGRESS...</button>';
     } else if (onCooldown) {
       const coolLeft = Math.ceil((state.cooldownUntil - Date.now()) / 1000);
       timerText = '<div class="class-timer" style="color:var(--text-muted);">⏱️ Cooldown: ' + fmtTime(coolLeft) + '</div>';
-      btnHTML = '<button class="btn btn-buy" disabled>ESPERANDO</button>';
+      btnHTML = '<button class="btn btn-buy" disabled>WAITING</button>';
     } else {
-      btnHTML = '<button class="btn btn-buy" ' + (canAfford ? '' : 'disabled') + ' onclick="startClass(\'' + gc.id + '\')">🎯 INICIAR — ' + fmtMoney(classCost) + '</button>';
+      btnHTML = '<button class="btn btn-buy" ' + (canAfford ? '' : 'disabled') + ' onclick="startClass(\'' + gc.id + '\')">🎯 START — ' + fmtMoney(classCost) + '</button>';
     }
 
     // --- Quality indicator (Fix 11: break down sources) ---
@@ -622,17 +622,17 @@ function renderClasses() {
       var qParts = [];
       if (eqBonus > 0) qParts.push('🏋️ +' + eqBonus + '%');
       if (instBonus > 0) qParts.push('👨‍🏫 +' + instBonus + '%');
-      qualityText = '<div style="font-size:11px;color:var(--accent);text-align:center;margin-top:2px;">⭐ Calidad total +' + qPct + '%' + (qParts.length ? ' (' + qParts.join(' · ') + ')' : '') + '</div>';
+      qualityText = '<div style="font-size:11px;color:var(--accent);text-align:center;margin-top:2px;">⭐ Total quality +' + qPct + '%' + (qParts.length ? ' (' + qParts.join(' · ') + ')' : '') + '</div>';
     }
 
     // --- Stats (only show full stats when instructor hired) ---
     var statsHTML = '';
     if (!locked && hasInstructor) {
       statsHTML = '<div class="class-stats">' +
-        '<div class="class-stat"><span style="color:var(--green);">💰 ' + fmtMoney(reward.income) + ' bruto</span></div>' +
-        (commissionAmt > 0 ? '<div class="class-stat"><span style="color:var(--orange);">👨‍🏫 -' + fmtMoney(commissionAmt) + ' comisión</span></div>' : '') +
-        (classCost > 0 ? '<div class="class-stat"><span style="color:var(--red);">💸 -' + fmtMoney(classCost) + ' costo</span></div>' : '') +
-        '<div class="class-stat"><span style="color:' + (profit > 0 ? 'var(--green)' : 'var(--red)') + ';">📊 ' + (profit >= 0 ? '+' : '') + fmtMoney(profit) + ' neto</span></div>' +
+        '<div class="class-stat"><span style="color:var(--green);">💰 ' + fmtMoney(reward.income) + ' gross</span></div>' +
+        (commissionAmt > 0 ? '<div class="class-stat"><span style="color:var(--orange);">👨‍🏫 -' + fmtMoney(commissionAmt) + ' commission</span></div>' : '') +
+        (classCost > 0 ? '<div class="class-stat"><span style="color:var(--red);">💸 -' + fmtMoney(classCost) + ' cost</span></div>' : '') +
+        '<div class="class-stat"><span style="color:' + (profit > 0 ? 'var(--green)' : 'var(--red)') + ';">📊 ' + (profit >= 0 ? '+' : '') + fmtMoney(profit) + ' net</span></div>' +
         '<div class="class-stat"><span style="color:var(--cyan);">✨ +' + reward.xp + ' XP · ⭐ +' + reward.rep + ' rep</span></div>' +
         '<div class="class-stat"><span style="color:var(--text-dim);">⏱️ ' + fmtTime(gc.duration) + ' · CD: ' + fmtTime(gc.cooldown) + '</span></div>' +
       '</div>';
@@ -651,7 +651,7 @@ function renderClasses() {
       autoRestartHTML = '<div class="class-autorestart">' +
         '<label class="autorestart-label">' +
           '<input type="checkbox" ' + (isOn ? 'checked' : '') + ' onchange="setClassAutoRestart(\'' + gc.id + '\', this.checked)">' +
-          ' 🔄 Auto-reiniciar' +
+          ' 🔄 Auto-restart' +
         '</label>' +
       '</div>';
     }
@@ -689,8 +689,8 @@ function toggleCampaign(id) {
 
   if (state.active) {
     game.marketing[id].active = false;
-    addLog('📢 Campaña <span class="highlight">' + mc.name + '</span> desactivada.');
-    showToast(mc.icon, mc.name + ' desactivada.');
+    addLog('📢 Campaign <span class="highlight">' + mc.name + '</span> turned off.');
+    showToast(mc.icon, mc.name + ' turned off.');
   } else {
     game.marketing[id] = {
       active: true,
@@ -700,8 +700,8 @@ function toggleCampaign(id) {
       memberAccumulator: state.memberAccumulator || 0,
       repAccumulator: state.repAccumulator || 0,
     };
-    addLog('📢 Campaña <span class="highlight">' + mc.name + '</span> activada!');
-    showToast(mc.icon, '¡' + mc.name + ' activada!');
+    addLog('📢 Campaign <span class="highlight">' + mc.name + '</span> turned on!');
+    showToast(mc.icon, mc.name + ' turned on!');
     game.stats.campaignsLaunched++;
     game.dailyTracking.campaignsLaunched++;
     var xpGain = 20;
@@ -731,7 +731,7 @@ function launchCampaign(id) {
   cost = Math.ceil(cost * getSkillEffect('campaignCostMult'));
 
   if (game.money < cost) {
-    showToast('❌', '¡No tenés suficiente plata!');
+    showToast('❌', 'Not enough cash!');
     return;
   }
 
@@ -763,8 +763,8 @@ function launchCampaign(id) {
   addXp(xpGain);
   game.dailyTracking.xpEarned += xpGain;
 
-  addLog('📢 Campaña <span class="highlight">' + mc.name + '</span> lanzada! +' + membersToGive + ' miembros en ' + fmtTime(realDuration) + ', +' + repBoost + '⭐');
-  showToast(mc.icon, '¡' + mc.name + ' en marcha!');
+  addLog('📢 Campaign <span class="highlight">' + mc.name + '</span> launched! +' + membersToGive + ' members in ' + fmtTime(realDuration) + ', +' + repBoost + '⭐');
+  showToast(mc.icon, mc.name + ' underway!');
 
   renderMarketing();
   updateUI();
@@ -786,7 +786,7 @@ function renderMarketing() {
     return st && st.active;
   });
 
-  let alwaysOnHTML = '<div class="marketing-section-title">📡 Campañas Continuas <span style="font-size:12px;color:var(--text-dim);font-weight:400;">— activá y desactivá cuando quieras</span></div>';
+  let alwaysOnHTML = '<div class="marketing-section-title">📡 Ongoing Campaigns <span style="font-size:12px;color:var(--text-dim);font-weight:400;">— turn on and off whenever you want</span></div>';
   alwaysOnHTML += '<div class="marketing-always-on-grid">';
 
   alwaysOnCampaigns.forEach(mc => {
@@ -809,19 +809,19 @@ function renderMarketing() {
       const activeForMs = now - state.activatedAt;
       const activeForStr = fmtTime(Math.floor(activeForMs / 1000));
       insightsHTML = '<div class="campaign-insights">' +
-        '<div class="insights-row"><span>⏱️ Tiempo activa</span><span>' + activeForStr + '</span></div>' +
-        '<div class="insights-row"><span>👥 Socios generados</span><span class="val">' + totalGens + '</span></div>' +
-        '<div class="insights-row"><span>💸 Total invertido</span><span class="val">' + fmtMoney(totalSpent) + '</span></div>' +
-        (totalGens > 0 ? '<div class="insights-row"><span>📊 Costo por socio</span><span class="val">' + fmtMoney(cpm) + '</span></div>' : '') +
+        '<div class="insights-row"><span>⏱️ Time active</span><span>' + activeForStr + '</span></div>' +
+        '<div class="insights-row"><span>👥 Members generated</span><span class="val">' + totalGens + '</span></div>' +
+        '<div class="insights-row"><span>💸 Total invested</span><span class="val">' + fmtMoney(totalSpent) + '</span></div>' +
+        (totalGens > 0 ? '<div class="insights-row"><span>📊 Cost per member</span><span class="val">' + fmtMoney(cpm) + '</span></div>' : '') +
       '</div>';
     }
 
     let toggleBtn = '';
     if (locked) {
-      toggleBtn = '<div class="campaign-locked-msg">🔒 Nivel ' + mc.reqLevel + ' requerido</div>';
+      toggleBtn = '<div class="campaign-locked-msg">🔒 Level ' + mc.reqLevel + ' required</div>';
     } else {
       toggleBtn = '<button class="btn campaign-toggle-btn ' + (isActive ? 'on' : 'off') + '" onclick="toggleCampaign(\'' + mc.id + '\')">' +
-        (isActive ? '🟢 ACTIVA — DESACTIVAR' : '⚫ ACTIVAR CAMPAÑA') +
+        (isActive ? '🟢 ACTIVE — TURN OFF' : '⚫ TURN ON CAMPAIGN') +
       '</button>';
     }
 
@@ -829,15 +829,15 @@ function renderMarketing() {
       '<div class="marketing-card always-on ' + (locked ? 'locked' : '') + ' ' + (isActive ? 'active' : '') + '">' +
         '<div class="marketing-header">' +
           '<span class="marketing-icon">' + mc.icon + '</span>' +
-          (isActive ? '<span class="marketing-badge running" style="font-size:11px;padding:3px 8px;">EN VIVO</span>' : '') +
+          (isActive ? '<span class="marketing-badge running" style="font-size:11px;padding:3px 8px;">LIVE</span>' : '') +
         '</div>' +
         '<div class="marketing-name">' + mc.name + '</div>' +
         '<div class="marketing-desc">' + mc.desc + '</div>' +
         '<div class="marketing-stats">' +
-          '<div class="marketing-stat"><span style="color:var(--cyan);">👥 ' + membersPerDay + ' socios/día</span></div>' +
-          '<div class="marketing-stat"><span style="color:var(--purple);">⭐ ' + repPerDay + ' rep/día</span></div>' +
-          '<div class="marketing-stat"><span style="color:var(--accent);">💰 ' + fmtMoney(costPerDay) + '/día</span></div>' +
-          '<div class="marketing-stat"><span style="color:var(--text-dim);">📊 ~$' + costPerMember + '/socio</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--cyan);">👥 ' + membersPerDay + ' members/day</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--purple);">⭐ ' + repPerDay + ' rep/day</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--accent);">💰 ' + fmtMoney(costPerDay) + '/day</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--text-dim);">📊 ~$' + costPerMember + '/member</span></div>' +
         '</div>' +
         insightsHTML +
         toggleBtn +
@@ -856,7 +856,7 @@ function renderMarketing() {
   let burstSummaryHTML = '';
   if (activeBurst.length > 0) {
     burstSummaryHTML = '<div class="marketing-summary">' +
-      '<div class="marketing-summary-title">🚀 Campañas de Impacto Activas: ' + activeBurst.length + '</div>';
+      '<div class="marketing-summary-title">🚀 Active Impact Campaigns: ' + activeBurst.length + '</div>';
     activeBurst.forEach(mc => {
       const state = game.marketing[mc.id];
       const timeLeft = Math.ceil((state.activeUntil - now) / 1000);
@@ -866,7 +866,7 @@ function renderMarketing() {
       const membersLeft = Math.ceil((state.membersToGive || mc.membersBoost) - (state.membersGiven || 0));
       burstSummaryHTML += '<div class="marketing-active-item">' +
         '<span>' + mc.icon + ' ' + mc.name + '</span>' +
-        '<span style="color:var(--cyan);">👥 ' + membersLeft + ' socios restantes</span>' +
+        '<span style="color:var(--cyan);">👥 ' + membersLeft + ' members left</span>' +
         '<span style="color:var(--text-dim);">⏱️ ' + fmtTime(timeLeft) + '</span>' +
         '<div class="marketing-progress-bar"><div class="marketing-progress-fill" style="width:' + progressPct + '%"></div></div>' +
       '</div>';
@@ -874,7 +874,7 @@ function renderMarketing() {
     burstSummaryHTML += '</div>';
   }
 
-  let burstSectionHTML = '<div class="marketing-section-title" style="margin-top:24px;">🚀 Campañas de Impacto <span style="font-size:12px;color:var(--text-dim);font-weight:400;">— eventos puntuales de alto alcance</span></div>';
+  let burstSectionHTML = '<div class="marketing-section-title" style="margin-top:24px;">🚀 Impact Campaigns <span style="font-size:12px;color:var(--text-dim);font-weight:400;">— one-time, high-reach events</span></div>';
   burstSectionHTML += burstSummaryHTML;
   burstSectionHTML += '<div class="marketing-grid">';
 
@@ -894,18 +894,18 @@ function renderMarketing() {
     let btnHTML = '';
 
     if (locked) {
-      btnHTML = '<div class="campaign-locked-msg">🔒 Nivel ' + mc.reqLevel + ' requerido</div>';
+      btnHTML = '<div class="campaign-locked-msg">🔒 Level ' + mc.reqLevel + ' required</div>';
     } else if (isActive) {
       const timeLeft = Math.ceil((state.activeUntil - now) / 1000);
       const totalMs = state.activeUntil - (state.startedAt || state.activeUntil - mc.duration * 1000);
       const progressPct = Math.min(100, Math.round(((now - (state.startedAt || now)) / totalMs) * 100));
       const membersLeft = Math.ceil((state.membersToGive || mc.membersBoost) - (state.membersGiven || 0));
       timerHTML = '<div style="text-align:center;margin-bottom:8px;">' +
-        '<span class="marketing-badge running">ACTIVA — ' + fmtTime(timeLeft) + '</span>' +
-        '<div style="color:var(--cyan);font-size:11px;margin-top:4px;">👥 ' + membersLeft + ' socios restantes</div>' +
+        '<span class="marketing-badge running">ACTIVE — ' + fmtTime(timeLeft) + '</span>' +
+        '<div style="color:var(--cyan);font-size:11px;margin-top:4px;">👥 ' + membersLeft + ' members left</div>' +
         '<div class="marketing-progress-bar" style="margin-top:6px;"><div class="marketing-progress-fill" style="width:' + progressPct + '%"></div></div>' +
       '</div>';
-      btnHTML = '<button class="btn btn-green" disabled>✅ EN CURSO</button>';
+      btnHTML = '<button class="btn btn-green" disabled>✅ IN PROGRESS</button>';
     } else if (isOnCooldown) {
       const cdLeft = Math.ceil((state.cooldownUntil - now) / 1000);
       const cdTotal = mc.cooldown;
@@ -916,7 +916,7 @@ function renderMarketing() {
       '</div>';
       btnHTML = '<button class="btn" style="background:var(--bg-card);color:var(--text-dim);cursor:not-allowed;" disabled>⏳ COOLDOWN</button>';
     } else {
-      btnHTML = '<button class="btn btn-cyan" ' + (canAfford ? '' : 'disabled') + ' onclick="launchCampaign(\'' + mc.id + '\')">🚀 LANZAR — ' + fmtMoney(cost) + '</button>';
+      btnHTML = '<button class="btn btn-cyan" ' + (canAfford ? '' : 'disabled') + ' onclick="launchCampaign(\'' + mc.id + '\')">🚀 LAUNCH — ' + fmtMoney(cost) + '</button>';
     }
 
     burstSectionHTML +=
@@ -927,8 +927,8 @@ function renderMarketing() {
         '<div class="marketing-name">' + mc.name + '</div>' +
         '<div class="marketing-desc">' + mc.desc + '</div>' +
         '<div class="marketing-stats">' +
-          '<div class="marketing-stat"><span style="color:var(--cyan);">👥 +' + membersEff + ' socios</span></div>' +
-          '<div class="marketing-stat"><span style="color:var(--purple);">⭐ +' + mc.repBoost + ' reputación</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--cyan);">👥 +' + membersEff + ' members</span></div>' +
+          '<div class="marketing-stat"><span style="color:var(--purple);">⭐ +' + mc.repBoost + ' reputation</span></div>' +
           '<div class="marketing-stat"><span style="color:var(--text-dim);">⏱️ ' + fmtTime(mc.duration) + ' · CD: ' + fmtTime(mc.cooldown) + '</span></div>' +
           '<div class="marketing-stat"><span style="color:var(--accent);">💰 ' + fmtMoney(cost) + '</span></div>' +
         '</div>' +
@@ -944,21 +944,21 @@ function renderMarketing() {
 
 // ===== SUPPLEMENTS =====
 var TOLERANCE_LABELS = [
-  { label: 'Sin tolerancia', color: 'var(--green)', pct: 100, warn: false },
-  { label: 'Tolerancia leve', color: 'var(--accent)', pct: 85, warn: false },
-  { label: 'Tolerancia moderada', color: 'orange', pct: 65, warn: true },
-  { label: 'Tolerancia máxima', color: 'var(--red)', pct: 45, warn: true },
+  { label: 'No tolerance', color: 'var(--green)', pct: 100, warn: false },
+  { label: 'Mild tolerance', color: 'var(--accent)', pct: 85, warn: false },
+  { label: 'Moderate tolerance', color: 'orange', pct: 65, warn: true },
+  { label: 'Max tolerance', color: 'var(--red)', pct: 45, warn: true },
 ];
 
-// ===== FAMA / TIENDA DE PRESTIGIO =====
+// ===== FAME / PRESTIGE SHOP =====
 function fameePerkEffectText(perk, level) {
   var pct = Math.round((perk.effect.perLevel || 0) * level * 100);
   switch (perk.effect.key) {
-    case 'income':    return '+' + pct + '% ingreso';
-    case 'cost':      return '-' + pct + '% costos';
-    case 'retention': return '-' + pct + '% robo de rivales';
-    case 'capacity':  return '+' + pct + '% capacidad';
-    case 'vipspeed':  return 'VIPs +' + pct + '% más seguido';
+    case 'income':    return '+' + pct + '% income';
+    case 'cost':      return '-' + pct + '% costs';
+    case 'retention': return '-' + pct + '% rival steal';
+    case 'capacity':  return '+' + pct + '% capacity';
+    case 'vipspeed':  return 'VIPs +' + pct + '% more often';
     default:          return '+' + pct + '%';
   }
 }
@@ -975,20 +975,20 @@ function renderFameShop() {
   var lifetime = getReputationLifetime();
 
   // ---- Header ----
-  var html = '<div class="section-title">🌟 Fama y Prestigio</div>';
-  html += '<p class="section-subtitle">Tu reputación es una moneda: gastala en boosts, mejoras permanentes y desbloqueos. Tu fama acumulada te da además un ingreso pasivo.</p>';
+  var html = '<div class="section-title">🌟 Fame and Prestige</div>';
+  html += '<p class="section-subtitle">Your reputation is a currency: spend it on boosts, permanent upgrades and unlocks. Your accumulated fame also gives you passive income.</p>';
 
   html += '<div class="fame-header">' +
-    '<div class="fame-header-box"><div class="fame-hb-label">Reputación disponible</div><div class="fame-hb-value" style="color:var(--accent);">🌟 ' + fmt(rep) + '</div></div>' +
-    '<div class="fame-header-box"><div class="fame-hb-label">Generás</div><div class="fame-hb-value" style="color:var(--cyan);">+' + (rate >= 10 ? fmt(Math.round(rate)) : rate.toFixed(1)) + '/seg</div></div>' +
-    '<div class="fame-header-box"><div class="fame-hb-label">Piso pasivo de ingreso</div><div class="fame-hb-value" style="color:var(--green);">+' + (floor * 100).toFixed(1) + '%</div><div class="fame-hb-sub">por ' + fmt(Math.floor(lifetime)) + ' de fama acumulada</div></div>' +
+    '<div class="fame-header-box"><div class="fame-hb-label">Reputation available</div><div class="fame-hb-value" style="color:var(--accent);">🌟 ' + fmt(rep) + '</div></div>' +
+    '<div class="fame-header-box"><div class="fame-hb-label">You generate</div><div class="fame-hb-value" style="color:var(--cyan);">+' + (rate >= 10 ? fmt(Math.round(rate)) : rate.toFixed(1)) + '/sec</div></div>' +
+    '<div class="fame-header-box"><div class="fame-hb-label">Passive income floor</div><div class="fame-hb-value" style="color:var(--green);">+' + (floor * 100).toFixed(1) + '%</div><div class="fame-hb-sub">from ' + fmt(Math.floor(lifetime)) + ' accumulated fame</div></div>' +
     '</div>';
 
   // ---- Boosts activos ----
   var activeBoosts = FAME_SHOP.boosts.filter(function(b) { return game.fameBoosts[b.id] && now < game.fameBoosts[b.id]; });
   if (activeBoosts.length > 0) {
     html += '<div class="fame-active">';
-    html += '<div class="fame-active-title">⚡ Boosts activos</div>';
+    html += '<div class="fame-active-title">⚡ Active boosts</div>';
     activeBoosts.forEach(function(b) {
       var left = Math.ceil((game.fameBoosts[b.id] - now) / 1000);
       html += '<div class="fame-active-item"><span>' + b.icon + ' ' + b.name + '</span><span style="color:var(--text-dim);">⏱️ ' + fmtTime(left) + '</span></div>';
@@ -997,7 +997,7 @@ function renderFameShop() {
   }
 
   // ---- Boosts ----
-  html += '<div class="fame-cat-title">⚡ Boosts temporales <span class="fame-cat-hint">— premio de juego activo</span></div>';
+  html += '<div class="fame-cat-title">⚡ Temporary boosts <span class="fame-cat-hint">— active-play reward</span></div>';
   html += '<div class="fame-grid">';
   FAME_SHOP.boosts.forEach(function(b) {
     var cost = getFameBoostCost(b);
@@ -1006,21 +1006,21 @@ function renderFameShop() {
     var btn;
     if (active) {
       var left = Math.ceil((game.fameBoosts[b.id] - now) / 1000);
-      btn = '<button class="btn btn-small" disabled style="opacity:.6;">⏱️ ACTIVO — ' + fmtTime(left) + '</button>';
+      btn = '<button class="btn btn-small" disabled style="opacity:.6;">⏱️ ACTIVE — ' + fmtTime(left) + '</button>';
     } else {
-      btn = '<button class="btn btn-buy btn-small" ' + (canAfford ? '' : 'disabled') + ' onclick="buyFameBoost(\'' + b.id + '\')">ACTIVAR — 🌟 ' + fmt(cost) + '</button>';
+      btn = '<button class="btn btn-buy btn-small" ' + (canAfford ? '' : 'disabled') + ' onclick="buyFameBoost(\'' + b.id + '\')">ACTIVATE — 🌟 ' + fmt(cost) + '</button>';
     }
     html += '<div class="fame-card' + (active ? ' fame-card-active' : '') + '">' +
       '<div class="fame-card-head"><span class="fame-card-icon">' + b.icon + '</span><span class="fame-card-name">' + b.name + '</span></div>' +
       '<div class="fame-card-desc">' + b.desc + '</div>' +
-      '<div class="fame-card-meta">Dura ' + fmtTime(b.duration) + '</div>' +
+      '<div class="fame-card-meta">Lasts ' + fmtTime(b.duration) + '</div>' +
       btn +
     '</div>';
   });
   html += '</div>';
 
   // ---- Perks permanentes ----
-  html += '<div class="fame-cat-title">📈 Mejoras permanentes <span class="fame-cat-hint">— suben de nivel, sink de largo plazo</span></div>';
+  html += '<div class="fame-cat-title">📈 Permanent upgrades <span class="fame-cat-hint">— level up, long-term sink</span></div>';
   html += '<div class="fame-grid">';
   FAME_SHOP.perks.forEach(function(p) {
     var lvl = getFamePerkLevel(p.id);
@@ -1031,22 +1031,22 @@ function renderFameShop() {
     for (var i = 0; i < p.maxLevel; i++) pips += '<span class="fame-pip' + (i < lvl ? ' on' : '') + '"></span>';
     var btn;
     if (maxed) {
-      btn = '<button class="btn btn-small" disabled style="opacity:.6;">✅ MÁXIMO</button>';
+      btn = '<button class="btn btn-small" disabled style="opacity:.6;">✅ MAX</button>';
     } else {
-      btn = '<button class="btn btn-buy btn-small" ' + (canAfford ? '' : 'disabled') + ' onclick="buyFamePerk(\'' + p.id + '\')">MEJORAR (Nv ' + (lvl + 1) + ') — 🌟 ' + fmt(cost) + '</button>';
+      btn = '<button class="btn btn-buy btn-small" ' + (canAfford ? '' : 'disabled') + ' onclick="buyFamePerk(\'' + p.id + '\')">UPGRADE (Lv ' + (lvl + 1) + ') — 🌟 ' + fmt(cost) + '</button>';
     }
     html += '<div class="fame-card">' +
       '<div class="fame-card-head"><span class="fame-card-icon">' + p.icon + '</span><span class="fame-card-name">' + p.name + '</span></div>' +
       '<div class="fame-card-desc">' + p.desc + '</div>' +
-      '<div class="fame-pips">' + pips + ' <span class="fame-card-meta">Nv ' + lvl + '/' + p.maxLevel + '</span></div>' +
-      (lvl > 0 ? '<div class="fame-card-current">Actual: ' + fameePerkEffectText(p, lvl) + '</div>' : '') +
+      '<div class="fame-pips">' + pips + ' <span class="fame-card-meta">Lv ' + lvl + '/' + p.maxLevel + '</span></div>' +
+      (lvl > 0 ? '<div class="fame-card-current">Current: ' + fameePerkEffectText(p, lvl) + '</div>' : '') +
       btn +
     '</div>';
   });
   html += '</div>';
 
   // ---- Unlocks ----
-  html += '<div class="fame-cat-title">👑 Desbloqueos <span class="fame-cat-hint">— hitos únicos, objetivos aspiracionales</span></div>';
+  html += '<div class="fame-cat-title">👑 Unlocks <span class="fame-cat-hint">— one-time milestones, aspirational goals</span></div>';
   html += '<div class="fame-grid">';
   FAME_SHOP.unlocks.forEach(function(u) {
     var owned = !!game.fameUnlocks[u.id];
@@ -1055,11 +1055,11 @@ function renderFameShop() {
     var canAfford = rep >= cost;
     var btn;
     if (owned) {
-      btn = '<div class="fame-owned">✓ DESBLOQUEADO</div>';
+      btn = '<div class="fame-owned">✓ UNLOCKED</div>';
     } else if (gated) {
-      btn = '<button class="btn btn-small" disabled style="opacity:.6;">🔒 Requiere 🌟 ' + fmt(u.reqLifetime) + ' de fama acumulada</button>';
+      btn = '<button class="btn btn-small" disabled style="opacity:.6;">🔒 Requires 🌟 ' + fmt(u.reqLifetime) + ' accumulated fame</button>';
     } else {
-      btn = '<button class="btn btn-buy btn-small" ' + (canAfford ? '' : 'disabled') + ' onclick="buyFameUnlock(\'' + u.id + '\')">DESBLOQUEAR — 🌟 ' + fmt(cost) + '</button>';
+      btn = '<button class="btn btn-buy btn-small" ' + (canAfford ? '' : 'disabled') + ' onclick="buyFameUnlock(\'' + u.id + '\')">UNLOCK — 🌟 ' + fmt(cost) + '</button>';
     }
     html += '<div class="fame-card' + (owned ? ' fame-card-owned' : '') + '">' +
       '<div class="fame-card-head"><span class="fame-card-icon">' + u.icon + '</span><span class="fame-card-name">' + u.name + '</span></div>' +
@@ -1089,8 +1089,8 @@ function renderSupplements() {
   var summaryHTML = '';
   if (activeSupps.length > 0) {
     summaryHTML = '<div class="supplement-summary">' +
-      '<div class="supplement-summary-title">🧃 Suplementos Activos: ' + activeSupps.length +
-      (hasCombo ? ' <span style="color:var(--accent);font-size:13px;">⚡ COMBO +10% ingresos!</span>' : '') +
+      '<div class="supplement-summary-title">🧃 Active Supplements: ' + activeSupps.length +
+      (hasCombo ? ' <span style="color:var(--accent);font-size:13px;">⚡ COMBO +10% income!</span>' : '') +
       '</div>';
     activeSupps.forEach(function(sup) {
       var state = game.supplements[sup.id];
@@ -1123,7 +1123,7 @@ function renderSupplements() {
     var comboPartner = sup.combo ? SUPPLEMENTS.find(function(s) { return s.id === sup.combo; }) : null;
     var comboActive = comboPartner && activeIds.includes(comboPartner.id);
     var comboBadge = comboPartner
-      ? '<span class="combo-badge ' + (comboActive ? 'combo-on' : '') + '">⚡ COMBO con ' + comboPartner.name + (comboActive ? ' ✓' : '') + '</span>'
+      ? '<span class="combo-badge ' + (comboActive ? 'combo-on' : '') + '">⚡ COMBO with ' + comboPartner.name + (comboActive ? ' ✓' : '') + '</span>'
       : '';
 
     // Tolerance meter (only show if tolerance > 0 or has been used)
@@ -1133,9 +1133,9 @@ function renderSupplements() {
         return '<div class="tolerance-bar ' + (i < tLevel ? 'filled' : '') + '" style="' + (i < tLevel ? 'background:' + tInfo.color : '') + '"></div>';
       }).join('');
       toleranceHTML = '<div class="tolerance-meter">' +
-        '<span class="tolerance-label" style="color:' + tInfo.color + ';">' + tInfo.label + ' — ' + tInfo.pct + '% efecto</span>' +
+        '<span class="tolerance-label" style="color:' + tInfo.color + ';">' + tInfo.label + ' — ' + tInfo.pct + '% effect</span>' +
         '<div class="tolerance-bars">' + bars + '</div>' +
-        (tInfo.warn ? '<div class="tolerance-warning">⚠️ Efecto reducido. Descansá un día para recuperar.</div>' : '') +
+        (tInfo.warn ? '<div class="tolerance-warning">⚠️ Reduced effect. Rest a day to recover.</div>' : '') +
       '</div>';
     }
 
@@ -1143,17 +1143,17 @@ function renderSupplements() {
     var btnHTML = '';
 
     if (locked) {
-      btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;margin-top:8px;">🔒 Nivel ' + sup.reqLevel + ' requerido</div>';
+      btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;margin-top:8px;">🔒 Level ' + sup.reqLevel + ' required</div>';
     } else if (isActive) {
       var timeLeft = Math.ceil((state.activeUntil - now) / 1000);
       var progressPct = Math.min(100, Math.round(((sup.duration - timeLeft) / sup.duration) * 100));
       timerHTML = '<div style="text-align:center;margin-bottom:8px;">' +
-        '<span class="supplement-badge running">ACTIVO — ' + fmtTime(timeLeft) + '</span>' +
+        '<span class="supplement-badge running">ACTIVE — ' + fmtTime(timeLeft) + '</span>' +
         '<div class="supplement-progress-bar" style="margin-top:6px;"><div class="supplement-progress-fill" style="width:' + progressPct + '%"></div></div>' +
       '</div>';
-      btnHTML = '<button class="btn btn-green" disabled>✅ EN CURSO</button>';
+      btnHTML = '<button class="btn btn-green" disabled>✅ IN PROGRESS</button>';
     } else {
-      btnHTML = '<button class="btn btn-buy" ' + (canAfford ? '' : 'disabled') + ' onclick="buySupplement(\'' + sup.id + '\')">🧃 TOMAR — ' + fmtMoney(cost) + '</button>';
+      btnHTML = '<button class="btn btn-buy" ' + (canAfford ? '' : 'disabled') + ' onclick="buySupplement(\'' + sup.id + '\')">🧃 TAKE — ' + fmtMoney(cost) + '</button>';
     }
 
     return (
@@ -1186,22 +1186,22 @@ function getSupplementEffectText(sup, toleranceLevel) {
   var e = sup.effects;
   if (e.incomeMult) {
     var scaled = Math.round((e.incomeMult - 1) * 100 * tMult);
-    parts.push('+' + scaled + '% ingresos');
+    parts.push('+' + scaled + '% income');
   }
   if (e.equipIncomeMult) {
     var scaled = Math.round((e.equipIncomeMult - 1) * 100 * tMult);
-    parts.push('+' + scaled + '% ing. equipos');
+    parts.push('+' + scaled + '% equip income');
   }
   if (e.classIncomeMult) {
     var scaled = Math.round((e.classIncomeMult - 1) * 100 * tMult);
-    parts.push('+' + scaled + '% ing. clases');
+    parts.push('+' + scaled + '% class income');
   }
   if (e.marketingMult) {
     var scaled = Math.round((e.marketingMult - 1) * 100 * tMult);
     parts.push('+' + scaled + '% marketing');
   }
-  if (e.capacityBonus) parts.push('+' + Math.round(e.capacityBonus * tMult) + ' capacidad');
-  if (e.repBonus) parts.push('+' + Math.round(e.repBonus * tMult) + ' reputación');
+  if (e.capacityBonus) parts.push('+' + Math.round(e.capacityBonus * tMult) + ' capacity');
+  if (e.repBonus) parts.push('+' + Math.round(e.repBonus * tMult) + ' reputation');
   if (e.repPerMin) parts.push('+' + (e.repPerMin * tMult).toFixed(1) + ' rep/min');
   return parts.join(', ');
 }
@@ -1223,18 +1223,18 @@ function renderRivals() {
   var summaryHTML = '';
   if (unlockedCount > 0) {
     summaryHTML = '<div class="rival-summary">' +
-      '<div class="rival-summary-title">🏪 Competencia del Mercado</div>' +
+      '<div class="rival-summary-title">🏪 Market Competition</div>' +
       '<div class="rival-summary-stats">' +
         '<div class="rival-summary-stat">' +
-          '<span class="rival-summary-label">Rivales activos</span>' +
+          '<span class="rival-summary-label">Active rivals</span>' +
           '<span class="rival-summary-value" style="color:var(--red);">' + (unlockedCount - defeatedCount) + '</span>' +
         '</div>' +
         '<div class="rival-summary-stat">' +
-          '<span class="rival-summary-label">Rivales superados</span>' +
+          '<span class="rival-summary-label">Rivals beaten</span>' +
           '<span class="rival-summary-value" style="color:var(--green);">' + defeatedCount + ' / ' + RIVAL_GYMS.length + '</span>' +
         '</div>' +
         '<div class="rival-summary-stat">' +
-          '<span class="rival-summary-label">Socios robados</span>' +
+          '<span class="rival-summary-label">Members stolen</span>' +
           '<span class="rival-summary-value" style="color:' + (rivalInfo.lost > 0 ? 'var(--red)' : 'var(--green)') + ';">' + (rivalInfo.lost > 0 ? '-' + rivalInfo.lost + ' (' + (rivalInfo.pct * 100).toFixed(1) + '%)' : '0') + '</span>' +
         '</div>' +
       '</div>' +
@@ -1254,13 +1254,13 @@ function renderRivals() {
     var actionsHTML = '';
 
     if (locked) {
-      statusHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;margin-top:8px;">🔒 Requiere Nivel ' + r.reqLevel + '</div>';
+      statusHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;margin-top:8px;">🔒 Requires Level ' + r.reqLevel + '</div>';
     } else if (defeated) {
       var bonusParts = [];
       if (r.defeatBonus.income) bonusParts.push('+' + r.defeatBonus.income + ' income/s');
-      if (r.defeatBonus.capacity) bonusParts.push('+' + r.defeatBonus.capacity + ' capacidad');
+      if (r.defeatBonus.capacity) bonusParts.push('+' + r.defeatBonus.capacity + ' capacity');
       statusHTML = '<div style="text-align:center;margin-bottom:8px;">' +
-        '<span class="rival-badge defeated">SUPERADO</span>' +
+        '<span class="rival-badge defeated">BEATEN</span>' +
       '</div>' +
       '<div style="text-align:center;font-size:12px;color:var(--green);margin-bottom:8px;">Bonus: ' + bonusParts.join(', ') + '</div>';
     } else if (promoActive) {
@@ -1268,18 +1268,18 @@ function renderRivals() {
       var totalDuration = r.promoDuration;
       var progressPct = Math.round(((totalDuration - timeLeft) / totalDuration) * 100);
       statusHTML = '<div style="text-align:center;margin-bottom:8px;">' +
-        '<span class="rival-badge promo">NEUTRALIZADO — ' + fmtTime(timeLeft) + '</span>' +
+        '<span class="rival-badge promo">NEUTRALIZED — ' + fmtTime(timeLeft) + '</span>' +
         '<div class="rival-progress-bar" style="margin-top:6px;"><div class="rival-progress-fill" style="width:' + progressPct + '%"></div></div>' +
       '</div>';
-      actionsHTML = '<button class="btn btn-red" ' + (game.money >= defeatCost ? '' : 'disabled') + ' onclick="defeatRival(\'' + r.id + '\')">🏆 SUPERAR — ' + fmtMoney(defeatCost) + '</button>';
+      actionsHTML = '<button class="btn btn-red" ' + (game.money >= defeatCost ? '' : 'disabled') + ' onclick="defeatRival(\'' + r.id + '\')">🏆 BEAT — ' + fmtMoney(defeatCost) + '</button>';
     } else {
       var rPct = (typeof getRivalStealPct === 'function') ? getRivalStealPct(r) * 100 : 0;
       statusHTML = '<div style="text-align:center;margin-bottom:8px;">' +
-        '<span class="rival-badge threat">AMENAZA — roba ' + rPct.toFixed(1) + '% de tus socios</span>' +
+        '<span class="rival-badge threat">THREAT — steals ' + rPct.toFixed(1) + '% of your members</span>' +
       '</div>';
       actionsHTML = '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
         '<button class="btn btn-cyan" style="flex:1;" ' + (game.money >= promoCost ? '' : 'disabled') + ' onclick="launchRivalPromo(\'' + r.id + '\')">📣 PROMO — ' + fmtMoney(promoCost) + '</button>' +
-        '<button class="btn btn-red" style="flex:1;" ' + (game.money >= defeatCost ? '' : 'disabled') + ' onclick="defeatRival(\'' + r.id + '\')">🏆 SUPERAR — ' + fmtMoney(defeatCost) + '</button>' +
+        '<button class="btn btn-red" style="flex:1;" ' + (game.money >= defeatCost ? '' : 'disabled') + ' onclick="defeatRival(\'' + r.id + '\')">🏆 BEAT — ' + fmtMoney(defeatCost) + '</button>' +
       '</div>';
     }
 
@@ -1291,7 +1291,7 @@ function renderRivals() {
         '<div class="rival-name">' + r.name + '</div>' +
         '<div class="rival-desc">' + r.desc + '</div>' +
         (!locked && !defeated ? '<div class="rival-stats">' +
-          '<div class="rival-stat">👥 <span class="val">roba ' + (getRivalStealPct(r) * 100).toFixed(1) + '% de socios</span></div>' +
+          '<div class="rival-stat">👥 <span class="val">steals ' + (getRivalStealPct(r) * 100).toFixed(1) + '% of members</span></div>' +
           '<div class="rival-stat">⏱️ <span class="val">Promo: ' + fmtTime(r.promoDuration) + '</span></div>' +
         '</div>' : '') +
         statusHTML +
@@ -1318,11 +1318,11 @@ function renderCityMap() {
   var passiveTotal = empireIncome - getIncomePerSecond();
 
   if (statsEl) {
-    var passiveNote = branchCount > 0 ? ' <span style="color:var(--text-dim);font-size:12px;">(+' + fmtMoney(passiveTotal) + '/s pasivo de ' + branchCount + ' sucursal' + (branchCount > 1 ? 'es' : '') + ')</span>' : '';
+    var passiveNote = branchCount > 0 ? ' <span style="color:var(--text-dim);font-size:12px;">(+' + fmtMoney(passiveTotal) + '/s passive from ' + branchCount + ' branch' + (branchCount > 1 ? 'es' : '') + ')</span>' : '';
     statsEl.innerHTML =
       '<div class="empire-stat-row">' +
         '<div class="empire-stat"><span class="empire-stat-icon">🏢</span> ' + totalGyms + ' gym' + (totalGyms > 1 ? 's' : '') + '</div>' +
-        '<div class="empire-stat"><span class="empire-stat-icon">⭐</span> ' + (starsText || 'Sin estrellas') + ' (x' + franchiseMult + ' ingresos)</div>' +
+        '<div class="empire-stat"><span class="empire-stat-icon">⭐</span> ' + (starsText || 'No stars') + ' (x' + franchiseMult + ' income)</div>' +
         '<div class="empire-stat"><span class="empire-stat-icon">💵</span> ' + fmtMoney(empireIncome) + '/s total' + passiveNote + '</div>' +
       '</div>';
   }
@@ -1352,7 +1352,7 @@ function renderCityMap() {
     html += '<div class="city-cell-header">';
     html += '<span class="city-cell-icon">' + hood.icon + '</span>';
     html += '<span class="city-cell-name">' + hood.name + '</span>';
-    if (isMain) html += '<span class="city-active-badge">PRINCIPAL</span>';
+    if (isMain) html += '<span class="city-active-badge">MAIN</span>';
     html += '</div>';
     html += '<div class="city-cell-desc">' + hood.desc + '</div>';
 
@@ -1360,11 +1360,11 @@ function renderCityMap() {
       html += '<div class="city-cell-gym">';
       html += '<div class="city-gym-name">' + game.gymName + '</div>';
       html += '<div class="city-gym-stats">';
-      html += '<span title="Nivel">Nv.' + game.level + '</span>';
-      html += '<span title="Miembros">👥 ' + Math.floor(game.members) + '</span>';
-      html += '<span title="Ingreso activo" style="color:var(--green);">💵 ' + fmtMoney(getIncomePerSecond()) + '/s</span>';
+      html += '<span title="Level">Lv.' + game.level + '</span>';
+      html += '<span title="Members">👥 ' + Math.floor(game.members) + '</span>';
+      html += '<span title="Active income" style="color:var(--green);">💵 ' + fmtMoney(getIncomePerSecond()) + '/s</span>';
       html += '</div>';
-      html += '<div class="city-active-label">📍 Tu gym — lo gestionás en las demás pestañas</div>';
+      html += '<div class="city-active-label">📍 Your gym — you manage it in the other tabs</div>';
       html += '</div>';
     } else if (branch) {
       var b = branch.data;
@@ -1372,26 +1372,26 @@ function renderCityMap() {
       var upCost = getBranchUpgradeCost(branch.branchId);
       var canUp = game.money >= upCost;
       html += '<div class="city-cell-gym">';
-      html += '<div class="city-gym-name">' + (b.name || 'Sucursal') + '</div>';
+      html += '<div class="city-gym-name">' + (b.name || 'Branch') + '</div>';
       html += '<div class="city-gym-stats">';
-      html += '<span title="Nivel de inversión">Nv.' + (b.level || 1) + '</span>';
-      html += '<span title="Ingreso pasivo — cae en tu billetera" style="color:var(--cyan);">💵 ' + fmtMoney(inc) + '/s → tuyo</span>';
+      html += '<span title="Investment level">Lv.' + (b.level || 1) + '</span>';
+      html += '<span title="Passive income — lands in your wallet" style="color:var(--cyan);">💵 ' + fmtMoney(inc) + '/s → yours</span>';
       html += '</div>';
-      html += '<button class="btn ' + (canUp ? 'btn-buy' : 'btn-disabled') + ' city-btn" ' + (canUp ? '' : 'disabled') + ' onclick="upgradeBranch(\'' + branch.branchId + '\')">⬆️ Ampliar — ' + fmtMoney(upCost) + '</button>';
+      html += '<button class="btn ' + (canUp ? 'btn-buy' : 'btn-disabled') + ' city-btn" ' + (canUp ? '' : 'disabled') + ' onclick="upgradeBranch(\'' + branch.branchId + '\')">⬆️ Expand — ' + fmtMoney(upCost) + '</button>';
       html += '</div>';
     } else if (isLocked) {
       html += '<div class="city-cell-locked">';
-      html += '<span>🔒 Nivel ' + hood.reqLevel + ' requerido</span>';
-      html += '<span style="color:var(--text-muted);font-size:11px;display:block;margin-top:4px;">Tu nivel: ' + game.level + '</span>';
+      html += '<span>🔒 Level ' + hood.reqLevel + ' required</span>';
+      html += '<span style="color:var(--text-muted);font-size:11px;display:block;margin-top:4px;">Your level: ' + game.level + '</span>';
       html += '</div>';
     } else {
       var projected = branchIncomeBasis(hood) / BRANCH_INCOME_PAYBACK;
-      var affordMsg = canUnlock ? '' : ' <span style="color:var(--red);font-size:11px;">(te faltan ' + fmtMoney(hood.unlockCost - game.money) + ')</span>';
+      var affordMsg = canUnlock ? '' : ' <span style="color:var(--red);font-size:11px;">(you need ' + fmtMoney(hood.unlockCost - game.money) + ' more)</span>';
       html += '<div class="city-cell-unlock">';
-      html += '<div style="font-size:12px;color:var(--cyan);margin-bottom:8px;">💵 Genera ~' + fmtMoney(projected) + '/s pasivo · ampliable</div>';
+      html += '<div style="font-size:12px;color:var(--cyan);margin-bottom:8px;">💵 Generates ~' + fmtMoney(projected) + '/s passive · expandable</div>';
       html += '<button class="btn ' + (canUnlock ? 'btn-buy' : 'btn-disabled') + ' city-btn" ' +
         (canUnlock ? 'onclick="openNewBranchModal(\'' + hood.id + '\')"' : 'disabled') + '>' +
-        'Abrir sucursal — ' + fmtMoney(hood.unlockCost) + '</button>' + affordMsg;
+        'Open branch — ' + fmtMoney(hood.unlockCost) + '</button>' + affordMsg;
       html += '</div>';
     }
 
@@ -1403,24 +1403,24 @@ function renderCityMap() {
   renderOpportunities();
 }
 
-// ===== OPORTUNIDADES / NEGOCIOS ARRIESGADOS =====
+// ===== OPPORTUNITIES / RISKY BUSINESS =====
 function renderOpportunities() {
   var container = document.getElementById('opportunitiesContainer');
   if (!container) return;
   var now = Date.now();
 
   var html = '';
-  html += '<div class="section-title" style="margin-top:24px;">💼 Negocios Arriesgados <span style="font-size:13px;color:var(--cyan);font-weight:400;">— golpes grandes, sin campeón</span></div>';
-  html += '<p class="section-subtitle" style="margin-bottom:12px;">Oportunidades de altísima recompensa con riesgo real. Prepará el terreno antes de entrar: si sale mal, tu gimnasio se come un revés temporal.</p>';
+  html += '<div class="section-title" style="margin-top:24px;">💼 Risky Business <span style="font-size:13px;color:var(--cyan);font-weight:400;">— big scores, no champion needed</span></div>';
+  html += '<p class="section-subtitle" style="margin-bottom:12px;">Sky-high reward opportunities with real risk. Set the stage before you go in: if it goes wrong, your gym takes a temporary setback.</p>';
 
-  // Banner de setback activo
+  // Active setback banner
   if (isGymSetbackActive()) {
     var sbLeft = getGymSetbackSecondsLeft();
     var penaltyPct = Math.round((1 - (game.gymSetback.incomeMult || 1)) * 100);
     html += '<div class="opp-setback-banner">' +
       '<span style="font-size:22px;">' + (game.gymSetback.icon || '🚨') + '</span>' +
-      '<div><div style="font-weight:700;color:var(--red);">' + (game.gymSetback.name || 'Revés') + '</div>' +
-      '<div style="font-size:12px;color:var(--text-dim);">Ingresos -' + penaltyPct + '% y reputación frenada · se recupera en ~' + fmtTime(sbLeft) + ' (solo con tiempo).</div></div>' +
+      '<div><div style="font-weight:700;color:var(--red);">' + (game.gymSetback.name || 'Setback') + '</div>' +
+      '<div style="font-size:12px;color:var(--text-dim);">Income -' + penaltyPct + '% and reputation stalled · recovers in ~' + fmtTime(sbLeft) + ' (time only).</div></div>' +
     '</div>';
   }
 
@@ -1448,26 +1448,26 @@ function renderOpportunities() {
     html += '<div class="grand-head-info">';
     html += '<div class="grand-name">' + o.name + '</div>';
     html += '<div class="grand-desc">' + o.desc + '</div>';
-    html += '<div class="grand-meta">⏱️ Cooldown ' + fmtTime(o.cooldown) + ' · 🎫 Entrada ' + fmtMoney(o.entryFee) +
+    html += '<div class="grand-meta">⏱️ Cooldown ' + fmtTime(o.cooldown) + ' · 🎫 Entry ' + fmtMoney(o.entryFee) +
       (state.wins + state.losses > 0 ? ' · ✅ ' + state.wins + '·❌ ' + state.losses : '') + '</div>';
     html += '</div>';
     html += '</div>';
 
     if (locked) {
-      html += '<div class="grand-locked-msg">🔒 Requisito: <strong>' + lockReason + '</strong></div>';
+      html += '<div class="grand-locked-msg">🔒 Requirement: <strong>' + lockReason + '</strong></div>';
       html += '</div>';
       return;
     }
 
     html += '<div class="grand-stats-row">';
-    html += '<div class="grand-stat"><span class="grand-stat-lbl">Premio (éxito)</span><span class="grand-stat-val" style="color:var(--accent);">' + fmtMoney(rewardMoney) + (o.reward.membersPct ? ' +socios' : '') + '</span></div>';
-    html += '<div class="grand-stat"><span class="grand-stat-lbl">Chance de éxito</span><span class="grand-stat-val" style="color:' + winColor + ';">' + Math.round(successChance * 100) + '%</span></div>';
-    html += '<div class="grand-stat"><span class="grand-stat-lbl">Riesgo (' + o.backfire.name + ')</span><span class="grand-stat-val" style="color:' + bfColor + ';">' + Math.round(backfireChance * 100) + '%</span></div>';
+    html += '<div class="grand-stat"><span class="grand-stat-lbl">Reward (success)</span><span class="grand-stat-val" style="color:var(--accent);">' + fmtMoney(rewardMoney) + (o.reward.membersPct ? ' +members' : '') + '</span></div>';
+    html += '<div class="grand-stat"><span class="grand-stat-lbl">Success chance</span><span class="grand-stat-val" style="color:' + winColor + ';">' + Math.round(successChance * 100) + '%</span></div>';
+    html += '<div class="grand-stat"><span class="grand-stat-lbl">Risk (' + o.backfire.name + ')</span><span class="grand-stat-val" style="color:' + bfColor + ';">' + Math.round(backfireChance * 100) + '%</span></div>';
     html += '</div>';
 
     var readyColor = readiness >= 80 ? 'var(--green)' : readiness >= 40 ? 'var(--accent)' : 'var(--red)';
     html += '<div class="grand-ready-row">';
-    html += '<span style="font-size:12px;color:var(--text-dim);">Preparación</span>';
+    html += '<span style="font-size:12px;color:var(--text-dim);">Readiness</span>';
     html += '<div class="grand-ready-bar"><div class="grand-ready-fill" style="width:' + readiness + '%;background:' + readyColor + ';"></div></div>';
     html += '<span style="font-size:12px;font-weight:700;color:' + readyColor + ';">' + readiness + '%</span>';
     html += '</div>';
@@ -1480,7 +1480,7 @@ function renderOpportunities() {
       var canAfford = game.money >= cost;
       var statusHtml;
       if (done) {
-        statusHtml = '<span class="grand-prep-done">✅ Listo</span>';
+        statusHtml = '<span class="grand-prep-done">✅ Done</span>';
       } else if (ddRunning) {
         var left = Math.ceil((prep.duediligenceUntil - now) / 1000);
         statusHtml = '<span class="grand-prep-running">⏳ ' + fmtTime(left) + '</span>';
@@ -1489,7 +1489,7 @@ function renderOpportunities() {
           ' onclick="buyOppPrep(\'' + o.id + '\',\'' + it.id + '\')">' + fmtMoney(cost) + '</button>';
       }
       html += '<div class="grand-prep-item' + (done ? ' done' : '') + '">' +
-        '<div class="grand-prep-top"><span>' + it.icon + ' <strong>' + it.name + '</strong>' + (it.required ? ' <span style="color:var(--red);font-size:10px;">*obligatorio</span>' : '') + '</span>' +
+        '<div class="grand-prep-top"><span>' + it.icon + ' <strong>' + it.name + '</strong>' + (it.required ? ' <span style="color:var(--red);font-size:10px;">*required</span>' : '') + '</span>' +
         '<span style="font-size:11px;color:var(--cyan);">+' + it.readiness + '%</span></div>' +
         '<div class="grand-prep-desc">' + it.desc + '</div>' +
         '<div class="grand-prep-action">' + statusHtml + '</div>' +
@@ -1500,12 +1500,12 @@ function renderOpportunities() {
     html += '<div class="grand-compete-row">';
     if (onCooldown) {
       var cd = Math.ceil((state.cooldownUntil - now) / 1000);
-      html += '<div class="grand-cooldown">⏱️ Próximo intento en <strong>' + fmtTime(cd) + '</strong></div>';
+      html += '<div class="grand-cooldown">⏱️ Next attempt in <strong>' + fmtTime(cd) + '</strong></div>';
     } else {
       var canEnter = hasPermisos && game.money >= o.entryFee;
-      var hint = !hasPermisos ? '📋 Necesitás Papeleo y Permisos' : game.money < o.entryFee ? '💸 Falta la entrada (' + fmtMoney(o.entryFee) + ')' : '';
+      var hint = !hasPermisos ? '📋 You need Paperwork and Permits' : game.money < o.entryFee ? '💸 Missing the entry fee (' + fmtMoney(o.entryFee) + ')' : '';
       html += '<button class="btn btn-buy grand-compete-btn" ' + (canEnter ? '' : 'disabled') +
-        ' onclick="attemptOpportunity(\'' + o.id + '\')">🎲 ARRIESGAR — ' + fmtMoney(o.entryFee) + '</button>';
+        ' onclick="attemptOpportunity(\'' + o.id + '\')">🎲 TAKE THE RISK — ' + fmtMoney(o.entryFee) + '</button>';
       if (hint) html += '<span class="grand-hint">' + hint + '</span>';
     }
     html += '</div>';
@@ -1517,7 +1517,7 @@ function renderOpportunities() {
   container.innerHTML = html;
 }
 
-// Modal de resultado de una oportunidad (reusa el overlay de eventos)
+// Result modal for an opportunity (reuses the events overlay)
 function showOpportunityResult(r) {
   var overlay = document.getElementById('eventOverlay');
   var card = document.getElementById('eventCard');
@@ -1525,24 +1525,24 @@ function showOpportunityResult(r) {
   var o = r.opportunity;
 
   var headIcon, headTitle, headColor;
-  if (r.success && !r.backfired) { headIcon = '💰'; headTitle = '¡NEGOCIO REDONDO!'; headColor = 'var(--green)'; }
-  else if (r.success && r.backfired) { headIcon = '💰🚨'; headTitle = '¡Saliste ganando, pero con coletazo!'; headColor = 'var(--accent)'; }
-  else if (!r.success && r.backfired) { headIcon = '🚨'; headTitle = 'Salió mal… y encima hubo lío'; headColor = 'var(--red)'; }
-  else { headIcon = '😞'; headTitle = 'El negocio no prosperó'; headColor = 'var(--accent)'; }
+  if (r.success && !r.backfired) { headIcon = '💰'; headTitle = 'SLAM DUNK DEAL!'; headColor = 'var(--green)'; }
+  else if (r.success && r.backfired) { headIcon = '💰🚨'; headTitle = 'You came out ahead, but it bit back!'; headColor = 'var(--accent)'; }
+  else if (!r.success && r.backfired) { headIcon = '🚨'; headTitle = 'It went wrong… and there was trouble on top'; headColor = 'var(--red)'; }
+  else { headIcon = '😞'; headTitle = 'The deal fell through'; headColor = 'var(--accent)'; }
 
   var lines = [];
   if (r.money) lines.push('<div class="grand-result-line">💰 <strong style="color:var(--accent);">+' + fmtMoney(r.money) + '</strong></div>');
-  if (r.members) lines.push('<div class="grand-result-line">👥 +' + r.members + ' socios</div>');
-  if (r.rep) lines.push('<div class="grand-result-line">⭐ +' + r.rep + ' reputación</div>');
-  if (r.backfired) lines.push('<div class="grand-result-line" style="color:var(--red);">' + (r.setback.icon || '🚨') + ' ' + r.setback.name + ': ingresos -' + Math.round(r.setback.incomePenalty * 100) + '% por ~' + fmtTime(r.setbackSecs) + '</div>');
-  if (!lines.length) lines.push('<div class="grand-result-line" style="color:var(--text-dim);">Perdiste la entrada. A la próxima.</div>');
+  if (r.members) lines.push('<div class="grand-result-line">👥 +' + r.members + ' members</div>');
+  if (r.rep) lines.push('<div class="grand-result-line">⭐ +' + r.rep + ' reputation</div>');
+  if (r.backfired) lines.push('<div class="grand-result-line" style="color:var(--red);">' + (r.setback.icon || '🚨') + ' ' + r.setback.name + ': income -' + Math.round(r.setback.incomePenalty * 100) + '% for ~' + fmtTime(r.setbackSecs) + '</div>');
+  if (!lines.length) lines.push('<div class="grand-result-line" style="color:var(--text-dim);">You lost the entry fee. Better luck next time.</div>');
 
   card.innerHTML =
     '<div class="event-icon">' + headIcon + '</div>' +
     '<div class="event-title" style="color:' + headColor + ';">' + headTitle + '</div>' +
     '<div class="event-desc">' + o.icon + ' ' + o.name + '</div>' +
     '<div class="grand-result-lines">' + lines.join('') + '</div>' +
-    '<div class="event-choices"><div class="event-choice" onclick="closeGrandResult()"><div class="event-choice-main"><span class="event-choice-text">Continuar</span></div></div></div>';
+    '<div class="event-choices"><div class="event-choice" onclick="closeGrandResult()"><div class="event-choice-main"><span class="event-choice-text">Continue</span></div></div></div>';
 
   overlay.classList.remove('hidden');
   window._grandResultOpen = true;
@@ -1553,14 +1553,14 @@ function upgradeBranch(branchId) {
   if (!branch) return;
   var cost = getBranchUpgradeCost(branchId);
   if (game.money < cost) {
-    showToast('❌', 'Te faltan ' + fmtMoney(cost - game.money));
+    showToast('❌', 'You need ' + fmtMoney(cost - game.money) + ' more');
     return;
   }
   game.money -= cost;
   branch.level = (branch.level || 1) + 1;
   var inc = getBranchPassiveIncome(branchId);
-  showToast('⬆️', (branch.name || 'Sucursal') + ' ampliada a Nv.' + branch.level + ' · ahora +' + fmtMoney(inc) + '/s');
-  addLog('⬆️ Ampliaste <span class="highlight">' + (branch.name || 'tu sucursal') + '</span> a nivel ' + branch.level + ' (+' + fmtMoney(inc) + '/s).');
+  showToast('⬆️', (branch.name || 'Branch') + ' expanded to Lv.' + branch.level + ' · now +' + fmtMoney(inc) + '/s');
+  addLog('⬆️ You expanded <span class="highlight">' + (branch.name || 'your branch') + '</span> to level ' + branch.level + ' (+' + fmtMoney(inc) + '/s).');
   renderCityMap();
   saveGame();
 }
@@ -1573,20 +1573,20 @@ function openNewBranchModal(neighborhoodId) {
   var modalHtml =
     '<div class="modal-overlay" id="newBranchModal" onclick="if(event.target===this)this.remove()">' +
     '<div class="modal-content" style="max-width:420px;">' +
-    '<div class="section-title">' + hood.icon + ' Nueva Sucursal en ' + hood.name + '</div>' +
+    '<div class="section-title">' + hood.icon + ' New Branch in ' + hood.name + '</div>' +
     '<p style="color:var(--text-dim);margin-bottom:12px;">' + hood.desc + '</p>' +
     '<div style="background:var(--bg-card);border-radius:8px;padding:12px;margin-bottom:16px;">' +
-      '<div style="color:var(--cyan);font-weight:700;font-size:16px;">💵 +' + fmtMoney(projected) + '/s pasivo</div>' +
-      '<div style="color:var(--text-dim);font-size:12px;margin-top:4px;">Cae directo en tu billetera, sin gestionar nada. Ampliala cuando quieras para que rinda más.</div>' +
+      '<div style="color:var(--cyan);font-weight:700;font-size:16px;">💵 +' + fmtMoney(projected) + '/s passive</div>' +
+      '<div style="color:var(--text-dim);font-size:12px;margin-top:4px;">Lands straight in your wallet, no management needed. Expand it whenever you want for more.</div>' +
     '</div>' +
     '<div style="margin-bottom:16px;">' +
-      '<label style="color:var(--text-dim);font-size:13px;">Nombre del nuevo gym:</label>' +
+      '<label style="color:var(--text-dim);font-size:13px;">New gym name:</label>' +
       '<input type="text" id="newBranchName" class="gym-name-input" placeholder="Gym ' + hood.name + '" style="width:100%;margin-top:4px;" maxlength="30">' +
     '</div>' +
-    '<div style="color:var(--accent);font-weight:700;font-size:18px;margin-bottom:16px;">Costo: ' + fmtMoney(hood.unlockCost) + '</div>' +
+    '<div style="color:var(--accent);font-weight:700;font-size:18px;margin-bottom:16px;">Cost: ' + fmtMoney(hood.unlockCost) + '</div>' +
     '<div style="display:flex;gap:8px;justify-content:center;">' +
-      '<button class="btn btn-buy" onclick="confirmNewBranch(\'' + neighborhoodId + '\')">Abrir Sucursal</button>' +
-      '<button class="btn" onclick="document.getElementById(\'newBranchModal\').remove()">Cancelar</button>' +
+      '<button class="btn btn-buy" onclick="confirmNewBranch(\'' + neighborhoodId + '\')">Open Branch</button>' +
+      '<button class="btn" onclick="document.getElementById(\'newBranchModal\').remove()">Cancel</button>' +
     '</div>' +
     '</div></div>';
 
@@ -1601,17 +1601,17 @@ function confirmNewBranch(neighborhoodId) {
   var alreadyExists = game.mainNeighborhoodId === neighborhoodId ||
     Object.values(game.branches).some(function(b) { return b.neighborhoodId === neighborhoodId; });
   if (alreadyExists) {
-    showToast('❌', 'Ya tenés un gym en ' + hood.name);
+    showToast('❌', 'You already have a gym in ' + hood.name);
     return;
   }
 
   if (game.level < hood.reqLevel) {
-    showToast('❌', 'Necesitás nivel ' + hood.reqLevel);
+    showToast('❌', 'Requires level ' + hood.reqLevel);
     return;
   }
 
   if (game.money < hood.unlockCost) {
-    showToast('❌', 'No tenés suficiente dinero');
+    showToast('❌', 'Not enough money');
     return;
   }
 
@@ -1636,8 +1636,8 @@ function confirmNewBranch(neighborhoodId) {
   if (modal) modal.remove();
 
   var inc = getBranchPassiveIncome(newId);
-  addLog('🏙️ ¡Abriste <span class="highlight">' + gymName + '</span> en ' + hood.name + '! Genera +' + fmtMoney(inc) + '/s pasivo.', 'critical');
-  showToast('🏙️', gymName + ' abierto · +' + fmtMoney(inc) + '/s pasivo');
+  addLog('🏙️ You opened <span class="highlight">' + gymName + '</span> in ' + hood.name + '! Generates +' + fmtMoney(inc) + '/s passive.', 'critical');
+  showToast('🏙️', gymName + ' opened · +' + fmtMoney(inc) + '/s passive');
 
   renderCityMap();
   checkAchievements();
@@ -1655,7 +1655,7 @@ function renderLeaderboard() {
   if (typeof currentUser === 'undefined' || !currentUser) {
     container.innerHTML = '<div class="leaderboard-empty">' +
       '<div style="font-size:40px;margin-bottom:12px;">🔒</div>' +
-      '<p style="color:var(--text-dim);">Iniciá sesión para ver el ranking global y competir con otros jugadores.</p>' +
+      '<p style="color:var(--text-dim);">Sign in to see the global ranking and compete with other players.</p>' +
     '</div>';
     return;
   }
@@ -1663,7 +1663,7 @@ function renderLeaderboard() {
   if (leaderboardLoading) return;
   leaderboardLoading = true;
 
-  container.innerHTML = '<div class="leaderboard-loading">Cargando ranking...</div>';
+  container.innerHTML = '<div class="leaderboard-loading">Loading ranking...</div>';
 
   Promise.all([fetchLeaderboard(false), fetchMyRank()]).then(function(results) {
     var entries = results[0];
@@ -1673,7 +1673,7 @@ function renderLeaderboard() {
     if (!entries || entries.length === 0) {
       container.innerHTML = '<div class="leaderboard-empty">' +
         '<div style="font-size:40px;margin-bottom:12px;">🏆</div>' +
-        '<p style="color:var(--text-dim);">Todavía no hay datos en el ranking. ¡Seguí jugando para ser el primero!</p>' +
+        '<p style="color:var(--text-dim);">No ranking data yet. Keep playing to be the first!</p>' +
       '</div>';
       return;
     }
@@ -1683,15 +1683,15 @@ function renderLeaderboard() {
     var myRankHTML = '';
     if (myRank) {
       myRankHTML = '<div class="leaderboard-myrank">' +
-        '<span>Tu posición:</span> <span class="leaderboard-myrank-value">#' + myRank + '</span>' +
+        '<span>Your position:</span> <span class="leaderboard-myrank-value">#' + myRank + '</span>' +
       '</div>';
     }
 
     var headerHTML = '<div class="leaderboard-row leaderboard-header">' +
       '<div class="lb-rank">#</div>' +
-      '<div class="lb-name">Jugador</div>' +
-      '<div class="lb-money">Total Ganado</div>' +
-      '<div class="lb-level">Nivel</div>' +
+      '<div class="lb-name">Player</div>' +
+      '<div class="lb-money">Total Earned</div>' +
+      '<div class="lb-level">Level</div>' +
       '<div class="lb-stars">⭐</div>' +
     '</div>';
 
@@ -1703,8 +1703,8 @@ function renderLeaderboard() {
       return '<div class="leaderboard-row ' + (isMe ? 'me' : '') + '">' +
         '<div class="lb-rank">' + rankDisplay + '</div>' +
         '<div class="lb-name">' +
-          '<div class="lb-username">' + escapeHtml(entry.username || 'Anónimo') + '</div>' +
-          '<div class="lb-gymname">' + escapeHtml(entry.gymName || 'Sin nombre') + '</div>' +
+          '<div class="lb-username">' + escapeHtml(entry.username || 'Anonymous') + '</div>' +
+          '<div class="lb-gymname">' + escapeHtml(entry.gymName || 'Unnamed') + '</div>' +
         '</div>' +
         '<div class="lb-money">' + fmtMoney(entry.totalMoneyEarned || 0) + '</div>' +
         '<div class="lb-level">' + (entry.level || 1) + '</div>' +
@@ -1713,15 +1713,15 @@ function renderLeaderboard() {
     }).join('');
 
     var refreshBtnHTML = '<div style="text-align:center;margin-top:12px;">' +
-      '<button class="btn btn-small btn-cyan" onclick="refreshLeaderboard()">🔄 ACTUALIZAR</button>' +
+      '<button class="btn btn-small btn-cyan" onclick="refreshLeaderboard()">🔄 REFRESH</button>' +
     '</div>';
 
     container.innerHTML = myRankHTML + headerHTML + rowsHTML + refreshBtnHTML;
   }).catch(function() {
     leaderboardLoading = false;
     container.innerHTML = '<div class="leaderboard-empty">' +
-      '<p style="color:var(--text-dim);">Error al cargar el ranking. Intentá de nuevo.</p>' +
-      '<button class="btn btn-small btn-cyan" onclick="refreshLeaderboard()" style="margin-top:8px;">🔄 REINTENTAR</button>' +
+      '<p style="color:var(--text-dim);">Error loading the ranking. Try again.</p>' +
+      '<button class="btn btn-small btn-cyan" onclick="refreshLeaderboard()" style="margin-top:8px;">🔄 RETRY</button>' +
     '</div>';
   });
 }
@@ -1828,16 +1828,16 @@ function _positionTutorialStep(step) {
 
   // Build tooltip content
   var isAction = step.action;
-  var actionHint = isAction ? '<div class="tutorial-action-hint">👆 Hacé clic en el área resaltada para continuar</div>' : '';
-  var nextBtn = isAction ? '' : '<button class="btn btn-small btn-buy" onclick="nextTutorialStep()">SIGUIENTE →</button>';
+  var actionHint = isAction ? '<div class="tutorial-action-hint">👆 Click the highlighted area to continue</div>' : '';
+  var nextBtn = isAction ? '' : '<button class="btn btn-small btn-buy" onclick="nextTutorialStep()">NEXT →</button>';
 
   tooltip.innerHTML =
-    '<div class="tutorial-step-indicator">Paso ' + (game.tutorialStep + 1) + ' de ' + TUTORIAL_STEPS.length + '</div>' +
+    '<div class="tutorial-step-indicator">Step ' + (game.tutorialStep + 1) + ' of ' + TUTORIAL_STEPS.length + '</div>' +
     '<h4>' + step.title + '</h4>' +
     '<p>' + step.text + '</p>' +
     actionHint +
     '<div class="tutorial-buttons">' +
-      '<button class="btn btn-small btn-red" onclick="endTutorial()">SALTAR</button>' +
+      '<button class="btn btn-small btn-red" onclick="endTutorial()">SKIP</button>' +
       nextBtn +
     '</div>';
 
@@ -1940,38 +1940,38 @@ function endTutorial() {
   // Return to gym tab
   switchTab('gym');
 
-  showToast('🎓', '¡Tutorial completado! ¡A construir tu imperio!');
+  showToast('🎓', 'Tutorial complete! Time to build your empire!');
   saveGame();
   setTimeout(showPrimerosPasosGuide, 700);
 }
 
-// ===== PRIMEROS PASOS GUIDE =====
+// ===== FIRST STEPS GUIDE =====
 function showPrimerosPasosGuide() {
   if (game.primerosPasosSeen) return;
   game.primerosPasosSeen = true;
   var card = document.getElementById('primerosPasosCard');
   if (!card) return;
   card.innerHTML =
-    '<div class="pp-title">🎯 PRIMEROS PASOS</div>' +
-    '<div class="pp-subtitle">Completaste el tutorial. Acá tus 3 primeros objetivos reales:</div>' +
+    '<div class="pp-title">🎯 FIRST STEPS</div>' +
+    '<div class="pp-subtitle">You finished the tutorial. Here are your first 3 real goals:</div>' +
     '<div class="pp-goals">' +
       '<div class="pp-goal">' +
         '<div class="pp-goal-icon">🏋️</div>' +
-        '<div class="pp-goal-text"><strong>Comprá más máquinas</strong><span>Cada equipo sube tu capacidad e ingresos por segundo</span></div>' +
-        '<button class="btn btn-buy pp-goal-btn" onclick="closePrimerosPasosGuide(\'equipment\')">Ir →</button>' +
+        '<div class="pp-goal-text"><strong>Buy more equipment</strong><span>Every machine raises your capacity and income per second</span></div>' +
+        '<button class="btn btn-buy pp-goal-btn" onclick="closePrimerosPasosGuide(\'equipment\')">Go →</button>' +
       '</div>' +
       '<div class="pp-goal">' +
         '<div class="pp-goal-icon">📢</div>' +
-        '<div class="pp-goal-text"><strong>Activá una campaña de Flyers</strong><span>La más barata: suma socios automáticamente todos los días</span></div>' +
-        '<button class="btn btn-buy pp-goal-btn" onclick="closePrimerosPasosGuide(\'marketing\')">Ir →</button>' +
+        '<div class="pp-goal-text"><strong>Turn on a Flyers campaign</strong><span>The cheapest one: adds members automatically every day</span></div>' +
+        '<button class="btn btn-buy pp-goal-btn" onclick="closePrimerosPasosGuide(\'marketing\')">Go →</button>' +
       '</div>' +
       '<div class="pp-goal">' +
         '<div class="pp-goal-icon">👥</div>' +
-        '<div class="pp-goal-text"><strong>Contratá un entrenador</strong><span>El personal sube tus ingresos y atrae más miembros</span></div>' +
-        '<button class="btn btn-buy pp-goal-btn" onclick="closePrimerosPasosGuide(\'staff\')">Ir →</button>' +
+        '<div class="pp-goal-text"><strong>Hire a trainer</strong><span>Staff raises your income and attracts more members</span></div>' +
+        '<button class="btn btn-buy pp-goal-btn" onclick="closePrimerosPasosGuide(\'staff\')">Go →</button>' +
       '</div>' +
     '</div>' +
-    '<button class="btn btn-small" style="width:100%;" onclick="closePrimerosPasosGuide(null)">¡Entendido, arrancamos!</button>';
+    '<button class="btn btn-small" style="width:100%;" onclick="closePrimerosPasosGuide(null)">Got it, let\'s go!</button>';
   document.getElementById('primerosPasosOverlay').classList.remove('hidden');
 }
 
@@ -1987,7 +1987,7 @@ var _walkthroughTabId = null;
 function showTabWalkthrough(tabId) {
   var wt = TAB_WALKTHROUGHS[tabId];
   if (!wt) return;
-  // No encimar: si ya hay un walkthrough abierto, no lo reemplaces (este tab queda sin ver y reaparece en la próxima visita)
+  // Don't stack: if a walkthrough is already open, don't replace it (this tab stays unseen and reappears on the next visit)
   var existingOv = document.getElementById('tabWalkthroughOverlay');
   if (existingOv && !existingOv.classList.contains('hidden')) return;
   _walkthroughTabId = tabId;
@@ -2002,8 +2002,8 @@ function showTabWalkthrough(tabId) {
     '<div class="walkthrough-intro">' + wt.intro + '</div>' +
     '<ul class="walkthrough-tips">' + tipsHTML + '</ul>' +
     '<div class="walkthrough-actions">' +
-      '<button class="btn btn-small walkthrough-wiki-btn" onclick="openWikiFromWalkthrough(\'' + (wt.wiki || tabId) + '\')">📖 Ver Wiki</button>' +
-      '<button class="btn btn-buy walkthrough-ok-btn" onclick="dismissTabWalkthrough(\'' + tabId + '\')">✅ Entendido</button>' +
+      '<button class="btn btn-small walkthrough-wiki-btn" onclick="openWikiFromWalkthrough(\'' + (wt.wiki || tabId) + '\')">📖 View Wiki</button>' +
+      '<button class="btn btn-buy walkthrough-ok-btn" onclick="dismissTabWalkthrough(\'' + tabId + '\')">✅ Got it</button>' +
     '</div>';
 
   document.getElementById('tabWalkthroughOverlay').classList.remove('hidden');
@@ -2109,7 +2109,7 @@ function researchSkill(skillId) {
 
   // Can't research if already researching something
   if (game.skillResearching && Date.now() < game.skillResearching.until) {
-    showToast('❌', '¡Ya tenés una investigación en curso!');
+    showToast('❌', 'You already have research in progress!');
     return;
   }
 
@@ -2122,8 +2122,8 @@ function researchSkill(skillId) {
     until: Date.now() + researchSeconds * 1000
   };
 
-  addLog('🔬 Investigando <span class="highlight">' + skill.name + '</span>... (' + fmtTime(researchSeconds) + ')');
-  showToast(skill.icon, 'Investigando: ' + skill.name + ' (' + fmtTime(researchSeconds) + ')');
+  addLog('🔬 Researching <span class="highlight">' + skill.name + '</span>... (' + fmtTime(researchSeconds) + ')');
+  showToast(skill.icon, 'Researching: ' + skill.name + ' (' + fmtTime(researchSeconds) + ')');
 
   renderSkillTree();
   saveGame();
@@ -2164,24 +2164,24 @@ function renderSkillTree() {
       html += '<div class="skill-node-desc">' + skill.desc + '</div>';
 
       if (owned) {
-        html += '<div class="skill-node-status" style="color:var(--green);">✅ Investigado</div>';
+        html += '<div class="skill-node-status" style="color:var(--green);">✅ Researched</div>';
       } else if (thisResearching) {
         var remaining = Math.max(0, Math.ceil((game.skillResearching.until - Date.now()) / 1000));
-        html += '<div class="skill-node-status" style="color:var(--cyan);">🔬 Investigando... ' + fmtTime(remaining) + '</div>';
+        html += '<div class="skill-node-status" style="color:var(--cyan);">🔬 Researching... ' + fmtTime(remaining) + '</div>';
         var totalTime = getSkillResearchTime(skill.cost);
         var elapsed = totalTime - remaining;
         var pct = Math.min(100, Math.round((elapsed / totalTime) * 100));
         html += '<div class="skill-progress-bar"><div class="skill-progress-fill" style="width:' + pct + '%;"></div></div>';
       } else if (!reqMet) {
-        html += '<div class="skill-node-status">🔒 Nivel ' + skill.reqLevel + '</div>';
+        html += '<div class="skill-node-status">🔒 Level ' + skill.reqLevel + '</div>';
       } else if (!depMet) {
-        html += '<div class="skill-node-status">🔒 Requiere: ' + branch.skills.find(s => s.id === skill.requires).name + '</div>';
+        html += '<div class="skill-node-status">🔒 Requires: ' + branch.skills.find(s => s.id === skill.requires).name + '</div>';
       } else if (isResearching) {
-        html += '<div class="skill-node-status" style="color:var(--text-muted);">⏳ Otra investigación en curso</div>';
+        html += '<div class="skill-node-status" style="color:var(--text-muted);">⏳ Other research in progress</div>';
         html += '<div style="font-size:12px;color:var(--text-dim);margin-top:4px;">' + fmtMoney(skill.cost) + ' · ' + fmtTime(getSkillResearchTime(skill.cost)) + '</div>';
       } else {
         var researchTime = getSkillResearchTime(skill.cost);
-        html += '<button class="btn btn-buy btn-small" ' + (canAfford ? '' : 'disabled') + ' onclick="researchSkill(\'' + skill.id + '\')">🔬 INVESTIGAR — ' + fmtMoney(skill.cost) + ' (' + fmtTime(researchTime) + ')</button>';
+        html += '<button class="btn btn-buy btn-small" ' + (canAfford ? '' : 'disabled') + ' onclick="researchSkill(\'' + skill.id + '\')">🔬 RESEARCH — ' + fmtMoney(skill.cost) + ' (' + fmtTime(researchTime) + ')</button>';
       }
 
       html += '</div>';
@@ -2211,7 +2211,7 @@ function buyZone(zoneId) {
   var activeBuilds = getActiveZoneBuilds();
   var maxBuilds = getMaxConcurrentUpgrades();
   if (activeBuilds >= maxBuilds) {
-    showToast('❌', '¡Ya hay ' + activeBuilds + ' construcción(es) en curso!');
+    showToast('❌', 'There are already ' + activeBuilds + ' construction(s) in progress!');
     return;
   }
 
@@ -2226,15 +2226,15 @@ function buyZone(zoneId) {
     if (!game.zoneBuilding) game.zoneBuilding = {};
     var buildDuration = Math.ceil(zone.buildTime * getSkillEffect('zoneBuildSpeedMult'));
     game.zoneBuilding[zoneId] = Date.now() + buildDuration * 1000;
-    addLog('🏗️ Construyendo <span class="highlight">' + zone.name + '</span> ' + zone.icon + ' (' + fmtTime(buildDuration) + ')');
-    showToast('🏗️', 'Construyendo ' + zone.name + '... ' + fmtTime(buildDuration));
+    addLog('🏗️ Building <span class="highlight">' + zone.name + '</span> ' + zone.icon + ' (' + fmtTime(buildDuration) + ')');
+    showToast('🏗️', 'Building ' + zone.name + '... ' + fmtTime(buildDuration));
   } else {
     // Instant (ground floor)
     game.zones[zoneId] = true;
     game.stats.zonesUnlocked++;
-    addLog('🏗️ Nueva zona: <span class="highlight">' + zone.name + '</span> ' + zone.icon);
-    showToast(zone.icon, '¡Zona desbloqueada: ' + zone.name + '!');
-    floatNumber('+' + zone.capacityBonus + ' capacidad', 'var(--accent)');
+    addLog('🏗️ New zone: <span class="highlight">' + zone.name + '</span> ' + zone.icon);
+    showToast(zone.icon, 'Zone unlocked: ' + zone.name + '!');
+    floatNumber('+' + zone.capacityBonus + ' capacity', 'var(--accent)');
     updateMembers();
   }
 
@@ -2269,7 +2269,7 @@ function renderExpansion() {
     let btnHTML = '';
     let cardExtra = '';
     if (owned) {
-      btnHTML = '<button class="btn btn-green" disabled>✅ DESBLOQUEADA</button>';
+      btnHTML = '<button class="btn btn-green" disabled>✅ UNLOCKED</button>';
     } else if (building) {
       var bldEnd = game.zoneBuilding[z.id];
       var bldDuration = z.buildTime * 1000;
@@ -2280,16 +2280,16 @@ function renderExpansion() {
       var bldMins = Math.floor(bldRemaining / 60);
       var bldSecs = bldRemaining % 60;
       var bldTimeStr = bldRemaining >= 3600 ? Math.floor(bldRemaining / 3600) + 'h ' + Math.floor((bldRemaining % 3600) / 60) + 'm' : bldMins + ':' + (bldSecs < 10 ? '0' : '') + bldSecs;
-      btnHTML = '<div class="zone-build-badge">🏗️ EN CONSTRUCCIÓN</div>';
+      btnHTML = '<div class="zone-build-badge">🏗️ UNDER CONSTRUCTION</div>';
       btnHTML += '<div class="equip-repair-bar"><div class="equip-upgrade-fill" style="width:' + bldPct + '%"></div></div>';
-      btnHTML += '<div class="equip-upgrade-time">Listo en ' + bldTimeStr + '</div>';
+      btnHTML += '<div class="equip-upgrade-time">Ready in ' + bldTimeStr + '</div>';
       cardExtra = ' building';
     } else if (locked) {
-      btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;">🔒 Requiere Nivel ' + z.reqLevel + '</div>';
+      btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;">🔒 Requires Level ' + z.reqLevel + '</div>';
     } else {
       var adjustedBuildTime = Math.ceil(z.buildTime * getSkillEffect('zoneBuildSpeedMult'));
       var timeStr = adjustedBuildTime >= 3600 ? Math.floor(adjustedBuildTime / 3600) + 'h' : Math.floor(adjustedBuildTime / 60) + 'min';
-      btnHTML = '<button class="btn btn-buy" ' + (canAfford ? '' : 'disabled') + ' onclick="buyZone(\'' + z.id + '\')">🏗️ CONSTRUIR — ' + fmtMoney(adjustedCost) + (z.buildTime > 0 ? ' (' + timeStr + ')' : '') + '</button>';
+      btnHTML = '<button class="btn btn-buy" ' + (canAfford ? '' : 'disabled') + ' onclick="buyZone(\'' + z.id + '\')">🏗️ BUILD — ' + fmtMoney(adjustedCost) + (z.buildTime > 0 ? ' (' + timeStr + ')' : '') + '</button>';
     }
 
     cardsHTML += '<div class="expansion-card ' + (owned ? 'owned' : '') + (locked && !owned && !building ? ' locked' : '') + cardExtra + '">';
@@ -2297,7 +2297,7 @@ function renderExpansion() {
     cardsHTML += '<div class="expansion-card-name">' + z.name + '</div>';
     cardsHTML += '<div class="expansion-card-desc">' + z.desc + '</div>';
     cardsHTML += '<div class="expansion-card-stats">';
-    cardsHTML += '<span>📦 +' + z.capacityBonus + ' capacidad</span>';
+    cardsHTML += '<span>📦 +' + z.capacityBonus + ' capacity</span>';
     cardsHTML += '<span>💰 +' + fmtMoney(z.incomeBonus) + '/s</span>';
     cardsHTML += '</div>';
     cardsHTML += btnHTML;
@@ -2317,18 +2317,18 @@ function renderExpansion() {
     rentDaily += extraZ * OPERATING_COSTS.rentPerExtraZone;
   }
   propertyHTML = '<div class="expansion-property">';
-  propertyHTML += '<div class="section-title" style="font-size:16px;margin-top:16px;">🏠 Propiedad del Local</div>';
+  propertyHTML += '<div class="section-title" style="font-size:16px;margin-top:16px;">🏠 Property Ownership</div>';
   if (game.ownProperty) {
-    propertyHTML += '<p style="color:var(--green);text-align:center;">✅ Sos dueño del local. No pagás alquiler.</p>';
+    propertyHTML += '<p style="color:var(--green);text-align:center;">✅ You own the property. No rent to pay.</p>';
   } else if (propLocked) {
-    propertyHTML += '<p style="color:var(--text-muted);text-align:center;">🔒 Requiere Nivel ' + OPERATING_COSTS.propertyReqLevel + ' para comprar el local.</p>';
-    propertyHTML += '<p style="color:var(--red);text-align:center;font-size:13px;">Alquiler actual: ' + fmtMoney(rentDaily) + '/día</p>';
+    propertyHTML += '<p style="color:var(--text-muted);text-align:center;">🔒 Requires Level ' + OPERATING_COSTS.propertyReqLevel + ' to buy the property.</p>';
+    propertyHTML += '<p style="color:var(--red);text-align:center;font-size:13px;">Current rent: ' + fmtMoney(rentDaily) + '/day</p>';
   } else {
-    propertyHTML += '<p style="color:var(--text-dim);text-align:center;font-size:13px;">Comprá el local y dejá de pagar alquiler (' + fmtMoney(rentDaily) + '/día).</p>';
+    propertyHTML += '<p style="color:var(--text-dim);text-align:center;font-size:13px;">Buy the property and stop paying rent (' + fmtMoney(rentDaily) + '/day).</p>';
     var canAffordProp = game.money >= OPERATING_COSTS.propertyPrice;
-    propertyHTML += '<div style="text-align:center;"><button class="btn btn-buy" ' + (canAffordProp ? '' : 'disabled') + ' onclick="buyProperty()">🏠 COMPRAR LOCAL — ' + fmtMoney(OPERATING_COSTS.propertyPrice) + '</button></div>';
+    propertyHTML += '<div style="text-align:center;"><button class="btn btn-buy" ' + (canAffordProp ? '' : 'disabled') + ' onclick="buyProperty()">🏠 BUY PROPERTY — ' + fmtMoney(OPERATING_COSTS.propertyPrice) + '</button></div>';
   }
-  propertyHTML += '<p style="color:var(--text-dim);text-align:center;font-size:12px;margin-top:8px;">Gastos operativos totales: ' + fmtMoney(opDaily) + '/día (alquiler + servicios)</p>';
+  propertyHTML += '<p style="color:var(--text-dim);text-align:center;font-size:12px;margin-top:8px;">Total operating costs: ' + fmtMoney(opDaily) + '/day (rent + utilities)</p>';
   propertyHTML += '</div>';
 
   container.innerHTML = mapHTML + cardsHTML + propertyHTML;
@@ -2345,7 +2345,7 @@ function checkVipSpawn() {
   // Neighborhood VIP chance multiplier (higher mult = shorter wait)
   var hood = typeof getActiveNeighborhood === 'function' ? getActiveNeighborhood() : null;
   if (hood && hood.vipChanceMult > 0) baseVipTimer = Math.floor(baseVipTimer / hood.vipChanceMult);
-  // Fama: perk "Imán de Famosos" acelera la aparición de VIPs (+15%/nivel)
+  // Fame: "Celebrity Magnet" perk speeds up VIP appearances (+15%/level)
   baseVipTimer = Math.floor(baseVipTimer / (1 + getFamePerkEffect('vipspeed')));
   game.nextVipIn = Math.max(60, baseVipTimer); // minimum 1 min
 
@@ -2367,8 +2367,8 @@ function checkVipSpawn() {
     accepted: false
   });
 
-  addLog('⭐ VIP: <span class="highlight">' + vip.name + '</span> quiere unirse! "' + vip.request + '"');
-  showToast(vip.icon, '¡VIP: ' + vip.name + ' quiere unirse!');
+  addLog('⭐ VIP: <span class="highlight">' + vip.name + '</span> wants to join! "' + vip.request + '"');
+  showToast(vip.icon, 'VIP: ' + vip.name + ' wants to join!');
 
   renderVipMembers();
   updateTabNotifications();
@@ -2380,7 +2380,7 @@ function checkVipExpiry() {
   expired.forEach(v => {
     const vipDef = VIP_MEMBERS.find(vd => vd.id === v.id);
     if (vipDef) {
-      addLog('😔 VIP <span class="highlight">' + vipDef.name + '</span> se fue... no cumplías sus requisitos.', 'critical');
+      addLog('😔 VIP <span class="highlight">' + vipDef.name + '</span> left... you didn\'t meet their requirements.', 'critical');
     }
   });
 
@@ -2424,14 +2424,14 @@ function acceptVip(vipId) {
   });
 
   if (!meetsReqs) {
-    showToast('❌', '¡No cumplís los requisitos del VIP!');
+    showToast('❌', 'You don\'t meet the VIP\'s requirements!');
     return;
   }
 
   vipState.accepted = true;
 
   const prestigeMult = 1 + (game.prestigeStars * 0.25);
-  // Fama: unlock "Salón VIP Exclusivo" → +50% a todo lo que rinde el VIP
+  // Fame: unlock "Exclusive VIP Lounge" → +50% to everything the VIP yields
   const salonMult = (game.fameUnlocks && game.fameUnlocks.unlock_vipsalon) ? 1.5 : 1;
   const vipMult = getSkillEffect('vipRewardMult') * salonMult;
   const moneyReward = Math.ceil(vipDef.reward.money * prestigeMult * vipMult);
@@ -2445,8 +2445,8 @@ function acceptVip(vipId) {
   game.dailyTracking.reputationGained += vipDef.reward.rep;
   game.dailyTracking.xpEarned += vipDef.reward.xp;
 
-  addLog('⭐ VIP <span class="highlight">' + vipDef.name + '</span> aceptado! +<span class="money-log">' + fmtMoney(moneyReward) + '</span> +' + vipDef.reward.rep + '⭐', 'important');
-  showToast(vipDef.icon, '¡VIP ' + vipDef.name + ' se unió!');
+  addLog('⭐ VIP <span class="highlight">' + vipDef.name + '</span> accepted! +<span class="money-log">' + fmtMoney(moneyReward) + '</span> +' + vipDef.reward.rep + '⭐', 'important');
+  showToast(vipDef.icon, 'VIP ' + vipDef.name + ' joined!');
   floatNumber('+' + fmtMoney(moneyReward));
 
   renderVipMembers();
@@ -2463,7 +2463,7 @@ function renderVipMembers() {
   const vips = game.vipMembers || [];
 
   if (vips.length === 0) {
-    container.innerHTML = '<div class="vip-empty"><div style="font-size:40px;margin-bottom:12px;">👀</div><p style="color:var(--text-dim);">No hay miembros VIP esperando. Aparecen cada 4-7 minutos.<br>Mientras más equipamiento y zonas tengas, más VIPs podés satisfacer.</p></div>';
+    container.innerHTML = '<div class="vip-empty"><div style="font-size:40px;margin-bottom:12px;">👀</div><p style="color:var(--text-dim);">No VIP members waiting. They show up every 4-7 minutes.<br>The more equipment and zones you have, the more VIPs you can satisfy.</p></div>';
     return;
   }
 
@@ -2525,12 +2525,12 @@ function renderVipMembers() {
     }
 
     html += '<div class="vip-reward">💰 ' + fmtMoney(vipDef.reward.money) + ' · ⭐ ' + vipDef.reward.rep + ' · ✨ ' + vipDef.reward.xp + ' XP</div>';
-    html += '<div class="vip-timer">' + (v.accepted ? '✅ Miembro activo' : '⏱️ Se va en: ' + fmtTime(timeLeft)) + '</div>';
+    html += '<div class="vip-timer">' + (v.accepted ? '✅ Active member' : '⏱️ Leaves in: ' + fmtTime(timeLeft)) + '</div>';
     html += '</div>';
 
     if (!v.accepted) {
       html += '<button class="btn ' + (allMet ? 'btn-buy' : 'btn-red') + ' btn-small" onclick="acceptVip(\'' + v.id + '\')">';
-      html += allMet ? '✅ ACEPTAR' : '❌ NO CUMPLÍS';
+      html += allMet ? '✅ ACCEPT' : '❌ NOT MET';
       html += '</button>';
     }
 
@@ -2842,10 +2842,10 @@ function renderChampion() {
     container.innerHTML =
       '<div class="champion-locked-panel">' +
         '<div style="font-size:64px;margin-bottom:16px;">🏅</div>' +
-        '<h3 style="margin:0 0 8px;">Sistema de Campeón</h3>' +
-        '<p style="color:var(--text-dim);margin:0 0 12px;">Desbloqueá en <strong>Nivel ' + CHAMPION_UNLOCK_LEVEL + '</strong>. Estás en Nivel ' + game.level + '.</p>' +
+        '<h3 style="margin:0 0 8px;">Champion System</h3>' +
+        '<p style="color:var(--text-dim);margin:0 0 12px;">Unlocks at <strong>Level ' + CHAMPION_UNLOCK_LEVEL + '</strong>. You\'re at Level ' + game.level + '.</p>' +
         '<div class="champ-progress-bar"><div class="champ-progress-fill" style="width:' + pct + '%"></div></div>' +
-        '<p style="color:var(--text-muted);font-size:12px;margin-top:8px;">Nivel ' + game.level + ' / ' + CHAMPION_UNLOCK_LEVEL + '</p>' +
+        '<p style="color:var(--text-muted);font-size:12px;margin-top:8px;">Level ' + game.level + ' / ' + CHAMPION_UNLOCK_LEVEL + '</p>' +
       '</div>' +
       renderNormalCompetitions();
     return;
@@ -2857,10 +2857,10 @@ function renderChampion() {
     container.innerHTML =
       '<div class="champion-locked-panel">' +
         '<div style="font-size:64px;margin-bottom:16px;">🥊</div>' +
-        '<h3 style="margin:0 0 8px;">Reclutá tu Campeón</h3>' +
-        '<p style="color:var(--text-dim);margin:0 0 8px;">Un peleador élite busca entrenador. Dirigilo, entrenalo y llevalo a la gloria.</p>' +
-        '<p style="color:var(--text-muted);font-size:13px;margin:0 0 16px;">Con campeón ganás el doble en todas las competencias.</p>' +
-        '<button class="btn btn-buy" style="font-size:16px;padding:14px 28px;" ' + (canAfford ? '' : 'disabled') + ' onclick="recruitChampion()">🏅 RECLUTAR — ' + fmtMoney(CHAMPION_RECRUIT_COST) + '</button>' +
+        '<h3 style="margin:0 0 8px;">Recruit Your Champion</h3>' +
+        '<p style="color:var(--text-dim);margin:0 0 8px;">An elite fighter is looking for a coach. Manage them, train them, and lead them to glory.</p>' +
+        '<p style="color:var(--text-muted);font-size:13px;margin:0 0 16px;">With a champion you earn double in every competition.</p>' +
+        '<button class="btn btn-buy" style="font-size:16px;padding:14px 28px;" ' + (canAfford ? '' : 'disabled') + ' onclick="recruitChampion()">🏅 RECRUIT — ' + fmtMoney(CHAMPION_RECRUIT_COST) + '</button>' +
       '</div>' +
       renderNormalCompetitions();
     return;
@@ -2883,18 +2883,18 @@ function renderChampion() {
 
   var html = '';
 
-  // ===== FICHA DEL CAMPEÓN =====
+  // ===== CHAMPION SHEET =====
   html += '<div class="champ-sheet">';
 
   // Header: name + level + record
   html += '<div class="champ-header">';
   html += '<div class="champ-name-row">';
-  html += '<span class="champ-name-display" id="champNameDisplay">' + (game.champion.name || 'Campeón') + '</span>';
-  html += '<button class="btn-icon" onclick="showChampionRename()" title="Cambiar nombre">✏️</button>';
+  html += '<span class="champ-name-display" id="champNameDisplay">' + (game.champion.name || 'Champion') + '</span>';
+  html += '<button class="btn-icon" onclick="showChampionRename()" title="Change name">✏️</button>';
   html += '</div>';
   html += '<div class="champ-meta">';
-  html += '<span class="champ-level-badge">🏅 NIV. ' + game.champion.level + '</span>';
-  html += '<span class="champ-record">🏆 ' + game.champion.wins + 'V · ' + game.champion.losses + 'D</span>';
+  html += '<span class="champ-level-badge">🏅 LV. ' + game.champion.level + '</span>';
+  html += '<span class="champ-record">🏆 ' + game.champion.wins + 'W · ' + game.champion.losses + 'L</span>';
   html += '<span class="champ-total-stat">📊 Total: ' + totalStats + '</span>';
   html += '</div>';
   html += '<div class="champ-xp-row">';
@@ -2905,13 +2905,13 @@ function renderChampion() {
 
   // Inline rename form (hidden by default)
   html += '<div class="champ-rename-form hidden" id="champRenameForm">' +
-    '<input class="champ-rename-input" id="champRenameInput" type="text" maxlength="20" placeholder="Nombre del campeón" value="' + (game.champion.name || 'Campeón') + '">' +
-    '<button class="btn btn-small btn-cyan" onclick="saveChampionRename()">✅ Guardar</button>' +
+    '<input class="champ-rename-input" id="champRenameInput" type="text" maxlength="20" placeholder="Champion name" value="' + (game.champion.name || 'Champion') + '">' +
+    '<button class="btn btn-small btn-cyan" onclick="saveChampionRename()">✅ Save</button>' +
     '<button class="btn btn-small" onclick="cancelChampionRename()">✖</button>' +
   '</div>';
 
-  // ===== ESTADÍSTICAS =====
-  html += '<div class="champ-section-title">📊 Estadísticas</div>';
+  // ===== STATS =====
+  html += '<div class="champ-section-title">📊 Stats</div>';
   html += '<div class="champ-stats-list">';
   CHAMPION_STATS.forEach(function(stat) {
     var base = game.champion.stats[stat] || 1;
@@ -2928,7 +2928,7 @@ function renderChampion() {
     // Icon + name + description
     html += '<div class="champ-stat-left">';
     html += '<div class="champ-stat-label">' + CHAMPION_STAT_ICONS[stat] + ' <strong>' + CHAMPION_STAT_NAMES[stat] + '</strong>';
-    if (bonus > 0) html += ' <span class="champ-stat-bonus">+' + bonus + ' (equipo)</span>';
+    if (bonus > 0) html += ' <span class="champ-stat-bonus">+' + bonus + ' (gear)</span>';
     html += '</div>';
     html += '<div class="champ-stat-desc">' + CHAMPION_STAT_DESC[stat] + '</div>';
     html += '<div class="champ-stat-bar-row">';
@@ -2946,12 +2946,12 @@ function renderChampion() {
       var remaining = Math.max(0, Math.ceil((game.champion.trainingUntil - now) / 1000));
       html += '<div class="champ-training-active">';
       html += '<div class="champ-train-bar"><div class="champ-train-fill" style="width:' + pct + '%"></div></div>';
-      html += '<div class="champ-train-time">Entrenando... ' + fmtTime(remaining) + '</div>';
+      html += '<div class="champ-train-time">Training... ' + fmtTime(remaining) + '</div>';
       html += '</div>';
     } else {
       html += '<button class="btn btn-buy btn-small champ-train-btn" ' + (canTrain ? '' : 'disabled') +
         ' onclick="trainChampion(\'' + stat + '\')">' +
-        '📚 ENTRENAR<br><span style="font-size:11px;">' + fmtMoney(cost) + ' · ' + fmtTime(duration) + '</span>' +
+        '📚 TRAIN<br><span style="font-size:11px;">' + fmtMoney(cost) + ' · ' + fmtTime(duration) + '</span>' +
         '</button>';
     }
     html += '</div>';
@@ -2959,52 +2959,52 @@ function renderChampion() {
   });
   html += '</div>'; // champ-stats-list
 
-  // ===== ESTADO FÍSICO (FATIGA) =====
-  html += '<div class="champ-section-title">⚡ Estado Físico</div>';
-  // Banner de lesión (recomponerse tras un Gran Torneo) o concentración
+  // ===== PHYSICAL STATE (FATIGUE) =====
+  html += '<div class="champ-section-title">⚡ Physical State</div>';
+  // Injury banner (recovering after a Grand Tournament) or training camp
   if (injured) {
     var injSecs = getChampionInjurySecondsLeft();
     html += '<div class="champ-injury-banner">' +
       '<span style="font-size:22px;">🤕</span>' +
-      '<div><div style="font-weight:700;color:var(--red);">LESIONADO</div>' +
-      '<div style="font-size:12px;color:var(--text-dim);">Recuperándose ~' + fmtTime(injSecs) + '. No puede entrenar ni competir. Mejorá Resistencia y llevá el Kit Médico para reducir el riesgo.</div></div>' +
+      '<div><div style="font-weight:700;color:var(--red);">INJURED</div>' +
+      '<div style="font-size:12px;color:var(--text-dim);">Recovering ~' + fmtTime(injSecs) + '. Can\'t train or compete. Improve Endurance and bring the Medical Kit to lower the risk.</div></div>' +
     '</div>';
   } else if (inCamp) {
     var camp = getChampionBusyState();
     html += '<div class="champ-camp-banner">' +
       '<span style="font-size:22px;">🏕️</span>' +
-      '<div><div style="font-weight:700;color:var(--cyan);">EN CONCENTRACIÓN</div>' +
-      '<div style="font-size:12px;color:var(--text-dim);">Pretemporada en curso ~' + fmtTime(camp.secs) + '. Al terminar suma Preparación para el Gran Torneo.</div></div>' +
+      '<div><div style="font-weight:700;color:var(--cyan);">IN TRAINING CAMP</div>' +
+      '<div style="font-size:12px;color:var(--text-dim);">Preseason in progress ~' + fmtTime(camp.secs) + '. When it ends it adds Readiness for the Grand Tournament.</div></div>' +
     '</div>';
   }
   html += '<div class="champ-fatigue-panel">';
   var stateLabel, stateColor;
-  if (isExhausted) { stateLabel = '⚠️ AGOTADO'; stateColor = 'var(--red)'; }
-  else if (fatigePct >= 50) { stateLabel = '😓 CANSADO'; stateColor = 'var(--accent)'; }
-  else if (fatigePct >= 20) { stateLabel = '💪 ACTIVO'; stateColor = 'var(--cyan)'; }
-  else { stateLabel = '✅ DESCANSADO'; stateColor = 'var(--green)'; }
+  if (isExhausted) { stateLabel = '⚠️ EXHAUSTED'; stateColor = 'var(--red)'; }
+  else if (fatigePct >= 50) { stateLabel = '😓 TIRED'; stateColor = 'var(--accent)'; }
+  else if (fatigePct >= 20) { stateLabel = '💪 ACTIVE'; stateColor = 'var(--cyan)'; }
+  else { stateLabel = '✅ RESTED'; stateColor = 'var(--green)'; }
 
   html += '<div class="champ-fatigue-header">';
   html += '<span style="color:' + stateColor + ';font-weight:700;">' + stateLabel + '</span>';
-  html += '<span class="champ-fatigue-num" style="color:' + fatigueColor + ';">Fatiga: ' + fatigue + '/' + CHAMPION_MAX_FATIGUE + '</span>';
+  html += '<span class="champ-fatigue-num" style="color:' + fatigueColor + ';">Fatigue: ' + fatigue + '/' + CHAMPION_MAX_FATIGUE + '</span>';
   html += '</div>';
   html += '<div class="champ-fatigue-bar"><div class="champ-fatigue-fill" style="width:' + fatigePct + '%;background:' + fatigueColor + ';"></div></div>';
   if (fatigue > 0) {
-    html += '<div class="champ-fatigue-recovery">⏱️ Recuperación: ~' + fmtTime(recoveryTimeSec) + ' restantes · mejorá Stamina para acelerar</div>';
+    html += '<div class="champ-fatigue-recovery">⏱️ Recovery: ~' + fmtTime(recoveryTimeSec) + ' left · improve Stamina to speed it up</div>';
   } else {
-    html += '<div class="champ-fatigue-recovery" style="color:var(--green);">Listo para entrenar y competir</div>';
+    html += '<div class="champ-fatigue-recovery" style="color:var(--green);">Ready to train and compete</div>';
   }
   if (isExhausted) {
     var fp = typeof getChampionFatiguePenalty === 'function' ? getChampionFatiguePenalty() : { label: null };
-    html += '<div class="champ-exhausted-msg">⚠️ ' + (fp.label || 'Muy cansado') + ' — entrenar y competir con penalidad. Descansá para recuperar efectividad.</div>';
+    html += '<div class="champ-exhausted-msg">⚠️ ' + (fp.label || 'Very tired') + ' — training and competing comes with a penalty. Rest to recover effectiveness.</div>';
   }
   html += '</div>'; // champ-fatigue-panel
 
-  // ===== EQUIPAMIENTO =====
-  html += '<div class="champ-section-title">🛡️ Equipamiento</div>';
+  // ===== GEAR =====
+  html += '<div class="champ-section-title">🛡️ Gear</div>';
   html += '<div class="champion-equip-grid">';
   var slots = ['head', 'hands', 'waist', 'feet'];
-  var slotNames = { head: 'Cabeza', hands: 'Manos', waist: 'Cintura', feet: 'Pies' };
+  var slotNames = { head: 'Head', hands: 'Hands', waist: 'Waist', feet: 'Feet' };
   var slotIcons = { head: '🧢', hands: '🧤', waist: '🥋', feet: '👟' };
 
   slots.forEach(function(slot) {
@@ -3020,7 +3020,7 @@ function renderChampion() {
       html += '<div class="champion-equipped-item">' + equipped.icon + ' ' + equipped.name + '</div>';
       html += '<div class="champion-equip-stats">' + eqStats + '</div>';
     } else {
-      html += '<div class="champion-empty-slot">— Vacío —</div>';
+      html += '<div class="champion-empty-slot">— Empty —</div>';
     }
     var available = CHAMPION_EQUIPMENT.filter(function(e) {
       return e.slot === slot && e.id !== equippedId && game.champion.level >= e.reqChampLevel;
@@ -3037,14 +3037,14 @@ function renderChampion() {
       return e.slot === slot && e.id !== equippedId && game.champion.level < e.reqChampLevel;
     });
     if (lockedItems.length > 0) {
-      html += '<div style="color:var(--text-muted);font-size:11px;margin-top:4px;">🔒 Más items en nivel ' + lockedItems[0].reqChampLevel + '</div>';
+      html += '<div style="color:var(--text-muted);font-size:11px;margin-top:4px;">🔒 More items at level ' + lockedItems[0].reqChampLevel + '</div>';
     }
     html += '</div>';
   });
   html += '</div>'; // champion-equip-grid
 
-  // ===== COMPETENCIAS =====
-  html += '<div class="champ-section-title">⚔️ Competencias <span style="font-size:13px;color:var(--cyan);font-weight:400;">— tu campeón gana el doble</span></div>';
+  // ===== COMPETITIONS =====
+  html += '<div class="champ-section-title">⚔️ Competitions <span style="font-size:13px;color:var(--cyan);font-weight:400;">— your champion earns double</span></div>';
   html += '<div class="champion-comp-list">';
 
   COMPETITIONS.forEach(function(c) {
@@ -3075,7 +3075,7 @@ function renderChampion() {
     } else {
       var penaltyLine = fp.label ? '<br><span style="font-size:10px;color:var(--accent);">' + fp.label + '</span>' : '';
       actionHTML = '<button class="btn btn-buy btn-small" ' + (canCompete ? '' : 'disabled') +
-        ' onclick="championCompete(\'' + c.id + '\')">🏅 COMPETIR<br><span style="font-size:10px;opacity:0.8;">-' + fatigueCost + ' fatiga</span>' + penaltyLine + '</button>';
+        ' onclick="championCompete(\'' + c.id + '\')">🏅 COMPETE<br><span style="font-size:10px;opacity:0.8;">-' + fatigueCost + ' fatigue</span>' + penaltyLine + '</button>';
     }
 
     html += '<div class="champion-comp-row' + (locked ? ' locked' : '') + '">' +
@@ -3084,7 +3084,7 @@ function renderChampion() {
         '<div>' +
           '<div class="champion-comp-name">' + c.name + '</div>' +
           '<div style="font-size:11px;color:var(--text-muted);">' + c.desc + '</div>' +
-          (state.wins + state.losses > 0 ? '<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Récord: ' + state.wins + 'V · ' + state.losses + 'D</div>' : '') +
+          (state.wins + state.losses > 0 ? '<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">Record: ' + state.wins + 'W · ' + state.losses + 'L</div>' : '') +
         '</div>' +
       '</div>' +
       '<div class="champion-comp-details">' +
@@ -3099,7 +3099,7 @@ function renderChampion() {
   });
   html += '</div>'; // champion-comp-list
 
-  // ===== GRANDES TORNEOS (circuito de alto riesgo) =====
+  // ===== GRAND TOURNAMENTS (high-risk circuit) =====
   html += renderGrandTournaments(champBusy, injured, inCamp, now);
 
   html += '</div>'; // champ-sheet
@@ -3107,11 +3107,11 @@ function renderChampion() {
   container.innerHTML = html;
 }
 
-// Sección del circuito de Grandes Torneos: prep (Preparación%) → competir → cooldown de días → lesión
+// Grand Tournaments circuit section: prep (Readiness%) → compete → multi-day cooldown → injury
 function renderGrandTournaments(champBusy, injured, inCamp, now) {
   var html = '';
-  html += '<div class="champ-section-title">🌟 Grandes Torneos <span style="font-size:13px;color:var(--cyan);font-weight:400;">— golpes grandes: prepará, arriesgá, esperá días</span></div>';
-  html += '<p style="font-size:12px;color:var(--text-muted);margin:0 0 12px;">Eventos raros de altísima recompensa. Juntá la preparación antes de entrar: más Preparación = más chance de ganar y menos riesgo de lesión.</p>';
+  html += '<div class="champ-section-title">🌟 Grand Tournaments <span style="font-size:13px;color:var(--cyan);font-weight:400;">— big scores: prepare, risk it, wait days</span></div>';
+  html += '<p style="font-size:12px;color:var(--text-muted);margin:0 0 12px;">Rare, sky-high reward events. Stack up your readiness before going in: more Readiness = higher win chance and lower injury risk.</p>';
   html += '<div class="grand-list">';
 
   GRAND_TOURNAMENTS.forEach(function(t) {
@@ -3137,28 +3137,28 @@ function renderGrandTournaments(champBusy, injured, inCamp, now) {
     html += '<div class="grand-head-info">';
     html += '<div class="grand-name">' + t.name + '</div>';
     html += '<div class="grand-desc">' + t.desc + '</div>';
-    html += '<div class="grand-meta">⏱️ Cooldown ' + fmtTime(t.cooldown) + ' · 🎫 Inscripción ' + fmtMoney(t.entryFee) +
-      (state.wins + state.losses > 0 ? ' · 🏆 ' + state.wins + 'V·' + state.losses + 'D' : '') + '</div>';
+    html += '<div class="grand-meta">⏱️ Cooldown ' + fmtTime(t.cooldown) + ' · 🎫 Entry ' + fmtMoney(t.entryFee) +
+      (state.wins + state.losses > 0 ? ' · 🏆 ' + state.wins + 'W·' + state.losses + 'L' : '') + '</div>';
     html += '</div>';
     html += '</div>';
 
     if (locked) {
-      html += '<div class="grand-locked-msg">🔒 Requisito: <strong>' + lockReason + '</strong></div>';
+      html += '<div class="grand-locked-msg">🔒 Requirement: <strong>' + lockReason + '</strong></div>';
       html += '</div>'; // grand-card
       return;
     }
 
     // Reward + odds row
     html += '<div class="grand-stats-row">';
-    html += '<div class="grand-stat"><span class="grand-stat-lbl">Premio (victoria)</span><span class="grand-stat-val" style="color:var(--accent);">' + fmtMoney(rewardMoney) + ' · +' + Math.ceil(t.reward.rep) + '⭐</span></div>';
-    html += '<div class="grand-stat"><span class="grand-stat-lbl">Chance de ganar</span><span class="grand-stat-val" style="color:' + winColor + ';">' + Math.round(winChance * 100) + '%</span></div>';
-    html += '<div class="grand-stat"><span class="grand-stat-lbl">Riesgo de lesión</span><span class="grand-stat-val" style="color:' + injColor + ';">' + Math.round(injuryChance * 100) + '%</span></div>';
+    html += '<div class="grand-stat"><span class="grand-stat-lbl">Reward (win)</span><span class="grand-stat-val" style="color:var(--accent);">' + fmtMoney(rewardMoney) + ' · +' + Math.ceil(t.reward.rep) + '⭐</span></div>';
+    html += '<div class="grand-stat"><span class="grand-stat-lbl">Win chance</span><span class="grand-stat-val" style="color:' + winColor + ';">' + Math.round(winChance * 100) + '%</span></div>';
+    html += '<div class="grand-stat"><span class="grand-stat-lbl">Injury risk</span><span class="grand-stat-val" style="color:' + injColor + ';">' + Math.round(injuryChance * 100) + '%</span></div>';
     html += '</div>';
 
     // Readiness bar
     var readyColor = readiness >= 80 ? 'var(--green)' : readiness >= 40 ? 'var(--accent)' : 'var(--red)';
     html += '<div class="grand-ready-row">';
-    html += '<span style="font-size:12px;color:var(--text-dim);">Preparación</span>';
+    html += '<span style="font-size:12px;color:var(--text-dim);">Readiness</span>';
     html += '<div class="grand-ready-bar"><div class="grand-ready-fill" style="width:' + readiness + '%;background:' + readyColor + ';"></div></div>';
     html += '<span style="font-size:12px;font-weight:700;color:' + readyColor + ';">' + readiness + '%</span>';
     html += '</div>';
@@ -3172,7 +3172,7 @@ function renderGrandTournaments(champBusy, injured, inCamp, now) {
       var canAfford = game.money >= cost;
       var statusHtml;
       if (done) {
-        statusHtml = '<span class="grand-prep-done">✅ Listo</span>';
+        statusHtml = '<span class="grand-prep-done">✅ Done</span>';
       } else if (isCampRunning) {
         var left = Math.ceil((prep.concentracionUntil - now) / 1000);
         statusHtml = '<span class="grand-prep-running">⏳ ' + fmtTime(left) + '</span>';
@@ -3182,7 +3182,7 @@ function renderGrandTournaments(champBusy, injured, inCamp, now) {
           ' onclick="buyGrandPrep(\'' + t.id + '\',\'' + it.id + '\')">' + fmtMoney(cost) + '</button>';
       }
       html += '<div class="grand-prep-item' + (done ? ' done' : '') + '">' +
-        '<div class="grand-prep-top"><span>' + it.icon + ' <strong>' + it.name + '</strong>' + (it.required ? ' <span style="color:var(--red);font-size:10px;">*obligatorio</span>' : '') + '</span>' +
+        '<div class="grand-prep-top"><span>' + it.icon + ' <strong>' + it.name + '</strong>' + (it.required ? ' <span style="color:var(--red);font-size:10px;">*required</span>' : '') + '</span>' +
         '<span style="font-size:11px;color:var(--cyan);">+' + it.readiness + '%</span></div>' +
         '<div class="grand-prep-desc">' + it.desc + '</div>' +
         '<div class="grand-prep-action">' + statusHtml + '</div>' +
@@ -3194,16 +3194,16 @@ function renderGrandTournaments(champBusy, injured, inCamp, now) {
     html += '<div class="grand-compete-row">';
     if (onCooldown) {
       var cd = Math.ceil((state.cooldownUntil - now) / 1000);
-      html += '<div class="grand-cooldown">⏱️ Próximo intento en <strong>' + fmtTime(cd) + '</strong></div>';
+      html += '<div class="grand-cooldown">⏱️ Next attempt in <strong>' + fmtTime(cd) + '</strong></div>';
     } else if (injured) {
-      html += '<div class="grand-cooldown" style="color:var(--red);">🤕 Tu campeón está lesionado</div>';
+      html += '<div class="grand-cooldown" style="color:var(--red);">🤕 Your champion is injured</div>';
     } else if (inCamp) {
-      html += '<div class="grand-cooldown" style="color:var(--cyan);">🏕️ Esperá a que termine la concentración</div>';
+      html += '<div class="grand-cooldown" style="color:var(--cyan);">🏕️ Wait for the training camp to finish</div>';
     } else {
       var canEnter = hasPasajes && game.money >= t.entryFee && !champBusy && (game.champion.fatigue || 0) < CHAMPION_FATIGUE_THRESHOLD;
-      var hint = !hasPasajes ? '✈️ Necesitás Pasajes y Visa' : game.money < t.entryFee ? '💸 Falta inscripción (' + fmtMoney(t.entryFee) + ')' : (game.champion.fatigue || 0) >= CHAMPION_FATIGUE_THRESHOLD ? '😴 Campeón agotado' : '';
+      var hint = !hasPasajes ? '✈️ You need Flights and Visa' : game.money < t.entryFee ? '💸 Missing entry fee (' + fmtMoney(t.entryFee) + ')' : (game.champion.fatigue || 0) >= CHAMPION_FATIGUE_THRESHOLD ? '😴 Champion exhausted' : '';
       html += '<button class="btn btn-buy grand-compete-btn" ' + (canEnter ? '' : 'disabled') +
-        ' onclick="attemptGrandTournament(\'' + t.id + '\')">🥊 COMPETIR — ' + fmtMoney(t.entryFee) + '</button>';
+        ' onclick="attemptGrandTournament(\'' + t.id + '\')">🥊 COMPETE — ' + fmtMoney(t.entryFee) + '</button>';
       if (hint) html += '<span class="grand-hint">' + hint + '</span>';
     }
     html += '</div>';
@@ -3215,7 +3215,7 @@ function renderGrandTournaments(champBusy, injured, inCamp, now) {
   return html;
 }
 
-// Modal de resultado de un Gran Torneo (reusa el overlay de eventos)
+// Grand Tournament result modal (reuses the events overlay)
 function showGrandResult(r) {
   var overlay = document.getElementById('eventOverlay');
   var card = document.getElementById('eventCard');
@@ -3223,26 +3223,26 @@ function showGrandResult(r) {
   var t = r.tournament;
 
   var headIcon, headTitle, headColor;
-  if (r.won && !r.injured) { headIcon = '🏆'; headTitle = '¡VICTORIA GLORIOSA!'; headColor = 'var(--green)'; }
-  else if (r.won && r.injured) { headIcon = '🏆🤕'; headTitle = '¡Ganaste, pero quedaste lesionado!'; headColor = 'var(--accent)'; }
-  else if (!r.won && r.injured) { headIcon = '🤕'; headTitle = 'Derrota con lesión'; headColor = 'var(--red)'; }
-  else { headIcon = '😤'; headTitle = 'Derrota digna'; headColor = 'var(--accent)'; }
+  if (r.won && !r.injured) { headIcon = '🏆'; headTitle = 'GLORIOUS VICTORY!'; headColor = 'var(--green)'; }
+  else if (r.won && r.injured) { headIcon = '🏆🤕'; headTitle = 'You won, but got injured!'; headColor = 'var(--accent)'; }
+  else if (!r.won && r.injured) { headIcon = '🤕'; headTitle = 'Loss with injury'; headColor = 'var(--red)'; }
+  else { headIcon = '😤'; headTitle = 'Honorable defeat'; headColor = 'var(--accent)'; }
 
   var lines = [];
   if (r.money) lines.push('<div class="grand-result-line">💰 <strong style="color:var(--accent);">+' + fmtMoney(r.money) + '</strong></div>');
-  if (r.rep) lines.push('<div class="grand-result-line">⭐ +' + r.rep + ' reputación</div>');
+  if (r.rep) lines.push('<div class="grand-result-line">⭐ +' + r.rep + ' reputation</div>');
   if (r.xp) lines.push('<div class="grand-result-line">✨ +' + r.xp + ' XP</div>');
-  if (r.champXp) lines.push('<div class="grand-result-line">🏅 +' + r.champXp + ' XP de campeón</div>');
-  if (r.injured) lines.push('<div class="grand-result-line" style="color:var(--red);">🤕 Lesionado: fuera de combate ~' + fmtTime(r.injurySecs) + '</div>');
-  if (r.newTitle) lines.push('<div class="grand-result-line" style="color:var(--cyan);">👑 ¡Título desbloqueado: <strong>' + r.newTitle + '</strong>!</div>');
-  if (!lines.length) lines.push('<div class="grand-result-line" style="color:var(--text-dim);">Sin recompensas esta vez.</div>');
+  if (r.champXp) lines.push('<div class="grand-result-line">🏅 +' + r.champXp + ' champion XP</div>');
+  if (r.injured) lines.push('<div class="grand-result-line" style="color:var(--red);">🤕 Injured: out of action ~' + fmtTime(r.injurySecs) + '</div>');
+  if (r.newTitle) lines.push('<div class="grand-result-line" style="color:var(--cyan);">👑 Title unlocked: <strong>' + r.newTitle + '</strong>!</div>');
+  if (!lines.length) lines.push('<div class="grand-result-line" style="color:var(--text-dim);">No rewards this time.</div>');
 
   card.innerHTML =
     '<div class="event-icon">' + headIcon + '</div>' +
     '<div class="event-title" style="color:' + headColor + ';">' + headTitle + '</div>' +
     '<div class="event-desc">' + t.icon + ' ' + t.name + '</div>' +
     '<div class="grand-result-lines">' + lines.join('') + '</div>' +
-    '<div class="event-choices"><div class="event-choice" onclick="closeGrandResult()"><div class="event-choice-main"><span class="event-choice-text">Continuar</span></div></div></div>';
+    '<div class="event-choices"><div class="event-choice" onclick="closeGrandResult()"><div class="event-choice-main"><span class="event-choice-text">Continue</span></div></div></div>';
 
   overlay.classList.remove('hidden');
   window._grandResultOpen = true;
@@ -3261,7 +3261,7 @@ function showChampionRename() {
   if (form) {
     form.classList.toggle('hidden');
     if (input && !form.classList.contains('hidden')) {
-      input.value = game.champion.name || 'Campeón';
+      input.value = game.champion.name || 'Champion';
       input.focus();
     }
   }
@@ -3286,8 +3286,8 @@ function generateChampionSVG(appearance, stage, equipment) {
 
 // Normal competitions (without champion) — shown in champion tab before recruiting
 function renderNormalCompetitions() {
-  var html = '<div class="section-title" style="margin-top:20px;">🏆 Competencias</div>';
-  html += '<p class="section-subtitle" style="margin-bottom:12px;">Enviá a tus miembros a competir por premios y reputación.</p>';
+  var html = '<div class="section-title" style="margin-top:20px;">🏆 Competitions</div>';
+  html += '<p class="section-subtitle" style="margin-bottom:12px;">Send your members to compete for prizes and reputation.</p>';
   html += '<div class="champion-comp-list">';
   COMPETITIONS.forEach(function(c) {
     var state = game.competitions[c.id] || { wins: 0, losses: 0, cooldownUntil: 0 };
@@ -3309,7 +3309,7 @@ function renderNormalCompetitions() {
       var timeLeft = Math.ceil((state.cooldownUntil - Date.now()) / 1000);
       actionHTML = '<span style="color:var(--text-dim);font-size:12px;">⏱️ ' + fmtTime(timeLeft) + '</span>';
     } else {
-      actionHTML = '<button class="btn btn-buy btn-small" onclick="enterCompetition(\'' + c.id + '\')">⚔️ COMPETIR</button>';
+      actionHTML = '<button class="btn btn-buy btn-small" onclick="enterCompetition(\'' + c.id + '\')">⚔️ COMPETE</button>';
     }
 
     html += '<div class="champion-comp-row' + (locked ? ' locked' : '') + '">' +
@@ -3347,7 +3347,7 @@ function renderProfile() {
   html += '<div class="profile-header">';
   html += '<div class="profile-avatar">' + title.icon + '</div>';
   html += '<div class="profile-info">';
-  html += '<div class="profile-gym-name">' + (game.gymName || 'Mi Gimnasio') + '</div>';
+  html += '<div class="profile-gym-name">' + (game.gymName || 'My Gym') + '</div>';
   html += '<div class="profile-title-badge">' + title.icon + ' ' + title.name + '</div>';
   html += '<div class="profile-tier">' + tier + '</div>';
   html += '</div>';
@@ -3355,7 +3355,7 @@ function renderProfile() {
 
   // Level + XP bar
   html += '<div class="profile-level-row">';
-  html += '<span class="profile-level">Nivel ' + game.level + '</span>';
+  html += '<span class="profile-level">Level ' + game.level + '</span>';
   html += '<div class="profile-xp-bar"><div class="profile-xp-fill" style="width:' + xpPct + '%"></div></div>';
   html += '<span class="profile-xp-text">' + game.xp + '/' + game.xpToNext + ' XP</span>';
   html += '</div>';
@@ -3364,17 +3364,17 @@ function renderProfile() {
   if (game.prestigeStars > 0) {
     var starsText = '';
     for (var s = 0; s < game.prestigeStars; s++) starsText += '⭐';
-    html += '<div class="profile-stars">' + starsText + ' x' + (1 + game.prestigeStars * 0.25).toFixed(2) + ' ingresos</div>';
+    html += '<div class="profile-stars">' + starsText + ' x' + (1 + game.prestigeStars * 0.25).toFixed(2) + ' income</div>';
   }
 
   // Current theme
   var theme = GYM_THEMES.find(function(t) { return t.id === game.decoration.theme; }) || GYM_THEMES[0];
-  html += '<div class="profile-theme">' + theme.icon + ' Tema: ' + theme.name + '</div>';
+  html += '<div class="profile-theme">' + theme.icon + ' Theme: ' + theme.name + '</div>';
   html += '</div>';
 
   // --- Titles Section ---
-  html += '<div class="section-title" style="margin-top:16px;">🏅 Títulos</div>';
-  html += '<p class="section-subtitle">Elegí tu título activo. Se muestra en tu perfil.</p>';
+  html += '<div class="section-title" style="margin-top:16px;">🏅 Titles</div>';
+  html += '<p class="section-subtitle">Choose your active title. It shows on your profile.</p>';
   html += '<div class="profile-titles-grid">';
   PLAYER_TITLES.forEach(function(t) {
     var unlocked = t.check();
@@ -3384,36 +3384,36 @@ function renderProfile() {
     html += '<div class="profile-title-icon">' + t.icon + '</div>';
     html += '<div class="profile-title-name">' + t.name + '</div>';
     html += '<div class="profile-title-desc">' + (unlocked ? t.desc : '🔒 ' + t.desc) + '</div>';
-    if (isActive) html += '<div class="profile-title-active">ACTIVO</div>';
+    if (isActive) html += '<div class="profile-title-active">ACTIVE</div>';
     html += '</div>';
   });
   html += '</div>';
 
   // --- Stats Section ---
-  html += '<div class="section-title" style="margin-top:16px;">📊 Estadísticas</div>';
+  html += '<div class="section-title" style="margin-top:16px;">📊 Stats</div>';
   html += '<div class="profile-stats-grid">';
 
   var stats = [
-    { icon: '💰', label: 'Total ganado', value: fmtMoney(game.totalMoneyEarned) },
-    { icon: '🕐', label: 'Tiempo jugado', value: formatPlayTime(game.stats.totalPlayTime || 0) },
-    { icon: '📅', label: 'Días jugados', value: game.stats.daysPlayed || 0 },
-    { icon: '👥', label: 'Máx miembros', value: game.stats.maxMembers || 0 },
-    { icon: '🏆', label: 'Competencias ganadas', value: game.stats.competitionsWon || 0 },
+    { icon: '💰', label: 'Total earned', value: fmtMoney(game.totalMoneyEarned) },
+    { icon: '🕐', label: 'Time played', value: formatPlayTime(game.stats.totalPlayTime || 0) },
+    { icon: '📅', label: 'Days played', value: game.stats.daysPlayed || 0 },
+    { icon: '👥', label: 'Max members', value: game.stats.maxMembers || 0 },
+    { icon: '🏆', label: 'Competitions won', value: game.stats.competitionsWon || 0 },
     { icon: '🏅', label: 'Champion wins', value: game.stats.championWins || 0 },
-    { icon: '🧘', label: 'Clases completadas', value: game.stats.classesCompleted || 0 },
-    { icon: '👨‍🏫', label: 'Instructores contratados', value: game.stats.instructorsHired || 0 },
-    { icon: '📢', label: 'Campañas lanzadas', value: game.stats.campaignsLaunched || 0 },
-    { icon: '🧃', label: 'Suplementos usados', value: game.stats.supplementsBought || 0 },
-    { icon: '🏪', label: 'Rivales superados', value: game.stats.rivalsDefeated || 0 },
-    { icon: '📋', label: 'Misiones completadas', value: game.stats.missionsCompleted || 0 },
-    { icon: '⚡', label: 'Eventos resueltos', value: game.stats.eventsHandled || 0 },
-    { icon: '🔬', label: 'Mejoras investigadas', value: game.stats.skillsResearched || 0 },
-    { icon: '🏗️', label: 'Zonas desbloqueadas', value: game.stats.zonesUnlocked || 0 },
-    { icon: '⭐', label: 'VIPs atendidos', value: game.stats.vipsServed || 0 },
-    { icon: '🔥', label: 'Streak máximo', value: game.stats.maxStreak || 0 },
-    { icon: '🏙️', label: 'Sucursales', value: Object.keys(game.branches).length },
-    { icon: '🌟', label: 'Estrellas franquicia', value: game.prestigeStars || 0 },
-    { icon: '🎖️', label: 'Logros', value: unlockedAchievements + '/' + ACHIEVEMENTS.length },
+    { icon: '🧘', label: 'Classes completed', value: game.stats.classesCompleted || 0 },
+    { icon: '👨‍🏫', label: 'Instructors hired', value: game.stats.instructorsHired || 0 },
+    { icon: '📢', label: 'Campaigns launched', value: game.stats.campaignsLaunched || 0 },
+    { icon: '🧃', label: 'Supplements used', value: game.stats.supplementsBought || 0 },
+    { icon: '🏪', label: 'Rivals beaten', value: game.stats.rivalsDefeated || 0 },
+    { icon: '📋', label: 'Missions completed', value: game.stats.missionsCompleted || 0 },
+    { icon: '⚡', label: 'Events resolved', value: game.stats.eventsHandled || 0 },
+    { icon: '🔬', label: 'Upgrades researched', value: game.stats.skillsResearched || 0 },
+    { icon: '🏗️', label: 'Zones unlocked', value: game.stats.zonesUnlocked || 0 },
+    { icon: '⭐', label: 'VIPs served', value: game.stats.vipsServed || 0 },
+    { icon: '🔥', label: 'Max streak', value: game.stats.maxStreak || 0 },
+    { icon: '🏙️', label: 'Branches', value: Object.keys(game.branches).length },
+    { icon: '🌟', label: 'Franchise stars', value: game.prestigeStars || 0 },
+    { icon: '🎖️', label: 'Achievements', value: unlockedAchievements + '/' + ACHIEVEMENTS.length },
   ];
 
   stats.forEach(function(s) {
@@ -3426,12 +3426,12 @@ function renderProfile() {
   html += '</div>';
 
   // --- Recent Achievements ---
-  html += '<div class="section-title" style="margin-top:16px;">🎖️ Logros Recientes</div>';
+  html += '<div class="section-title" style="margin-top:16px;">🎖️ Recent Achievements</div>';
   html += '<div class="profile-achievements-showcase">';
   var unlocked = ACHIEVEMENTS.filter(function(a) { return game.achievements[a.id]; });
   var recent = unlocked.slice(-8).reverse();
   if (recent.length === 0) {
-    html += '<p style="color:var(--text-muted);text-align:center;padding:16px;">Todavía no desbloqueaste ningún logro.</p>';
+    html += '<p style="color:var(--text-muted);text-align:center;padding:16px;">You haven\'t unlocked any achievements yet.</p>';
   } else {
     recent.forEach(function(a) {
       html += '<div class="profile-achievement-badge" title="' + a.name + ': ' + a.desc + '">';
@@ -3441,7 +3441,7 @@ function renderProfile() {
     });
   }
   html += '</div>';
-  html += '<button class="btn btn-small" onclick="document.querySelector(\'[data-tab=achievements]\').click()" style="margin-top:8px;">Ver todos los logros →</button>';
+  html += '<button class="btn btn-small" onclick="document.querySelector(\'[data-tab=achievements]\').click()" style="margin-top:8px;">View all achievements →</button>';
 
   container.innerHTML = html;
 }
@@ -3469,8 +3469,8 @@ function renderDecorationPanel() {
   var html = '';
 
   // --- Themes ---
-  html += '<div class="section-title">🎨 Temas Visuales</div>';
-  html += '<p class="section-subtitle">Cambiá el estilo visual de todo tu gym. Los temas persisten después del prestige.</p>';
+  html += '<div class="section-title">🎨 Visual Themes</div>';
+  html += '<p class="section-subtitle">Change the visual style of your whole gym. Themes persist through prestige.</p>';
   html += '<div class="deco-themes-grid">';
   GYM_THEMES.forEach(function(theme) {
     var owned = game.decoration.unlockedThemes.indexOf(theme.id) >= 0;
@@ -3485,11 +3485,11 @@ function renderDecorationPanel() {
     html += '<div class="deco-theme-name">' + theme.icon + ' ' + theme.name + '</div>';
 
     if (active) {
-      html += '<div class="deco-theme-status" style="color:var(--green);">✓ Activo</div>';
+      html += '<div class="deco-theme-status" style="color:var(--green);">✓ Active</div>';
     } else if (owned) {
-      html += '<button class="btn btn-small btn-cyan" onclick="setTheme(\'' + theme.id + '\')">Usar</button>';
+      html += '<button class="btn btn-small btn-cyan" onclick="setTheme(\'' + theme.id + '\')">Use</button>';
     } else if (locked) {
-      html += '<div class="deco-theme-status" style="color:var(--text-muted);">🔒 Nivel ' + theme.reqLevel + '</div>';
+      html += '<div class="deco-theme-status" style="color:var(--text-muted);">🔒 Level ' + theme.reqLevel + '</div>';
     } else {
       html += '<button class="btn btn-small btn-buy" ' + (canBuy ? '' : 'disabled') + ' onclick="buyTheme(\'' + theme.id + '\')">' + fmtMoney(theme.cost) + '</button>';
     }
@@ -3498,8 +3498,8 @@ function renderDecorationPanel() {
   html += '</div>';
 
   // --- Decorations ---
-  html += '<div class="section-title" style="margin-top:16px;">🏠 Objetos Decorativos</div>';
-  html += '<p class="section-subtitle">Comprá decoraciones para tu gym. Dan bonus pasivos. Se reinician con el prestige.</p>';
+  html += '<div class="section-title" style="margin-top:16px;">🏠 Decorative Items</div>';
+  html += '<p class="section-subtitle">Buy decorations for your gym. They give passive bonuses. They reset with prestige.</p>';
   html += '<div class="deco-items-grid">';
   GYM_DECORATIONS.forEach(function(item) {
     var owned = game.decoration.items[item.id];
@@ -3509,7 +3509,7 @@ function renderDecorationPanel() {
     var bonusText = Object.keys(item.bonuses).map(function(k) {
       var v = item.bonuses[k];
       if (k === 'capacity') return '+' + v + ' cap';
-      var labels = { income: 'ingreso', reputation: 'rep', classQuality: 'calidad clase', compReward: 'premios comp' };
+      var labels = { income: 'income', reputation: 'rep', classQuality: 'class quality', compReward: 'comp rewards' };
       return '+' + Math.round(v * 100) + '% ' + (labels[k] || k);
     }).join(', ');
 
@@ -3589,7 +3589,7 @@ function renderBalancePanel() {
   var rivalIncome = getRivalIncomeBonus();
   if (rivalIncome > 0) {
     var daily = rivalIncome * D;
-    incomeItems.push({ name: '🏪 Rivales derrotados', value: daily });
+    incomeItems.push({ name: '🏪 Rivals defeated', value: daily });
     totalBaseIncome += daily;
   }
 
@@ -3597,7 +3597,7 @@ function renderBalancePanel() {
   var multipliers = [];
 
   var eqSkillMult = getSkillEffect('equipIncomeMult');
-  if (eqSkillMult > 1) multipliers.push({ name: '🔬 Mejora equipo', value: eqSkillMult });
+  if (eqSkillMult > 1) multipliers.push({ name: '🔬 Equipment upgrade', value: eqSkillMult });
 
   STAFF.forEach(function(s) {
     if (game.staff[s.id] && game.staff[s.id].hired && s.incomeMult) {
@@ -3615,22 +3615,22 @@ function renderBalancePanel() {
       }
     });
     var synergyBonus = hiredCount * SKILL_TREE.staff.skills.find(function(sk) { return sk.id === 'st_synergy'; }).effect.staffSynergyBonus;
-    if (synergyBonus > 0) multipliers.push({ name: '🤝 Sinergia staff (x' + hiredCount + ')', value: 1 + synergyBonus });
+    if (synergyBonus > 0) multipliers.push({ name: '🤝 Staff synergy (x' + hiredCount + ')', value: 1 + synergyBonus });
   }
 
   var memberIncomeMult = getSkillEffect('memberIncomeMult');
   var memberBonus = Math.min(3.0, 1 + game.members * 0.002) * memberIncomeMult;
-  if (memberBonus > 1) multipliers.push({ name: '👥 Bonus miembros (' + game.members + ')', value: memberBonus });
+  if (memberBonus > 1) multipliers.push({ name: '👥 Member bonus (' + game.members + ')', value: memberBonus });
 
   var prestigeMult = 1 + (game.prestigeStars * 0.25);
-  if (prestigeMult > 1) multipliers.push({ name: '🌟 Franquicia (x' + game.prestigeStars + ')', value: prestigeMult });
+  if (prestigeMult > 1) multipliers.push({ name: '🌟 Franchise (x' + game.prestigeStars + ')', value: prestigeMult });
 
   var suppEffects = getActiveSupplementEffects();
-  if (suppEffects.incomeMult > 1) multipliers.push({ name: '🧃 Suplementos (income)', value: suppEffects.incomeMult });
-  if (suppEffects.equipIncomeMult > 1) multipliers.push({ name: '🧃 Suplementos (equipo)', value: suppEffects.equipIncomeMult });
+  if (suppEffects.incomeMult > 1) multipliers.push({ name: '🧃 Supplements (income)', value: suppEffects.incomeMult });
+  if (suppEffects.equipIncomeMult > 1) multipliers.push({ name: '🧃 Supplements (equipment)', value: suppEffects.equipIncomeMult });
 
   var decoIncome = getDecorationBonus('income');
-  if (decoIncome > 0) multipliers.push({ name: '🎨 Decoración', value: 1 + decoIncome });
+  if (decoIncome > 0) multipliers.push({ name: '🎨 Decoration', value: 1 + decoIncome });
 
   var finalIncomeDaily = getIncomePerSecond() * D;
 
@@ -3656,7 +3656,7 @@ function renderBalancePanel() {
 
   // Operating costs (already per day)
   if (!game.ownProperty) {
-    expenseItems.push({ name: '🏠 Alquiler base', value: OPERATING_COSTS.baseRent });
+    expenseItems.push({ name: '🏠 Base rent', value: OPERATING_COSTS.baseRent });
     totalExpenses += OPERATING_COSTS.baseRent;
     var extraZones = 0;
     GYM_ZONES.forEach(function(z) {
@@ -3664,18 +3664,18 @@ function renderBalancePanel() {
     });
     if (extraZones > 0) {
       var zoneRent = extraZones * OPERATING_COSTS.rentPerExtraZone;
-      expenseItems.push({ name: '🏗️ Alquiler zonas (x' + extraZones + ')', value: zoneRent });
+      expenseItems.push({ name: '🏗️ Zone rent (x' + extraZones + ')', value: zoneRent });
       totalExpenses += zoneRent;
     }
   } else {
-    expenseItems.push({ name: '🏠 Propiedad comprada', value: 0, note: '✅ Sin alquiler' });
+    expenseItems.push({ name: '🏠 Property owned', value: 0, note: '✅ No rent' });
   }
 
   var totalEquipLevels = 0;
   EQUIPMENT.forEach(function(eq) { totalEquipLevels += (game.equipment[eq.id] ? game.equipment[eq.id].level : 0); });
   if (totalEquipLevels > 0) {
     var utilities = totalEquipLevels * OPERATING_COSTS.utilitiesPerEquipLevel;
-    expenseItems.push({ name: '⚡ Servicios (' + totalEquipLevels + ' lvls equipo)', value: utilities });
+    expenseItems.push({ name: '⚡ Utilities (' + totalEquipLevels + ' equip lvls)', value: utilities });
     totalExpenses += utilities;
   }
 
@@ -3693,10 +3693,10 @@ function renderBalancePanel() {
     });
   }
 
-  // Servicios e impuestos (% del ingreso bruto) — escala con el ingreso
+  // Utilities and taxes (% of gross income) — scales with income
   var overheadDaily = (typeof getIncomeOverheadPerSecond === 'function') ? getIncomeOverheadPerSecond() * D : 0;
   if (overheadDaily > 0) {
-    expenseItems.push({ name: '🧾 Servicios e impuestos (' + Math.round((OPERATING_COSTS.overheadRate || 0) * 100) + '% ingresos)', value: overheadDaily });
+    expenseItems.push({ name: '🧾 Utilities and taxes (' + Math.round((OPERATING_COSTS.overheadRate || 0) * 100) + '% income)', value: overheadDaily });
     totalExpenses += overheadDaily;
   }
 
@@ -3707,18 +3707,18 @@ function renderBalancePanel() {
   // ===== BUILD HTML =====
   var html = '<div class="balance-card">';
   html += '<div class="balance-header">';
-  html += '<h3>📊 Balance Contable</h3>';
+  html += '<h3>📊 Financial Balance</h3>';
   html += '<div class="balance-header-right">';
-  html += '<span class="balance-period">por día de juego (10 min)</span>';
+  html += '<span class="balance-period">per game day (10 min)</span>';
   html += '<button class="btn btn-small btn-red" onclick="closeBalancePanel()">✕</button>';
   html += '</div>';
   html += '</div>';
 
   // Income section
   html += '<div class="balance-section">';
-  html += '<div class="balance-section-title income">💰 INGRESOS BASE</div>';
+  html += '<div class="balance-section-title income">💰 BASE INCOME</div>';
   if (incomeItems.length === 0) {
-    html += '<div class="balance-row"><span class="balance-label muted">Sin equipamiento</span></div>';
+    html += '<div class="balance-row"><span class="balance-label muted">No equipment</span></div>';
   }
   incomeItems.forEach(function(item) {
     html += '<div class="balance-row">';
@@ -3730,28 +3730,28 @@ function renderBalancePanel() {
     }
     html += '</div>';
   });
-  html += '<div class="balance-subtotal income">Subtotal: +' + fmtMoney(totalBaseIncome) + '/día</div>';
+  html += '<div class="balance-subtotal income">Subtotal: +' + fmtMoney(totalBaseIncome) + '/day</div>';
   html += '</div>';
 
   // Multipliers section
   if (multipliers.length > 0) {
     html += '<div class="balance-section">';
-    html += '<div class="balance-section-title mult">✨ MULTIPLICADORES</div>';
+    html += '<div class="balance-section-title mult">✨ MULTIPLIERS</div>';
     multipliers.forEach(function(m) {
       html += '<div class="balance-row">';
       html += '<span class="balance-label">' + m.name + '</span>';
       html += '<span class="balance-value mult">×' + m.value.toFixed(2) + '</span>';
       html += '</div>';
     });
-    html += '<div class="balance-subtotal income">Ingreso final: +' + fmtMoney(finalIncomeDaily) + '/día</div>';
+    html += '<div class="balance-subtotal income">Final income: +' + fmtMoney(finalIncomeDaily) + '/day</div>';
     html += '</div>';
   }
 
   // Expenses section
   html += '<div class="balance-section">';
-  html += '<div class="balance-section-title expense">📉 GASTOS</div>';
+  html += '<div class="balance-section-title expense">📉 EXPENSES</div>';
   if (expenseItems.length === 0) {
-    html += '<div class="balance-row"><span class="balance-label muted">Sin gastos</span></div>';
+    html += '<div class="balance-row"><span class="balance-label muted">No expenses</span></div>';
   }
   expenseItems.forEach(function(item) {
     html += '<div class="balance-row">';
@@ -3763,38 +3763,38 @@ function renderBalancePanel() {
     }
     html += '</div>';
   });
-  html += '<div class="balance-subtotal expense">Total gastos: -' + fmtMoney(totalExpenses) + '/día</div>';
+  html += '<div class="balance-subtotal expense">Total expenses: -' + fmtMoney(totalExpenses) + '/day</div>';
   html += '</div>';
 
   // Net total
   html += '<div class="balance-net ' + (netDaily >= 0 ? 'positive' : 'negative') + '">';
-  html += '<span>BALANCE NETO /DÍA</span>';
+  html += '<span>NET BALANCE /DAY</span>';
   html += '<span>' + (netDaily >= 0 ? '+' : '') + fmtMoney(netDaily) + '</span>';
   html += '</div>';
 
   // Per second
   html += '<div class="balance-projection">';
-  html += '<span>Equivalente por segundo:</span>';
+  html += '<span>Equivalent per second:</span>';
   html += '<span class="' + (netPerSec >= 0 ? 'income' : 'expense') + '">' + (netPerSec >= 0 ? '+' : '') + fmtMoney(netPerSec) + '/s</span>';
   html += '</div>';
 
   // Franchise section (passive branches)
   if (game.branches && Object.keys(game.branches).length > 0) {
     html += '<div class="balance-section" style="margin-top:12px;">';
-    html += '<div class="balance-section-title income">🏙️ FRANQUICIA (Sucursales Pasivas)</div>';
+    html += '<div class="balance-section-title income">🏙️ FRANCHISE (Passive Branches)</div>';
     var passiveTotal = 0;
     Object.keys(game.branches).forEach(function(id) {
       var b = game.branches[id];
       var bHood = NEIGHBORHOODS.find(function(n) { return n.id === b.neighborhoodId; }) || NEIGHBORHOODS[0];
       var passive = getBranchPassiveIncome(id);
       passiveTotal += passive;
-      html += '<div class="balance-row"><span class="balance-label">' + bHood.icon + ' ' + (b.name || 'Sucursal') + ' (Nv.' + (b.level || 1) + ')</span><span class="balance-value income">+' + fmtMoney(passive * D) + '/día</span></div>';
+      html += '<div class="balance-row"><span class="balance-label">' + bHood.icon + ' ' + (b.name || 'Branch') + ' (Lv.' + (b.level || 1) + ')</span><span class="balance-value income">+' + fmtMoney(passive * D) + '/day</span></div>';
     });
-    html += '<div class="balance-subtotal income">Ingreso pasivo total: +' + fmtMoney(passiveTotal * D) + '/día</div>';
+    html += '<div class="balance-subtotal income">Total passive income: +' + fmtMoney(passiveTotal * D) + '/day</div>';
     html += '</div>';
 
     html += '<div class="balance-net positive">';
-    html += '<span>TOTAL IMPERIO /SEG</span>';
+    html += '<span>TOTAL EMPIRE /SEC</span>';
     html += '<span>+' + fmtMoney(getTotalEmpireIncomePerSecond()) + '/s</span>';
     html += '</div>';
   }

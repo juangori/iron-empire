@@ -68,20 +68,20 @@ function setAuthLoading(loading) {
   });
 }
 
-// ===== FIREBASE AUTH ERROR MESSAGES (Spanish) =====
+// ===== FIREBASE AUTH ERROR MESSAGES (English) =====
 function getAuthErrorMsg(code) {
   const msgs = {
-    'auth/email-already-in-use': 'Ese email ya tiene una cuenta. Iniciá sesión.',
-    'auth/invalid-email': 'Email inválido.',
-    'auth/weak-password': 'La contraseña debe tener al menos 6 caracteres.',
-    'auth/user-not-found': 'No existe una cuenta con ese email.',
-    'auth/wrong-password': 'Contraseña incorrecta.',
-    'auth/too-many-requests': 'Demasiados intentos. Esperá un momento.',
-    'auth/popup-closed-by-user': 'Se cerró la ventana de login.',
-    'auth/account-exists-with-different-credential': 'Ya existe una cuenta con ese email usando otro método de login.',
-    'auth/network-request-failed': 'Error de conexión. Revisá tu internet.',
-    'auth/invalid-credential': 'Credenciales inválidas. Revisá email y contraseña.',
-    'auth/popup-blocked': 'El navegador bloqueó la ventana de login. Permití popups para este sitio.',
+    'auth/email-already-in-use': 'That email already has an account. Log in.',
+    'auth/invalid-email': 'Invalid email.',
+    'auth/weak-password': 'Password must be at least 6 characters.',
+    'auth/user-not-found': "There's no account with that email.",
+    'auth/wrong-password': 'Wrong password.',
+    'auth/too-many-requests': 'Too many attempts. Wait a moment.',
+    'auth/popup-closed-by-user': 'The login window was closed.',
+    'auth/account-exists-with-different-credential': 'An account with that email already exists using a different login method.',
+    'auth/network-request-failed': 'Connection error. Check your internet.',
+    'auth/invalid-credential': 'Invalid credentials. Check your email and password.',
+    'auth/popup-blocked': 'The browser blocked the login window. Allow popups for this site.',
   };
   return msgs[code] || 'Error: ' + code;
 }
@@ -94,23 +94,23 @@ async function registerWithEmail() {
   const password2 = document.getElementById('regPassword2').value;
 
   if (!username || username.length < 2) {
-    showAuthError('register', 'El nombre de usuario debe tener al menos 2 caracteres.');
+    showAuthError('register', 'Username must be at least 2 characters.');
     return;
   }
   if (username.length > 20) {
-    showAuthError('register', 'El nombre de usuario no puede tener más de 20 caracteres.');
+    showAuthError('register', 'Username cannot be more than 20 characters.');
     return;
   }
   if (!email) {
-    showAuthError('register', 'Ingresá tu email.');
+    showAuthError('register', 'Enter your email.');
     return;
   }
   if (!password || password.length < 6) {
-    showAuthError('register', 'La contraseña debe tener al menos 6 caracteres.');
+    showAuthError('register', 'Password must be at least 6 characters.');
     return;
   }
   if (password !== password2) {
-    showAuthError('register', 'Las contraseñas no coinciden.');
+    showAuthError('register', "Passwords don't match.");
     return;
   }
 
@@ -141,7 +141,7 @@ async function loginWithEmail() {
   const password = document.getElementById('loginPassword').value;
 
   if (!email || !password) {
-    showAuthError('login', 'Completá email y contraseña.');
+    showAuthError('login', 'Fill in email and password.');
     return;
   }
 
@@ -168,7 +168,7 @@ async function loginWithGoogle() {
 
     if (isNew) {
       await db.collection('users').doc(cred.user.uid).set({
-        username: cred.user.displayName || 'Jugador',
+        username: cred.user.displayName || 'Player',
         email: cred.user.email,
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
@@ -198,7 +198,7 @@ async function loginWithFacebook() {
 
     if (isNew) {
       await db.collection('users').doc(cred.user.uid).set({
-        username: cred.user.displayName || 'Jugador',
+        username: cred.user.displayName || 'Player',
         email: cred.user.email || '',
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         lastLogin: firebase.firestore.FieldValue.serverTimestamp(),
@@ -222,7 +222,7 @@ async function loginWithFacebook() {
 async function resetPassword() {
   const email = document.getElementById('resetEmail').value.trim();
   if (!email) {
-    showAuthError('reset', 'Ingresá tu email.');
+    showAuthError('reset', 'Enter your email.');
     return;
   }
 
@@ -230,7 +230,7 @@ async function resetPassword() {
   try {
     await auth.sendPasswordResetEmail(email);
     showAuthError('reset', ''); // Clear error
-    document.getElementById('resetSuccess').textContent = '¡Email enviado! Revisá tu bandeja de entrada.';
+    document.getElementById('resetSuccess').textContent = 'Email sent! Check your inbox.';
   } catch (err) {
     showAuthError('reset', getAuthErrorMsg(err.code));
   }
@@ -344,7 +344,7 @@ async function logoutUser() {
 // ===== ACCOUNT SETTINGS =====
 function openAccountSettings() {
   if (!currentUser) {
-    showToast('❌', 'Tenés que iniciar sesión para ver tu cuenta.');
+    showToast('❌', 'You need to log in to view your account.');
     return;
   }
   document.getElementById('accountModal').classList.remove('hidden');
@@ -365,7 +365,7 @@ function updateAccountModal() {
   if (!currentUser) return;
 
   document.getElementById('accountUsername').value = currentUser.displayName || '';
-  document.getElementById('accountEmail').textContent = currentUser.email || 'No disponible';
+  document.getElementById('accountEmail').textContent = currentUser.email || 'Not available';
 
   const providerIcons = currentUser.providerData.map(p => {
     if (p.providerId === 'google.com') return '🔵 Google';
@@ -385,31 +385,31 @@ function updateAccountUI() {
   if (!el) return;
 
   if (currentUser) {
-    const name = currentUser.displayName || currentUser.email || 'Jugador';
+    const name = currentUser.displayName || currentUser.email || 'Player';
     el.innerHTML =
       '<button class="btn btn-cyan btn-small" onclick="openAccountSettings()">' +
         '👤 ' + name +
       '</button>' +
       '<button class="btn btn-red btn-small" onclick="logoutUser()">' +
-        '🚪 SALIR' +
+        '🚪 LOG OUT' +
       '</button>';
   } else {
     el.innerHTML =
-      '<span style="color:var(--text-muted);font-size:12px;">Modo invitado</span>';
+      '<span style="color:var(--text-muted);font-size:12px;">Guest mode</span>';
   }
 }
 
 async function saveAccountUsername() {
   const newName = document.getElementById('accountUsername').value.trim();
   if (!newName || newName.length < 2 || newName.length > 20) {
-    document.getElementById('usernameError').textContent = 'El nombre debe tener entre 2 y 20 caracteres.';
+    document.getElementById('usernameError').textContent = 'Name must be between 2 and 20 characters.';
     return;
   }
 
   try {
     await currentUser.updateProfile({ displayName: newName });
     await db.collection('users').doc(currentUser.uid).update({ username: newName });
-    document.getElementById('usernameSuccess').textContent = '¡Nombre actualizado!';
+    document.getElementById('usernameSuccess').textContent = 'Name updated!';
     document.getElementById('usernameError').textContent = '';
     updateAccountUI();
     setTimeout(() => {
@@ -417,7 +417,7 @@ async function saveAccountUsername() {
       if (s) s.textContent = '';
     }, 3000);
   } catch (err) {
-    document.getElementById('usernameError').textContent = 'Error al actualizar: ' + err.message;
+    document.getElementById('usernameError').textContent = 'Update failed: ' + err.message;
   }
 }
 
@@ -427,15 +427,15 @@ async function changeAccountPassword() {
   const newPass2 = document.getElementById('accountNewPass2').value;
 
   if (!current || !newPass) {
-    document.getElementById('passwordError').textContent = 'Completá todos los campos.';
+    document.getElementById('passwordError').textContent = 'Fill in all fields.';
     return;
   }
   if (newPass.length < 6) {
-    document.getElementById('passwordError').textContent = 'La nueva contraseña debe tener al menos 6 caracteres.';
+    document.getElementById('passwordError').textContent = 'The new password must be at least 6 characters.';
     return;
   }
   if (newPass !== newPass2) {
-    document.getElementById('passwordError').textContent = 'Las contraseñas no coinciden.';
+    document.getElementById('passwordError').textContent = "Passwords don't match.";
     return;
   }
 
@@ -445,7 +445,7 @@ async function changeAccountPassword() {
     await currentUser.reauthenticateWithCredential(cred);
     await currentUser.updatePassword(newPass);
 
-    document.getElementById('passwordSuccess').textContent = '¡Contraseña actualizada!';
+    document.getElementById('passwordSuccess').textContent = 'Password updated!';
     document.getElementById('passwordError').textContent = '';
     document.getElementById('accountCurrentPass').value = '';
     document.getElementById('accountNewPass').value = '';
@@ -480,7 +480,7 @@ async function saveCloudSave() {
     // Sync leaderboard — totalMoneyEarned is global (includes passive franchise income)
     var empireTotalEarned = game.totalMoneyEarned;
     await db.collection('leaderboard').doc(currentUser.uid).set({
-      username: currentUser.displayName || 'Anónimo',
+      username: currentUser.displayName || 'Anonymous',
       gymName: game.gymName,
       totalMoneyEarned: empireTotalEarned,
       level: game.level,

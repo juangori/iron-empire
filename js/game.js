@@ -1,7 +1,7 @@
 // ===== IRON EMPIRE - GAME ENGINE =====
 
 let game = {
-  gymName: 'Mi Gimnasio',
+  gymName: 'My Gym',
   money: 0,
   totalMoneyEarned: 0,
   members: 0,
@@ -63,8 +63,8 @@ let game = {
   // Skill tree
   skills: {},
 
-  // Fama / tienda de prestigio (la reputación se gasta acá)
-  reputationSpent: 0,   // total de rep gastada — lifetime = reputation + reputationSpent
+  // Fame / prestige shop (reputation is spent here)
+  reputationSpent: 0,   // total rep spent — lifetime = reputation + reputationSpent
   famePerks: {},        // { perkId: level }
   fameBoosts: {},       // { boostId: expiresAtTimestamp }
   fameUnlocks: {},      // { unlockId: true }
@@ -76,7 +76,7 @@ let game = {
   // Champion
   champion: {
     recruited: false,
-    name: 'Campeón',
+    name: 'Champion',
     stats: { fuerza: 1, resistencia: 1, velocidad: 1, tecnica: 1, stamina: 1, mentalidad: 1 },
     level: 1,
     xp: 0,
@@ -90,11 +90,11 @@ let game = {
     injurySeverity: 0,
   },
 
-  // Grandes Torneos (circuito de alto riesgo del campeón)
+  // Grand Tournaments (high-risk champion circuit)
   grandTournaments: {},   // { id: { wins, losses, cooldownUntil } }
   grandPrep: {},          // { id: { pasajes, nutricion, medico, concentracionUntil } }
 
-  // Oportunidades / negocios arriesgados (mismo loop, a nivel gimnasio)
+  // Opportunities / risky ventures (same loop, at the gym level)
   opportunities: {},      // { id: { wins, losses, cooldownUntil } }
   oppPrep: {},            // { id: { permisos, contactos, seguro, duediligenceUntil } }
   gymSetback: { active: false, name: '', icon: '', until: 0, incomeMult: 1 },
@@ -234,7 +234,7 @@ function migrateBranchesToPassive() {
     var eqLevels = 0;
     if (b.equipment) Object.keys(b.equipment).forEach(function(k) { eqLevels += (b.equipment[k] && b.equipment[k].level) || 0; });
     var lvl = Math.max(1, Math.min(10, Math.round(eqLevels / 5)));
-    newBranches[id] = { id: id, neighborhoodId: b.neighborhoodId, name: b.gymName || 'Sucursal', level: lvl, openedAt: 0 };
+    newBranches[id] = { id: id, neighborhoodId: b.neighborhoodId, name: b.gymName || 'Branch', level: lvl, openedAt: 0 };
   });
   game.branches = newBranches;
   delete game.activeBranch;
@@ -262,7 +262,7 @@ function fmt(n) {
   if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
   if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
   if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
-  return Math.floor(n).toLocaleString('es-AR');
+  return Math.floor(n).toLocaleString('en-US');
 }
 
 function fmtMoney(n) { return '$' + fmt(n); }
@@ -402,7 +402,7 @@ function trainStaff(id, copyIdx) {
     }
   });
   if (trainingCount >= 2) {
-    showToast('❌', '¡Ya hay 2 entrenamientos en curso!');
+    showToast('❌', '2 training sessions are already in progress!');
     return;
   }
 
@@ -417,13 +417,13 @@ function trainStaff(id, copyIdx) {
   }
 
   if (level >= STAFF_MAX_LEVEL) {
-    showToast('❌', '¡Nivel máximo alcanzado!');
+    showToast('❌', 'Max level reached!');
     return;
   }
 
   var cost = getTrainingCost(s, level);
   if (game.money < cost) {
-    showToast('❌', '¡No tenés suficiente plata!');
+    showToast('❌', 'Not enough cash!');
     return;
   }
 
@@ -431,8 +431,8 @@ function trainStaff(id, copyIdx) {
   var duration = Math.ceil(getTrainingDuration(level + 1) * getSkillEffect('trainingSpeedMult'));
   target.trainingUntil = Date.now() + duration * 1000;
 
-  addLog('📚 <span class="highlight">' + s.name + '</span> empezó entrenamiento a LVL ' + (level + 1) + ' (' + Math.floor(duration / 60) + ' min)');
-  showToast('📚', s.name + ' entrenando → LVL ' + (level + 1));
+  addLog('📚 <span class="highlight">' + s.name + '</span> started training to LVL ' + (level + 1) + ' (' + Math.floor(duration / 60) + ' min)');
+  showToast('📚', s.name + ' training → LVL ' + (level + 1));
   renderStaff();
   saveGame();
 }
@@ -450,14 +450,14 @@ function hireExtraStaff(id) {
 
   var cost = getStaffCost(s, copyIdx);
   if (game.money < cost) {
-    showToast('❌', '¡No tenés suficiente plata!');
+    showToast('❌', 'Not enough cash!');
     return;
   }
 
   game.money -= cost;
   state.extras.push({ level: 1, trainingUntil: 0 });
-  addLog('🤝 Contrataste otro <span class="highlight">' + s.name + '</span> (#' + (copyIdx + 1) + ')');
-  showToast(s.icon, '¡Nuevo ' + s.name + ' #' + (copyIdx + 1) + '!');
+  addLog('🤝 You hired another <span class="highlight">' + s.name + '</span> (#' + (copyIdx + 1) + ')');
+  showToast(s.icon, 'New ' + s.name + ' #' + (copyIdx + 1) + '!');
   renderStaff();
   renderGymScene();
   updateUI();
@@ -475,7 +475,7 @@ function checkTrainingCompletion() {
       var xpGain = 25 * state.level;
       addXp(xpGain);
       game.dailyTracking.xpEarned += xpGain;
-      addLog('🎓 <span class="highlight">' + s.name + '</span> subió a LVL ' + state.level + '!', 'important');
+      addLog('🎓 <span class="highlight">' + s.name + '</span> leveled up to LVL ' + state.level + '!', 'important');
       showToast('🎓', s.name + ' → LVL ' + state.level + '!');
       renderStaff();
     }
@@ -488,7 +488,7 @@ function checkTrainingCompletion() {
           var xpGain = 25 * ex.level;
           addXp(xpGain);
           game.dailyTracking.xpEarned += xpGain;
-          addLog('🎓 <span class="highlight">' + s.name + ' #' + (i + 2) + '</span> subió a LVL ' + ex.level + '!');
+          addLog('🎓 <span class="highlight">' + s.name + ' #' + (i + 2) + '</span> leveled up to LVL ' + ex.level + '!');
           showToast('🎓', s.name + ' #' + (i + 2) + ' → LVL ' + ex.level + '!');
           renderStaff();
         }
@@ -536,7 +536,7 @@ function normalizeEquipmentData() {
 function normalizeChampionData() {
   if (!game.champion) game.champion = {};
   if (game.champion.recruited === undefined) game.champion.recruited = false;
-  if (!game.champion.name) game.champion.name = 'Campeón';
+  if (!game.champion.name) game.champion.name = 'Champion';
   if (!game.champion.stats) game.champion.stats = {};
   // Init all 6 stats with defaults
   CHAMPION_STATS.forEach(function(s) {
@@ -560,7 +560,7 @@ function normalizeChampionData() {
   if (!game.stats.championLosses) game.stats.championLosses = 0;
   if (!game.stats.championCompetitions) game.stats.championCompetitions = 0;
   if (!game.stats.championTrainings) game.stats.championTrainings = 0;
-  // Grandes Torneos
+  // Grand Tournaments
   if (!game.grandTournaments) game.grandTournaments = {};
   if (!game.grandPrep) game.grandPrep = {};
   if (!game.stats.grandWins) game.stats.grandWins = 0;
@@ -624,8 +624,8 @@ function buyTheme(themeId) {
   game.decoration.unlockedThemes.push(themeId);
   game.decoration.theme = themeId;
   applyTheme();
-  addLog('🎨 Desbloqueaste el tema <span class="highlight">' + theme.name + '</span>!');
-  showToast(theme.icon, 'Tema ' + theme.name + ' desbloqueado!');
+  addLog('🎨 You unlocked the <span class="highlight">' + theme.name + '</span> theme!');
+  showToast(theme.icon, theme.name + ' theme unlocked!');
   renderDecorationPanel();
   updateUI();
   checkAchievements();
@@ -658,8 +658,8 @@ function buyDecoration(itemId) {
   if (game.money < item.cost || game.level < item.reqLevel) return;
   game.money -= item.cost;
   game.decoration.items[itemId] = true;
-  addLog('🎨 Compraste <span class="highlight">' + item.name + '</span> ' + item.icon);
-  showToast(item.icon, item.name + ' agregado al gym!');
+  addLog('🎨 You bought <span class="highlight">' + item.name + '</span> ' + item.icon);
+  showToast(item.icon, item.name + ' added to your gym!');
   renderDecorationPanel();
   renderGymScene();
   updateUI();
@@ -714,13 +714,13 @@ function repairEquipment(id) {
   });
   var maxRepairs = (game.staff.manager?.hired && !isStaffTraining('manager', 0) && !isStaffSick('manager', 0)) ? 2 : 1;
   if (repairingCount >= maxRepairs) {
-    showToast('❌', '¡Ya hay ' + repairingCount + ' equipo(s) en reparación!');
+    showToast('❌', repairingCount + ' machine(s) are already under repair!');
     return;
   }
 
   var cost = getRepairCost(eq, state.level);
   if (game.money < cost) {
-    showToast('❌', '¡No tenés suficiente plata!');
+    showToast('❌', 'Not enough cash!');
     return;
   }
 
@@ -728,8 +728,8 @@ function repairEquipment(id) {
   var duration = Math.ceil(getRepairDuration(state.level) * getSkillEffect('repairSpeedMult'));
   state.brokenUntil = Date.now() + duration * 1000;
 
-  addLog('🔧 Reparando <span class="highlight">' + eq.name + '</span> (' + Math.floor(duration / 60) + ' min ' + (duration % 60) + 's)');
-  showToast('🔧', 'Reparando ' + eq.name + '...');
+  addLog('🔧 Repairing <span class="highlight">' + eq.name + '</span> (' + Math.floor(duration / 60) + ' min ' + (duration % 60) + 's)');
+  showToast('🔧', 'Repairing ' + eq.name + '...');
   renderEquipment();
   saveGame();
 }
@@ -769,8 +769,8 @@ function checkEquipmentBreakdown() {
       state.brokenUntil = -1; // broken, waiting for repair
       game.stats.equipBreakdowns++;
       var repairCost = getRepairCost(eq, state.level);
-      addLog('⚠️ <span class="highlight">' + eq.name + '</span> se rompió! Reparación: ' + fmtMoney(repairCost), 'critical');
-      showToast('⚠️', '¡' + eq.name + ' se rompió!');
+      addLog('⚠️ <span class="highlight">' + eq.name + '</span> broke down! Repair: ' + fmtMoney(repairCost), 'critical');
+      showToast('⚠️', eq.name + ' broke down!');
       renderEquipment();
     }
   });
@@ -783,8 +783,8 @@ function checkRepairCompletion() {
     if (state.brokenUntil > 0 && Date.now() >= state.brokenUntil) {
       state.brokenUntil = 0;
       game.stats.equipRepaired++;
-      addLog('✅ <span class="highlight">' + eq.name + '</span> reparado y funcionando!', 'important');
-      showToast('✅', eq.name + ' reparado!');
+      addLog('✅ <span class="highlight">' + eq.name + '</span> repaired and back in service!', 'important');
+      showToast('✅', eq.name + ' repaired!');
       renderEquipment();
       updateUI();
     }
@@ -838,8 +838,8 @@ function checkConstructionCompletion() {
     if (state.upgradingUntil > 0 && Date.now() >= state.upgradingUntil) {
       state.upgradingUntil = 0;
       state.level++;
-      addLog('🏗️ <span class="highlight">' + eq.name + '</span> mejorado a nivel ' + state.level + '!', 'important');
-      showToast('⬆️', eq.name + ' — Nivel ' + state.level + '!');
+      addLog('🏗️ <span class="highlight">' + eq.name + '</span> upgraded to level ' + state.level + '!', 'important');
+      showToast('⬆️', eq.name + ' — Level ' + state.level + '!');
       updateMembers();
       renderEquipment();
       renderGymScene();
@@ -855,9 +855,9 @@ function checkConstructionCompletion() {
         var zone = GYM_ZONES.find(function(z) { return z.id === zId; });
         if (zone) {
           game.stats.zonesUnlocked++;
-          addLog('🏗️ ¡Construcción terminada: <span class="highlight">' + zone.name + '</span>! ' + zone.icon, 'important');
-          showToast(zone.icon, '¡' + zone.name + ' lista!');
-          floatNumber('+' + zone.capacityBonus + ' capacidad', 'var(--accent)');
+          addLog('🏗️ Construction complete: <span class="highlight">' + zone.name + '</span>! ' + zone.icon, 'important');
+          showToast(zone.icon, zone.name + ' is ready!');
+          floatNumber('+' + zone.capacityBonus + ' capacity', 'var(--accent)');
         }
         updateMembers();
         renderAll();
@@ -907,8 +907,8 @@ function checkSkillResearchCompletion() {
     game.dailyTracking.xpEarned += xpGain;
 
     if (skillInfo) {
-      addLog('🔬 Investigación completa: <span class="highlight">' + skillInfo.name + '</span> (' + SKILL_TREE[branchKey].name + ')', 'important');
-      showToast(skillInfo.icon, '¡Mejora lista: ' + skillInfo.name + '!');
+      addLog('🔬 Research complete: <span class="highlight">' + skillInfo.name + '</span> (' + SKILL_TREE[branchKey].name + ')', 'important');
+      showToast(skillInfo.icon, 'Upgrade ready: ' + skillInfo.name + '!');
     }
 
     updateMembers();
@@ -949,15 +949,15 @@ function healStaff(id, copyIdx) {
   var lvl = target.level || 1;
   var cost = getHealCost(s, lvl);
   if (game.money < cost) {
-    showToast('❌', '¡No tenés suficiente plata!');
+    showToast('❌', 'Not enough cash!');
     return;
   }
 
   game.money -= cost;
   target.sickUntil = 0;
   game.stats.staffHealed++;
-  addLog('💊 <span class="highlight">' + s.name + '</span> se recuperó con tratamiento médico.');
-  showToast('💊', s.name + ' curado!');
+  addLog('💊 <span class="highlight">' + s.name + '</span> recovered with medical treatment.');
+  showToast('💊', s.name + ' healed!');
   renderStaff();
   updateUI();
   saveGame();
@@ -995,8 +995,8 @@ function checkStaffIllness() {
         state.sickUntil = Date.now() + sickDuration * 1000;
         game.stats.staffIllnesses++;
         var healCost = getHealCost(s, state.level || 1);
-        addLog('🤒 <span class="highlight">' + s.name + '</span> se enfermó! Curar: ' + fmtMoney(healCost), 'critical');
-        showToast('🤒', s.name + ' se enfermó!');
+        addLog('🤒 <span class="highlight">' + s.name + '</span> got sick! Heal: ' + fmtMoney(healCost), 'critical');
+        showToast('🤒', s.name + ' got sick!');
         renderStaff();
       }
     }
@@ -1009,8 +1009,8 @@ function checkStaffIllness() {
             var sickDuration = 180 + Math.floor(Math.random() * 300);
             ex.sickUntil = Date.now() + sickDuration * 1000;
             game.stats.staffIllnesses++;
-            addLog('🤒 <span class="highlight">' + s.name + ' #' + (i + 2) + '</span> se enfermó!');
-            showToast('🤒', s.name + ' #' + (i + 2) + ' se enfermó!');
+            addLog('🤒 <span class="highlight">' + s.name + ' #' + (i + 2) + '</span> got sick!');
+            showToast('🤒', s.name + ' #' + (i + 2) + ' got sick!');
             renderStaff();
           }
         }
@@ -1071,8 +1071,8 @@ function getIncomePerSecond() {
   const totalIncome = (base + zoneIncome + rivalIncome) * mult * memberBonus * prestigeMult;
   // Decoration income bonus
   var decoIncome = getDecorationBonus('income');
-  // Fama: piso pasivo (lifetime) × perks × unlocks × boost activo. Setback: penalty temporal si un
-  // negocio salió mal (mala prensa / redada). Sólo afecta al gym activo, no a las sucursales pasivas.
+  // Fame: passive floor (lifetime) × perks × unlocks × active boost. Setback: temporary penalty if a
+  // venture went wrong (bad press / raid). Only affects the active gym, not the passive branches.
   return totalIncome * suppEffects.incomeMult * (1 + decoIncome) * getFameIncomeMult() * getGymSetbackIncomeMult();
 }
 
@@ -1099,22 +1099,22 @@ function getActiveSupplementEffects() {
       if (e.repPerMin) effects.repPerMin += e.repPerMin * tMult;
     }
   });
-  // Combo bonus: Proteína + Creatina → +10% ingresos
+  // Combo bonus: Protein + Creatine → +10% income
   var proteinActive = game.supplements['protein'] && now < game.supplements['protein'].activeUntil;
   var creatineActive = game.supplements['creatine'] && now < game.supplements['creatine'].activeUntil;
   if (proteinActive && creatineActive) effects.incomeMult *= 1.1;
   return effects;
 }
 
-// ===== FAMA / REPUTATION SPENDING =====
-// La reputación pasa de número muerto a moneda. lifetime = balance gastable + gastado,
-// así gastar NO baja el "piso pasivo" (que mide tu fama acumulada de toda la vida).
+// ===== FAME / REPUTATION SPENDING =====
+// Reputation goes from a dead number to a currency. lifetime = spendable balance + spent,
+// so spending does NOT lower the "passive floor" (which tracks your accumulated lifetime fame).
 
 function getReputationLifetime() {
   return (game.reputation || 0) + (game.reputationSpent || 0);
 }
 
-// Ritmo real de generación de rep (espejo de repTick). Base de pricing de la tienda.
+// Real rep generation rate (mirror of repTick). Base for the shop's pricing.
 function getReputationPerSecond() {
   var r = (game.members || 0) * 0.02 * getSkillEffect('memberRepMult');
   STAFF.forEach(function(s) {
@@ -1126,8 +1126,8 @@ function getReputationPerSecond() {
   return r;
 }
 
-// Piso pasivo: bonus de ingreso logarítmico por tu fama ACUMULADA (lifetime).
-// Crece parejo de 1K a 20M+ sin saturar. Techo +15% (o +30% con la Leyenda).
+// Passive floor: logarithmic income bonus from your ACCUMULATED (lifetime) fame.
+// Grows smoothly from 1K to 20M+ without saturating. Cap +15% (or +30% with Legend).
 function getReputationFloorBonus() {
   var life = getReputationLifetime();
   if (life <= 0) return 0;
@@ -1139,7 +1139,7 @@ function getFamePerkLevel(id) {
   return (game.famePerks && game.famePerks[id]) || 0;
 }
 
-// Suma aditiva de perks permanentes para una clave de efecto (income/cost/capacity/retention/vipspeed)
+// Additive sum of permanent perks for an effect key (income/cost/capacity/retention/vipspeed)
 function getFamePerkEffect(key) {
   var total = 0;
   if (typeof FAME_SHOP === 'undefined') return 0;
@@ -1149,7 +1149,7 @@ function getFamePerkEffect(key) {
   return total;
 }
 
-// Multiplicadores de boosts temporales activos
+// Multipliers from active temporary boosts
 function getActiveFameBoosts() {
   var b = { incomeMult: 1, repMult: 1, classMult: 1, memberAttractMult: 1 };
   if (typeof FAME_SHOP === 'undefined' || !game.fameBoosts) return b;
@@ -1175,7 +1175,7 @@ function getFameUnlockIncome() {
   return m;
 }
 
-// Multiplicador de ingreso total de Fama: piso pasivo × perks × unlocks × boost activo
+// Total Fame income multiplier: passive floor × perks × unlocks × active boost
 function getFameIncomeMult() {
   return (1 + getReputationFloorBonus())
     * (1 + getFamePerkEffect('income'))
@@ -1183,12 +1183,12 @@ function getFameIncomeMult() {
     * getActiveFameBoosts().incomeMult;
 }
 
-// Reducción de costos por el perk Proveedores Premium (capeada por seguridad)
+// Cost reduction from the Premium Suppliers perk (capped for safety)
 function getFameCostReduction() {
   return Math.min(0.5, getFamePerkEffect('cost'));
 }
 
-// ----- Costos de la tienda (escalan con la generación real de rep) -----
+// ----- Shop costs (scale with the real rep generation rate) -----
 function getFameRate() {
   return Math.max(1, getReputationPerSecond());
 }
@@ -1196,14 +1196,14 @@ function getFameBoostCost(b) {
   return Math.ceil(getFameRate() * b.costSeconds);
 }
 function getFamePerkCost(p) {
-  var lvl = getFamePerkLevel(p.id); // costo del PRÓXIMO nivel
+  var lvl = getFamePerkLevel(p.id); // cost of the NEXT level
   return Math.ceil(getFameRate() * p.baseSeconds * Math.pow(p.growth, lvl));
 }
 function getFameUnlockCost(u) {
   return Math.ceil(getFameRate() * u.costSeconds);
 }
 
-// ----- Compras (gastan reputación) -----
+// ----- Purchases (spend reputation) -----
 function spendReputation(amount) {
   game.reputation = Math.max(0, game.reputation - amount);
   game.reputationSpent = (game.reputationSpent || 0) + amount;
@@ -1213,13 +1213,13 @@ function buyFameBoost(id) {
   var b = FAME_SHOP.boosts.find(function(x) { return x.id === id; });
   if (!b) return;
   var now = Date.now();
-  if (game.fameBoosts[id] && now < game.fameBoosts[id]) { showToast('⏳', '¡' + b.name + ' ya está activo!'); return; }
+  if (game.fameBoosts[id] && now < game.fameBoosts[id]) { showToast('⏳', b.name + ' is already active!'); return; }
   var cost = getFameBoostCost(b);
-  if (game.reputation < cost) { showToast('❌', '¡Te falta reputación!'); return; }
+  if (game.reputation < cost) { showToast('❌', 'Not enough reputation!'); return; }
   spendReputation(cost);
   game.fameBoosts[id] = now + b.duration * 1000;
-  addLog('🌟 Activaste <span class="highlight">' + b.name + '</span> (' + fmtTime(b.duration) + ') — costó ' + fmt(cost) + ' de fama.', 'important');
-  showToast(b.icon, '¡' + b.name + ' activado!');
+  addLog('🌟 You activated <span class="highlight">' + b.name + '</span> (' + fmtTime(b.duration) + ') — cost ' + fmt(cost) + ' fame.', 'important');
+  showToast(b.icon, b.name + ' activated!');
   updateUI(); renderFameShop(); saveGame();
 }
 
@@ -1227,27 +1227,27 @@ function buyFamePerk(id) {
   var p = FAME_SHOP.perks.find(function(x) { return x.id === id; });
   if (!p) return;
   var lvl = getFamePerkLevel(id);
-  if (lvl >= p.maxLevel) { showToast('✅', '¡' + p.name + ' al máximo!'); return; }
+  if (lvl >= p.maxLevel) { showToast('✅', p.name + ' is maxed out!'); return; }
   var cost = getFamePerkCost(p);
-  if (game.reputation < cost) { showToast('❌', '¡Te falta reputación!'); return; }
+  if (game.reputation < cost) { showToast('❌', 'Not enough reputation!'); return; }
   spendReputation(cost);
   game.famePerks[id] = lvl + 1;
-  addLog('🌟 Mejoraste <span class="highlight">' + p.name + '</span> a nivel ' + (lvl + 1) + ' — costó ' + fmt(cost) + ' de fama.', 'important');
-  showToast(p.icon, '¡' + p.name + ' Nv' + (lvl + 1) + '!');
+  addLog('🌟 You upgraded <span class="highlight">' + p.name + '</span> to level ' + (lvl + 1) + ' — cost ' + fmt(cost) + ' fame.', 'important');
+  showToast(p.icon, p.name + ' Lv' + (lvl + 1) + '!');
   updateUI(); renderFameShop(); saveGame();
 }
 
 function buyFameUnlock(id) {
   var u = FAME_SHOP.unlocks.find(function(x) { return x.id === id; });
   if (!u) return;
-  if (game.fameUnlocks[id]) { showToast('✅', '¡Ya lo tenés!'); return; }
-  if (getReputationLifetime() < u.reqLifetime) { showToast('🔒', 'Necesitás ' + fmt(u.reqLifetime) + ' de fama acumulada.'); return; }
+  if (game.fameUnlocks[id]) { showToast('✅', 'You already have it!'); return; }
+  if (getReputationLifetime() < u.reqLifetime) { showToast('🔒', 'Requires ' + fmt(u.reqLifetime) + ' accumulated fame.'); return; }
   var cost = getFameUnlockCost(u);
-  if (game.reputation < cost) { showToast('❌', '¡Te falta reputación!'); return; }
+  if (game.reputation < cost) { showToast('❌', 'Not enough reputation!'); return; }
   spendReputation(cost);
   game.fameUnlocks[id] = true;
-  addLog('👑 Desbloqueaste <span class="highlight">' + u.name + '</span> — costó ' + fmt(cost) + ' de fama.', 'important');
-  showToast(u.icon, '¡' + u.name + ' desbloqueado!');
+  addLog('👑 You unlocked <span class="highlight">' + u.name + '</span> — cost ' + fmt(cost) + ' fame.', 'important');
+  showToast(u.icon, u.name + ' unlocked!');
   updateUI(); renderFameShop(); saveGame();
 }
 
@@ -1288,14 +1288,14 @@ function buySupplement(id) {
 
   var state = game.supplements[id];
   if (state && state.activeUntil && Date.now() < state.activeUntil) {
-    showToast('❌', '¡Ya está activo!');
+    showToast('❌', "It's already active!");
     return;
   }
 
   var cost = getSupplementCost(sup);
 
   if (game.money < cost) {
-    showToast('❌', '¡No tenés suficiente plata!');
+    showToast('❌', 'Not enough cash!');
     return;
   }
 
@@ -1321,8 +1321,8 @@ function buySupplement(id) {
 
   updateMembers();
 
-  addLog('🧃 Suplemento <span class="highlight">' + sup.name + '</span> activado! Duración: ' + fmtTime(sup.duration));
-  showToast(sup.icon, '¡' + sup.name + ' activado!');
+  addLog('🧃 Supplement <span class="highlight">' + sup.name + '</span> activated! Duration: ' + fmtTime(sup.duration));
+  showToast(sup.icon, sup.name + ' activated!');
 
   renderSupplements();
   updateUI();
@@ -1361,8 +1361,8 @@ function getRivalMemberSteal() {
   return total;
 }
 
-// Robo de rivales como % REAL de socios (espejo de getMembersAttracted), para mostrarlo coherente.
-// El robo NO es un número plano: es un % del pool de socios, capeado al 30%, reducido por Lealtad de Marca.
+// Rival steal as a REAL % of members (mirror of getMembersAttracted), so it displays consistently.
+// The steal is NOT a flat number: it's a % of the member pool, capped at 30%, reduced by Brand Loyalty.
 function getRivalStealInfo() {
   var totalSteal = getRivalMemberSteal();
   var stealMult = getSkillEffect('rivalStealMult');
@@ -1372,7 +1372,7 @@ function getRivalStealInfo() {
   return { totalSteal: totalSteal, pct: pct, lost: Math.round(members * pct), members: members, capped: (totalSteal * 0.0025 * stealMult) > 0.30 };
 }
 
-// % de socios que roba UN rival puntual (standalone, sin el cap del total) — para la tarjeta.
+// % of members stolen by a SINGLE rival (standalone, without the total cap) — for the card.
 function getRivalStealPct(rival) {
   var stealMult = getSkillEffect('rivalStealMult');
   var retention = (typeof getFamePerkEffect === 'function') ? getFamePerkEffect('retention') : 0;
@@ -1410,14 +1410,14 @@ function launchRivalPromo(id) {
   var state = game.rivals[id];
   if (state && state.defeated) return;
   if (state && state.promoUntil && Date.now() < state.promoUntil) {
-    showToast('❌', '¡Ya tenés una promo activa contra este rival!');
+    showToast('❌', 'You already have an active promo against this rival!');
     return;
   }
 
   var cost = getRivalPromoCost(rival);
 
   if (game.money < cost) {
-    showToast('❌', '¡No tenés suficiente plata!');
+    showToast('❌', 'Not enough cash!');
     return;
   }
 
@@ -1431,8 +1431,8 @@ function launchRivalPromo(id) {
 
   updateMembers();
 
-  addLog('🏪 Promoción contra <span class="highlight">' + rival.name + '</span>! Neutralizado por ' + fmtTime(rival.promoDuration));
-  showToast('📣', '¡Promo contra ' + rival.name + '!');
+  addLog('🏪 Promo against <span class="highlight">' + rival.name + '</span>! Neutralized for ' + fmtTime(rival.promoDuration));
+  showToast('📣', 'Promo against ' + rival.name + '!');
 
   renderRivals();
   updateUI();
@@ -1451,11 +1451,11 @@ function defeatRival(id) {
   var cost = getRivalDefeatCost(rival);
 
   if (game.money < cost) {
-    showToast('❌', '¡No tenés suficiente plata!');
+    showToast('❌', 'Not enough cash!');
     return;
   }
 
-  if (!confirm('¿Superar a ' + rival.name + ' por ' + fmtMoney(cost) + '? Bonus permanente al derrotarlo.')) return;
+  if (!confirm('Defeat ' + rival.name + ' for ' + fmtMoney(cost) + '? Permanent bonus on victory.')) return;
 
   game.money -= cost;
   if (!game.rivals[id]) game.rivals[id] = {};
@@ -1469,12 +1469,12 @@ function defeatRival(id) {
 
   var bonusParts = [];
   if (rival.defeatBonus.income) bonusParts.push('+' + rival.defeatBonus.income + ' income/s');
-  if (rival.defeatBonus.capacity) bonusParts.push('+' + rival.defeatBonus.capacity + ' capacidad');
+  if (rival.defeatBonus.capacity) bonusParts.push('+' + rival.defeatBonus.capacity + ' capacity');
 
   updateMembers();
 
-  addLog('🏆 ¡Superaste a <span class="highlight">' + rival.name + '</span>! Bonus: ' + bonusParts.join(', '));
-  showToast('🏆', '¡' + rival.name + ' superado!');
+  addLog('🏆 You defeated <span class="highlight">' + rival.name + '</span>! Bonus: ' + bonusParts.join(', '));
+  showToast('🏆', rival.name + ' defeated!');
 
   renderRivals();
   updateUI();
@@ -1533,10 +1533,10 @@ function getOperatingCostsPerDay() {
   return daily;
 }
 
-// "Servicios e impuestos": costo que ESCALA con el ingreso bruto, para que el gasto siga siendo
-// una fracción relevante a toda escala (sin esto, el gasto flat queda en ~1% del ingreso a nivel
-// medio/alto y se pierde la tensión económica del tycoon). Reducible con el Gerente — agencia:
-// optimizás tu margen contratando/mejorando administración.
+// "Utilities and taxes": a cost that SCALES with gross income, so expenses stay a relevant
+// fraction at every scale (without this, flat costs land at ~1% of income at mid/high
+// level and the tycoon's economic tension is lost). Reducible with the Manager — agency:
+// you optimize your margin by hiring/upgrading administration.
 function getIncomeOverheadPerSecond() {
   var rate = OPERATING_COSTS.overheadRate || 0;
   if (rate <= 0) return 0;
@@ -1546,7 +1546,7 @@ function getIncomeOverheadPerSecond() {
     // stacks across copies (skips sick/training) + scales with level, capped 60% — extra managers now matter
     overhead *= Math.max(0, 1 - Math.min(0.6, getStaffTotalEffect(mgrDef, 'costReduction')));
   }
-  // Fama: perk "Proveedores Premium" también reduce el overhead de servicios e impuestos
+  // Fame: the "Premium Suppliers" perk also reduces the utilities-and-taxes overhead
   overhead *= (1 - getFameCostReduction());
   return Math.max(0, overhead);
 }
@@ -1572,19 +1572,19 @@ function getCampaignCostsPerSecond() {
 
 function buyProperty() {
   if (game.ownProperty) {
-    showToast('❌', '¡Ya sos dueño del local!');
+    showToast('❌', 'You already own the property!');
     return;
   }
   if (game.level < OPERATING_COSTS.propertyReqLevel) return;
   if (game.money < OPERATING_COSTS.propertyPrice) {
-    showToast('❌', '¡No tenés suficiente plata!');
+    showToast('❌', 'Not enough cash!');
     return;
   }
-  if (!confirm('¿Comprar el local por ' + fmtMoney(OPERATING_COSTS.propertyPrice) + '? No pagás más alquiler.')) return;
+  if (!confirm('Buy the property for ' + fmtMoney(OPERATING_COSTS.propertyPrice) + '? You stop paying rent.')) return;
   game.money -= OPERATING_COSTS.propertyPrice;
   game.ownProperty = true;
-  addLog('🏠 ¡Compraste el local! No pagás más alquiler.');
-  showToast('🏠', '¡Local propio! Sin más alquiler.');
+  addLog('🏠 You bought the property! No more rent.');
+  showToast('🏠', 'You own the property! No more rent.');
   addXp(200);
   game.dailyTracking.xpEarned += 200;
   renderExpansion();
@@ -1593,10 +1593,10 @@ function buyProperty() {
 }
 
 // ===== RANDOM EVENT OUTCOME SCALING =====
-// Outcomes are DECLARED as signed tier magnitudes (1=chico, 2=medio, 3=grande; signo=gana/pierde)
-// and resolved into real numbers that scale with the player's economy, so cada evento sigue siendo
-// relevante temprano Y tarde. Plata: ganancias = segundos-de-ingreso; costos = igual pero capeados
-// como % del efectivo (nunca te funden). Rep/XP/miembros escalan con nivel y con el cap.
+// Outcomes are DECLARED as signed tier magnitudes (1=small, 2=medium, 3=large; sign=gain/loss)
+// and resolved into real numbers that scale with the player's economy, so every event stays
+// relevant early AND late. Cash: gains = seconds-of-income; costs = same but capped
+// as a % of cash (never bankrupts you). Rep/XP/members scale with level and with the cap.
 function evIncSec() { var i = getIncomePerSecond(); return i > 5 ? i : 5; }
 function evMoney(tier) {
   if (!tier) return 0;
@@ -1637,10 +1637,10 @@ function fmtEventDeltas(d, special) {
   if (d.money) parts.push((d.money > 0 ? '+' : '-') + fmtMoney(Math.abs(d.money)));
   if (d.rep) parts.push((d.rep > 0 ? '+' : '') + d.rep + ' rep');
   if (d.xp) parts.push('+' + d.xp + ' XP');
-  if (d.members) parts.push((d.members > 0 ? '+' : '') + d.members + ' miembros');
-  if (special === 'curestaff') parts.push('staff recuperado');
-  if (special === 'randomsupp') parts.push('suplemento gratis');
-  return parts.length ? parts.join(' · ') : 'Nada';
+  if (d.members) parts.push((d.members > 0 ? '+' : '') + d.members + ' members');
+  if (special === 'curestaff') parts.push('staff recovered');
+  if (special === 'randomsupp') parts.push('free supplement');
+  return parts.length ? parts.join(' · ') : 'Nothing';
 }
 
 function getMaxMembers() {
@@ -1675,7 +1675,7 @@ function getMaxMembers() {
   cap += getRivalCapacityBonus();
   // Skill: capacity mult
   cap *= getSkillEffect('capacityMult');
-  // Fama: perk "Gimnasio de Moda" (+5% cap/nivel)
+  // Fame: "Trendy Gym" perk (+5% cap/level)
   cap *= (1 + getFamePerkEffect('capacity'));
   // Decoration capacity bonus
   cap += getDecorationBonus('capacity');
@@ -1702,7 +1702,7 @@ function getMembersAttracted() {
     base += eq.membersPerLevel * lvl;
   });
   base *= getSkillEffect('memberAttractionMult');
-  // Fama: boost temporal "Jornada Abierta" (+50% atracción)
+  // Fame: "Open House" temporary boost (+50% attraction)
   base *= getActiveFameBoosts().memberAttractMult;
   // Marketing boost
   var campaignMembersMult = getSkillEffect('campaignMembersMult');
@@ -1723,14 +1723,14 @@ function getMembersAttracted() {
 // ===== GYM TIER =====
 function getGymTier() {
   const m = game.totalMoneyEarned;
-  if (m >= 10000000) return '🏛️ Imperio del Fitness';
-  if (m >= 5000000) return '🏛️ Mega Gym de Elite';
-  if (m >= 1000000) return '🏢 Cadena Premium';
-  if (m >= 500000) return '💎 Gym VIP';
-  if (m >= 100000) return '🏋️ Gym Profesional';
-  if (m >= 50000) return '💪 Gym Establecido';
-  if (m >= 10000) return '🔨 Gym en Crecimiento';
-  if (m >= 1000) return '🌱 Gym Principiante';
+  if (m >= 10000000) return '🏛️ Fitness Empire';
+  if (m >= 5000000) return '🏛️ Elite Mega Gym';
+  if (m >= 1000000) return '🏢 Premium Chain';
+  if (m >= 500000) return '💎 VIP Gym';
+  if (m >= 100000) return '🏋️ Pro Gym';
+  if (m >= 50000) return '💪 Established Gym';
+  if (m >= 10000) return '🔨 Growing Gym';
+  if (m >= 1000) return '🌱 Rookie Gym';
   return '🏠 Garage Gym';
 }
 
@@ -1787,13 +1787,13 @@ function buyEquipment(id) {
 
   // Can't upgrade if already upgrading
   if (isEquipmentUpgrading(id)) {
-    showToast('❌', '¡Ya se está mejorando!');
+    showToast('❌', "It's already being upgraded!");
     return;
   }
 
   // Equipment level cannot exceed player level
   if (state.level >= game.level) {
-    showToast('❌', 'El equipo no puede superar tu nivel (' + game.level + ')');
+    showToast('❌', "Equipment can't exceed your level (" + game.level + ')');
     return;
   }
 
@@ -1804,7 +1804,7 @@ function buyEquipment(id) {
     var activeUpgrades = getActiveEquipUpgrades();
     var maxUpgrades = getMaxConcurrentUpgrades();
     if (activeUpgrades >= maxUpgrades) {
-      showToast('❌', '¡Ya hay ' + activeUpgrades + ' mejora(s) en curso! Máx: ' + maxUpgrades);
+      showToast('❌', activeUpgrades + ' upgrade(s) already in progress! Max: ' + maxUpgrades);
       return;
     }
   }
@@ -1824,16 +1824,16 @@ function buyEquipment(id) {
   if (isNew) {
     // First purchase is instant
     game.equipment[id].level = 1;
-    addLog('🛒 Compraste <span class="highlight">' + eq.name + '</span> ' + eq.icon);
-    showToast(eq.icon, '¡Nuevo equipo: ' + eq.name + '!');
+    addLog('🛒 You bought <span class="highlight">' + eq.name + '</span> ' + eq.icon);
+    showToast(eq.icon, 'New equipment: ' + eq.name + '!');
     updateMembers();
   } else {
     // Upgrades take time
     var duration = getEquipUpgradeDuration(state.level) * getSkillEffect('equipUpgradeSpeedMult') * 1000;
     game.equipment[id].upgradingUntil = Date.now() + duration;
     var secs = Math.ceil(duration / 1000);
-    addLog('🏗️ Mejorando <span class="highlight">' + eq.name + '</span> a nivel ' + nextLevel + ' (' + fmtTime(secs) + ')');
-    showToast('🏗️', 'Mejorando ' + eq.name + '... ' + fmtTime(secs));
+    addLog('🏗️ Upgrading <span class="highlight">' + eq.name + '</span> to level ' + nextLevel + ' (' + fmtTime(secs) + ')');
+    showToast('🏗️', 'Upgrading ' + eq.name + '... ' + fmtTime(secs));
   }
 
   renderEquipment();
@@ -1855,8 +1855,8 @@ function hireStaff(id) {
   addXp(xpGain);
   game.dailyTracking.xpEarned += xpGain;
 
-  addLog('🤝 Contrataste a <span class="highlight">' + s.name + '</span> (' + s.role + ')');
-  showToast(s.icon, '¡' + s.name + ' se unió al equipo!');
+  addLog('🤝 You hired <span class="highlight">' + s.name + '</span> (' + s.role + ')');
+  showToast(s.icon, s.name + ' joined the team!');
 
   updateMembers();
   renderStaff();
@@ -1906,16 +1906,16 @@ function enterCompetition(id) {
     game.dailyTracking.moneyEarned += reward;
     game.dailyTracking.reputationGained += c.repReward;
     game.dailyTracking.xpEarned += c.xpReward;
-    addLog('🏆 ¡VICTORIA en <span class="highlight">' + c.name + '</span>! +<span class="money-log">' + fmtMoney(reward) + '</span> +' + c.repReward + '⭐', 'important');
-    showToast('🏆', '¡Victoria en ' + c.name + '!');
+    addLog('🏆 VICTORY at <span class="highlight">' + c.name + '</span>! +<span class="money-log">' + fmtMoney(reward) + '</span> +' + c.repReward + '⭐', 'important');
+    showToast('🏆', 'Victory at ' + c.name + '!');
     floatNumber('+' + fmtMoney(reward));
   } else {
     const xpGain = Math.ceil(c.xpReward * 0.2 * (1 + (game.level - 1) * 0.15));
     addXp(xpGain);
     game.dailyTracking.xpEarned += xpGain;
     game.competitions[id].losses++;
-    addLog('😤 Derrota en <span class="highlight">' + c.name + '</span>. A seguir entrenando...');
-    showToast('😤', 'Derrota en ' + c.name + '...');
+    addLog('😤 Loss at <span class="highlight">' + c.name + '</span>. Keep training...');
+    showToast('😤', 'Loss at ' + c.name + '...');
   }
 
   renderChampion();
@@ -1947,8 +1947,8 @@ function checkLevelUp() {
     game.xp -= game.xpToNext;
     game.level++;
     game.xpToNext = Math.ceil(100 * Math.pow(1.40, game.level - 1));
-    addLog('🎉 ¡Subiste al <span class="highlight">Nivel ' + game.level + '</span>!', 'critical');
-    showToast('🎉', '¡Nivel ' + game.level + '!');
+    addLog('🎉 You reached <span class="highlight">Level ' + game.level + '</span>!', 'critical');
+    showToast('🎉', 'Level ' + game.level + '!');
     leveled = true;
   }
   if (leveled) {
@@ -1968,9 +1968,9 @@ function checkLevelUp() {
 function getChampionFatiguePenalty() {
   var fatigue = game.champion ? (game.champion.fatigue || 0) : 0;
   if (fatigue < 50) return { mult: 1.0, chancePenalty: 0, label: null };
-  if (fatigue < 75) return { mult: 0.85, chancePenalty: 0.05, label: '😓 Cansado: -15% recompensas' };
-  if (fatigue < 90) return { mult: 0.70, chancePenalty: 0.10, label: '😰 Muy cansado: -30% recompensas' };
-  return { mult: 0.50, chancePenalty: 0.20, label: '💀 Agotado: -50% recompensas' };
+  if (fatigue < 75) return { mult: 0.85, chancePenalty: 0.05, label: '😓 Tired: -15% rewards' };
+  if (fatigue < 90) return { mult: 0.70, chancePenalty: 0.10, label: '😰 Very tired: -30% rewards' };
+  return { mult: 0.50, chancePenalty: 0.20, label: '💀 Exhausted: -50% rewards' };
 }
 
 function getChampionTotalStats() {
@@ -2031,15 +2031,15 @@ function recruitChampion() {
   if (game.champion.recruited) return;
   if (game.level < CHAMPION_UNLOCK_LEVEL) return;
   if (game.money < CHAMPION_RECRUIT_COST) {
-    showToast('❌', '¡No tenés suficiente plata!');
+    showToast('❌', 'Not enough cash!');
     return;
   }
 
   game.money -= CHAMPION_RECRUIT_COST;
   game.champion.recruited = true;
 
-  addLog('🏅 ¡Reclutaste a tu <span class="highlight">Campeón</span>! Entrenalo y llevalo a la gloria.');
-  showToast('🏅', '¡Campeón reclutado!');
+  addLog('🏅 You recruited your <span class="highlight">Champion</span>! Train them and lead them to glory.');
+  showToast('🏅', 'Champion recruited!');
   renderChampion();
   updateUI();
   checkAchievements();
@@ -2049,25 +2049,25 @@ function recruitChampion() {
 function trainChampion(stat) {
   if (!game.champion.recruited) return;
   if (isChampionInjured()) {
-    showToast('🤕', '¡Tu campeón está lesionado! Esperá a que se recupere.');
+    showToast('🤕', 'Your champion is injured! Wait for them to recover.');
     return;
   }
   if (isChampionInCamp()) {
-    showToast('🏕️', '¡El campeón está en concentración! No puede entrenar ahora.');
+    showToast('🏕️', 'Your champion is at training camp! They can\'t train right now.');
     return;
   }
   if (game.champion.trainingUntil && Date.now() < game.champion.trainingUntil) {
-    showToast('❌', '¡Tu campeón ya está entrenando!');
+    showToast('❌', 'Your champion is already training!');
     return;
   }
   if ((game.champion.fatigue || 0) >= CHAMPION_FATIGUE_THRESHOLD) {
-    showToast('😴', '¡Tu campeón está agotado! Dejalo descansar antes de entrenar.');
+    showToast('😴', 'Your champion is exhausted! Let them rest before training.');
     return;
   }
 
   var cost = getChampionTrainingCost(stat);
   if (game.money < cost) {
-    showToast('❌', '¡No tenés suficiente plata!');
+    showToast('❌', 'Not enough cash!');
     return;
   }
 
@@ -2078,8 +2078,8 @@ function trainChampion(stat) {
   game.champion.trainingStat = stat;
   game.stats.championTrainings++;
 
-  addLog('🏅 Campeón entrenando <span class="highlight">' + CHAMPION_STAT_NAMES[stat] + '</span>...');
-  showToast('🏋️', 'Entrenando ' + CHAMPION_STAT_NAMES[stat] + '...');
+  addLog('🏅 Champion training <span class="highlight">' + CHAMPION_STAT_NAMES[stat] + '</span>...');
+  showToast('🏋️', 'Training ' + CHAMPION_STAT_NAMES[stat] + '...');
   renderChampion();
   updateUI();
   saveGame();
@@ -2091,7 +2091,7 @@ function checkChampionTraining() {
     var stat = game.champion.trainingStat;
     if (stat) {
       game.champion.stats[stat]++;
-      addLog('🏅 ¡Campeón mejoró <span class="highlight">' + CHAMPION_STAT_NAMES[stat] + '</span> a ' + game.champion.stats[stat] + '!');
+      addLog('🏅 Champion improved <span class="highlight">' + CHAMPION_STAT_NAMES[stat] + '</span> to ' + game.champion.stats[stat] + '!');
       showToast('💪', CHAMPION_STAT_NAMES[stat] + ' → ' + game.champion.stats[stat]);
     }
     game.champion.trainingUntil = 0;
@@ -2105,15 +2105,15 @@ function checkChampionTraining() {
 function championCompete(compId) {
   if (!game.champion || !game.champion.recruited) return;
   if (isChampionInjured()) {
-    showToast('🤕', '¡Tu campeón está lesionado! No puede competir hasta recuperarse.');
+    showToast('🤕', 'Your champion is injured! They can\'t compete until they recover.');
     return;
   }
   if (isChampionInCamp()) {
-    showToast('🏕️', '¡El campeón está en concentración! No puede competir ahora.');
+    showToast('🏕️', 'Your champion is at training camp! They can\'t compete right now.');
     return;
   }
   if (game.champion.trainingUntil && Date.now() < game.champion.trainingUntil) {
-    showToast('⏳', '¡Tu campeón está entrenando, esperá que termine!');
+    showToast('⏳', 'Your champion is training, wait for it to finish!');
     return;
   }
 
@@ -2125,7 +2125,7 @@ function championCompete(compId) {
   var state = game.competitions[compId];
   if (Date.now() < state.cooldownUntil) return;
   if ((game.champion.fatigue || 0) >= CHAMPION_FATIGUE_THRESHOLD) {
-    showToast('😴', '¡Tu campeón está agotado! No puede competir hasta descansar.');
+    showToast('😴', 'Your champion is exhausted! They can\'t compete until they rest.');
     return;
   }
 
@@ -2181,8 +2181,8 @@ function championCompete(compId) {
     game.dailyTracking.xpEarned += xpGain;
 
     var penaltyNote = fatiguePenalty.label ? ' <span style="color:var(--accent);font-size:11px;">(' + fatiguePenalty.label + ')</span>' : '';
-    addLog('🏅 ¡VICTORIA en <span class="highlight">' + c.name + '</span>! +<span class="money-log">' + fmtMoney(reward) + '</span> +' + repGain + '⭐' + penaltyNote, 'important');
-    showToast('🏅', '¡Victoria en ' + c.name + '!');
+    addLog('🏅 VICTORY at <span class="highlight">' + c.name + '</span>! +<span class="money-log">' + fmtMoney(reward) + '</span> +' + repGain + '⭐' + penaltyNote, 'important');
+    showToast('🏅', 'Victory at ' + c.name + '!');
     floatNumber('+' + fmtMoney(reward));
   } else {
     var consolationXp = Math.ceil(c.xpReward * 0.2 * (1 + (game.level - 1) * 0.15));
@@ -2192,8 +2192,8 @@ function championCompete(compId) {
     game.champion.losses++;
     game.stats.championLosses++;
 
-    addLog('🏅 Derrota en <span class="highlight">' + c.name + '</span>. ¡A seguir entrenando!');
-    showToast('😤', 'Derrota en ' + c.name);
+    addLog('🏅 Loss at <span class="highlight">' + c.name + '</span>. Keep training!');
+    showToast('😤', 'Loss at ' + c.name);
   }
 
   checkChampionLevelUp();
@@ -2211,8 +2211,8 @@ function checkChampionLevelUp() {
   while (game.champion.xp >= xpNeeded) {
     game.champion.xp -= xpNeeded;
     game.champion.level++;
-    addLog('🏅 ¡Campeón subió a <span class="highlight">Nivel ' + game.champion.level + '</span>!', 'important');
-    showToast('🏅', '¡Campeón Nivel ' + game.champion.level + '!');
+    addLog('🏅 Champion reached <span class="highlight">Level ' + game.champion.level + '</span>!', 'important');
+    showToast('🏅', 'Champion Level ' + game.champion.level + '!');
     xpNeeded = getChampionXpToNext();
   }
 }
@@ -2228,7 +2228,7 @@ function championFatigueTick() {
   }
 }
 
-// ===== GRANDES TORNEOS (circuito de alto riesgo del campeón) =====
+// ===== GRAND TOURNAMENTS (high-risk champion circuit) =====
 function getGrandTournament(id) { return GRAND_TOURNAMENTS.find(function(t) { return t.id === id; }); }
 
 function getGrandPrep(id) {
@@ -2245,7 +2245,7 @@ function getGrandState(id) {
 
 function getGrandPrepItemCost(t, item) { return Math.ceil(t.entryFee * item.costMult); }
 
-// concentración cuenta como "lista" sólo cuando terminó el timer; el resto son flags directos
+// training camp counts as "ready" only when the timer finished; the rest are direct flags
 function isGrandPrepItemDone(t, itemId) {
   var p = getGrandPrep(t.id);
   if (itemId === 'concentracion') return p.concentracionUntil > 0 && Date.now() >= p.concentracionUntil;
@@ -2267,7 +2267,7 @@ function getChampionInjurySecondsLeft() {
   return Math.ceil((game.champion.injuredUntil - Date.now()) / 1000);
 }
 
-// "En concentración" = algún torneo con la pretemporada corriendo todavía (el campeón está afuera)
+// "In training camp" = some tournament still has its pre-season running (the champion is away)
 function isChampionInCamp() {
   if (!game.grandPrep) return false;
   return Object.keys(game.grandPrep).some(function(id) {
@@ -2276,7 +2276,7 @@ function isChampionInCamp() {
   });
 }
 
-// Estado de ocupación que bloquea entrenar / competir (normal y Grande)
+// Busy state that blocks training / competing (normal and Grand)
 function getChampionBusyState() {
   if (isChampionInjured()) return { busy: true, reason: 'injured', secs: getChampionInjurySecondsLeft() };
   if (isChampionInCamp()) {
@@ -2309,11 +2309,11 @@ function getGrandInjuryChance(t) {
   return Math.max(0.02, Math.min(t.injury.baseChance, chance));
 }
 
-// ¿Por qué no puedo entrar? (null = puedo). No chequea cooldown ni pasajes/fee (eso lo informa el botón).
+// Why can't I enter? (null = I can). Doesn't check cooldown or tickets/fee (the button reports that).
 function getGrandLockReason(t) {
-  if (!game.champion || !game.champion.recruited) return 'Reclutá un campeón primero';
-  if (game.champion.level < t.champLevelReq) return 'Campeón nivel ' + t.champLevelReq;
-  if (game.reputation < t.minRep) return t.minRep + ' de reputación';
+  if (!game.champion || !game.champion.recruited) return 'Recruit a champion first';
+  if (game.champion.level < t.champLevelReq) return 'Champion level ' + t.champLevelReq;
+  if (game.reputation < t.minRep) return t.minRep + ' reputation';
   if (t.minStat) {
     var keys = Object.keys(t.minStat);
     for (var i = 0; i < keys.length; i++) {
@@ -2327,29 +2327,29 @@ function getGrandLockReason(t) {
 function buyGrandPrep(tId, itemId) {
   var t = getGrandTournament(tId);
   if (!t || !game.champion || !game.champion.recruited) return;
-  if (isChampionInjured()) { showToast('🤕', '¡Tu campeón está lesionado! Esperá que se recupere.'); return; }
+  if (isChampionInjured()) { showToast('🤕', 'Your champion is injured! Wait for them to recover.'); return; }
   var it = GRAND_PREP_ITEMS.find(function(i) { return i.id === itemId; });
   if (!it) return;
   var p = getGrandPrep(tId);
   var cost = getGrandPrepItemCost(t, it);
 
   if (itemId === 'concentracion') {
-    if (isGrandPrepItemDone(t, 'concentracion')) { showToast('✅', 'La concentración ya está lista.'); return; }
-    if (p.concentracionUntil > 0 && Date.now() < p.concentracionUntil) { showToast('⏳', 'La concentración ya está en curso.'); return; }
+    if (isGrandPrepItemDone(t, 'concentracion')) { showToast('✅', 'The training camp is already done.'); return; }
+    if (p.concentracionUntil > 0 && Date.now() < p.concentracionUntil) { showToast('⏳', 'The training camp is already in progress.'); return; }
     var busy = getChampionBusyState();
-    if (busy.busy) { showToast('⏳', 'El campeón está ocupado, no puede ir a concentración ahora.'); return; }
-    if (game.money < cost) { showToast('❌', '¡No tenés suficiente plata!'); return; }
+    if (busy.busy) { showToast('⏳', 'The champion is busy and can\'t go to training camp right now.'); return; }
+    if (game.money < cost) { showToast('❌', 'Not enough cash!'); return; }
     game.money -= cost;
     p.concentracionUntil = Date.now() + t.concentracionSecs * 1000;
-    addLog('🏕️ El campeón entró en <span class="highlight">concentración</span> para ' + t.name + '.');
-    showToast('🏕️', 'Concentración iniciada');
+    addLog('🏕️ The champion entered <span class="highlight">training camp</span> for ' + t.name + '.');
+    showToast('🏕️', 'Training camp started');
   } else {
-    if (p[itemId]) { showToast('✅', '¡Ya lo tenés!'); return; }
-    if (game.money < cost) { showToast('❌', '¡No tenés suficiente plata!'); return; }
+    if (p[itemId]) { showToast('✅', 'You already have it!'); return; }
+    if (game.money < cost) { showToast('❌', 'Not enough cash!'); return; }
     game.money -= cost;
     p[itemId] = true;
-    addLog('✅ Conseguiste <span class="highlight">' + it.name + '</span> para ' + t.name + '. (-' + fmtMoney(cost) + ')');
-    showToast(it.icon, it.name + ' listo');
+    addLog('✅ You got <span class="highlight">' + it.name + '</span> for ' + t.name + '. (-' + fmtMoney(cost) + ')');
+    showToast(it.icon, it.name + ' ready');
   }
   renderChampion();
   updateUI();
@@ -2361,24 +2361,24 @@ function attemptGrandTournament(tId) {
   if (!t || !game.champion || !game.champion.recruited) return;
 
   var lock = getGrandLockReason(t);
-  if (lock) { showToast('🔒', 'Requisito: ' + lock); return; }
+  if (lock) { showToast('🔒', 'Requirement: ' + lock); return; }
 
   var busy = getChampionBusyState();
   if (busy.busy) {
-    var msg = busy.reason === 'injured' ? '¡Tu campeón está lesionado!' : busy.reason === 'camp' ? '¡El campeón sigue en concentración!' : '¡El campeón está entrenando!';
+    var msg = busy.reason === 'injured' ? 'Your champion is injured!' : busy.reason === 'camp' ? 'Your champion is still at training camp!' : 'Your champion is training!';
     showToast('⏳', msg);
     return;
   }
-  if ((game.champion.fatigue || 0) >= CHAMPION_FATIGUE_THRESHOLD) { showToast('😴', '¡Tu campeón está agotado! Dejalo descansar.'); return; }
+  if ((game.champion.fatigue || 0) >= CHAMPION_FATIGUE_THRESHOLD) { showToast('😴', 'Your champion is exhausted! Let them rest.'); return; }
 
   var state = getGrandState(tId);
-  if (Date.now() < state.cooldownUntil) { showToast('⏱️', 'Todavía en cooldown.'); return; }
+  if (Date.now() < state.cooldownUntil) { showToast('⏱️', 'Still on cooldown.'); return; }
 
   var p = getGrandPrep(tId);
-  if (!p.pasajes) { showToast('✈️', '¡Necesitás Pasajes y Visa para entrar!'); return; }
-  if (game.money < t.entryFee) { showToast('❌', 'No tenés para la inscripción (' + fmtMoney(t.entryFee) + ').'); return; }
+  if (!p.pasajes) { showToast('✈️', 'You need Tickets and Visa to enter!'); return; }
+  if (game.money < t.entryFee) { showToast('❌', "You can't afford the entry fee (" + fmtMoney(t.entryFee) + ').'); return; }
 
-  // ---- Compromiso: se paga la inscripción, arranca el cooldown, sube la fatiga ----
+  // ---- Commitment: the entry fee is paid, the cooldown starts, fatigue goes up ----
   game.money -= t.entryFee;
   state.cooldownUntil = Date.now() + t.cooldown * 1000;
   var fatigueCost = Math.max(30, GRAND_FATIGUE_PER_ATTEMPT - Math.floor(getChampionEffectiveStat('resistencia') * 0.5));
@@ -2398,7 +2398,7 @@ function attemptGrandTournament(tId) {
   if (won) {
     var rewardMult = getSkillEffect('compRewardMult') * (1 + tecnica * 0.02) * (1 + fuerza * 0.01) * (1 + getDecorationBonus('compReward'));
     var money = Math.ceil(t.reward.money * rewardMult * fp.mult);
-    money = Math.max(money, Math.ceil(getIncomePerSecond() * t.floorSecs * fp.mult)); // piso escalado por economía
+    money = Math.max(money, Math.ceil(getIncomePerSecond() * t.floorSecs * fp.mult)); // floor scaled by economy
     var rep = Math.ceil(t.reward.rep * getSkillEffect('compRepMult') * (1 + tecnica * 0.01) * fp.mult);
     var xp = Math.ceil(t.reward.xp * getSkillEffect('compXpMult') * (1 + (game.level - 1) * 0.15));
     var champXp = Math.ceil(t.reward.xp * 0.5);
@@ -2422,8 +2422,8 @@ function attemptGrandTournament(tId) {
     result.money = money; result.rep = rep; result.xp = xp; result.champXp = champXp;
     if (firstWin && t.title) result.newTitle = t.title;
 
-    addLog('🏆 ¡VICTORIA en <span class="highlight">' + t.name + '</span>! +<span class="money-log">' + fmtMoney(money) + '</span> +' + rep + '⭐', 'important');
-    showToast('🏆', '¡Ganaste ' + t.name + '!');
+    addLog('🏆 VICTORY at <span class="highlight">' + t.name + '</span>! +<span class="money-log">' + fmtMoney(money) + '</span> +' + rep + '⭐', 'important');
+    showToast('🏆', 'You won ' + t.name + '!');
     floatNumber('+' + fmtMoney(money));
   } else {
     var consolationRep = Math.ceil(t.reward.rep * 0.08 * (1 + (game.level - 1) * 0.1));
@@ -2439,19 +2439,19 @@ function attemptGrandTournament(tId) {
     game.dailyTracking.reputationGained += consolationRep;
 
     result.rep = consolationRep; result.xp = consolationXp;
-    addLog('😤 Derrota en <span class="highlight">' + t.name + '</span>. +' + consolationRep + '⭐ de consuelo.');
-    showToast('😤', 'Derrota en ' + t.name);
+    addLog('😤 Loss at <span class="highlight">' + t.name + '</span>. +' + consolationRep + '⭐ consolation.');
+    showToast('😤', 'Loss at ' + t.name);
   }
 
-  // ---- Lesión (la cola rara; mitigada por prep + médico + resistencia) ----
+  // ---- Injury (the rare tail; mitigated by prep + medic + endurance) ----
   if (injured) {
     var inj = applyChampionInjury(t);
     result.injurySecs = inj.secs;
     game.stats.championInjuries = (game.stats.championInjuries || 0) + 1;
-    addLog('🤕 ¡Tu campeón quedó lesionado! Fuera de combate ~' + fmtTime(inj.secs) + '.', 'important');
+    addLog('🤕 Your champion got injured! Out of action ~' + fmtTime(inj.secs) + '.', 'important');
   }
 
-  // ---- La preparación se consume (ganes o pierdas) ----
+  // ---- Prep is consumed (win or lose) ----
   game.grandPrep[tId] = { pasajes: false, nutricion: false, medico: false, concentracionUntil: 0 };
 
   game.stats.championCompetitions++;
@@ -2468,8 +2468,8 @@ function attemptGrandTournament(tId) {
 function applyChampionInjury(t) {
   var resist = getChampionEffectiveStat('resistencia');
   var severity = 0.3 + Math.random() * 0.7;                 // 0.3 - 1.0
-  if (isGrandPrepItemDone(t, 'medico')) severity *= 0.6;    // el kit médico aliviana
-  severity *= Math.max(0.4, 1 - resist * 0.01);             // la resistencia aliviana
+  if (isGrandPrepItemDone(t, 'medico')) severity *= 0.6;    // the medical kit softens it
+  severity *= Math.max(0.4, 1 - resist * 0.01);             // endurance softens it
   severity = Math.max(0.15, Math.min(1, severity));
   var secs = Math.ceil(severity * t.injury.maxHours * 3600);
   game.champion.injuredUntil = Date.now() + secs * 1000;
@@ -2477,21 +2477,21 @@ function applyChampionInjury(t) {
   return { severity: severity, secs: secs };
 }
 
-// Tick: avisa cuando el campeón se recupera de una lesión
+// Tick: notifies when the champion recovers from an injury
 function checkChampionInjury() {
   if (!game.champion || !game.champion.recruited) return;
   if (game.champion._wasInjured && !isChampionInjured()) {
     game.champion._wasInjured = false;
     game.champion.injurySeverity = 0;
-    addLog('💚 ¡Tu campeón se recuperó de la lesión! Listo para volver a la acción.', 'important');
-    showToast('💚', '¡Campeón recuperado!');
+    addLog('💚 Your champion recovered from the injury! Ready to get back in action.', 'important');
+    showToast('💚', 'Champion recovered!');
     renderChampion();
   } else if (isChampionInjured()) {
     game.champion._wasInjured = true;
   }
 }
 
-// Tick: avisa cuando termina una concentración
+// Tick: notifies when a training camp ends
 function checkGrandConcentracion() {
   if (!game.grandPrep) return;
   Object.keys(game.grandPrep).forEach(function(id) {
@@ -2499,7 +2499,7 @@ function checkGrandConcentracion() {
     if (p.concentracionUntil > 0 && !p._campDone && Date.now() >= p.concentracionUntil) {
       p._campDone = true;
       var t = getGrandTournament(id);
-      addLog('🏕️ Terminó la concentración para <span class="highlight">' + (t ? t.name : 'el torneo') + '</span>. Preparación lista.');
+      addLog('🏕️ Training camp ended for <span class="highlight">' + (t ? t.name : 'the tournament') + '</span>. Readiness set.');
       renderChampion();
     } else if (p.concentracionUntil > 0 && Date.now() < p.concentracionUntil) {
       p._campDone = false;
@@ -2507,7 +2507,7 @@ function checkGrandConcentracion() {
   });
 }
 
-// ===== OPORTUNIDADES / NEGOCIOS ARRIESGADOS (mismo motor, a nivel gimnasio) =====
+// ===== OPPORTUNITIES / RISKY VENTURES (same engine, at the gym level) =====
 function getOpportunity(id) { return OPPORTUNITIES.find(function(o) { return o.id === id; }); }
 
 function getOppPrep(id) {
@@ -2538,7 +2538,7 @@ function getOppReadiness(o) {
 
 function getOppSuccessChance(o) {
   var readiness = getOppReadiness(o) / 100;
-  var repBonus = Math.min(0.25, getReputationLifetime() * 0.00002); // tu standing/conexiones ayudan
+  var repBonus = Math.min(0.25, getReputationLifetime() * 0.00002); // your standing/connections help
   return Math.max(0.05, Math.min(0.95, o.baseSuccessChance + readiness * OPP_READINESS_WIN_WEIGHT + repBonus));
 }
 
@@ -2551,12 +2551,12 @@ function getOppBackfireChance(o) {
 }
 
 function getOppLockReason(o) {
-  if (game.level < o.reqLevel) return 'Nivel ' + o.reqLevel;
-  if (getReputationLifetime() < o.reqRepLifetime) return o.reqRepLifetime + ' de fama (rep acumulada)';
+  if (game.level < o.reqLevel) return 'Level ' + o.reqLevel;
+  if (getReputationLifetime() < o.reqRepLifetime) return o.reqRepLifetime + ' fame (accumulated rep)';
   return null;
 }
 
-// ---- Setback del gimnasio (el "daño" cuando un negocio sale mal) ----
+// ---- Gym setback (the "damage" when a venture goes wrong) ----
 function isGymSetbackActive() {
   return !!(game.gymSetback && game.gymSetback.active && Date.now() < game.gymSetback.until);
 }
@@ -2567,7 +2567,7 @@ function getGymSetbackIncomeMult() {
   return isGymSetbackActive() ? (game.gymSetback.incomeMult || 1) : 1;
 }
 function getGymSetbackRepMult() {
-  return isGymSetbackActive() ? 0.5 : 1; // la mala prensa también frena la generación de reputación
+  return isGymSetbackActive() ? 0.5 : 1; // bad press also slows reputation generation
 }
 
 function buyOppPrep(oId, itemId) {
@@ -2579,20 +2579,20 @@ function buyOppPrep(oId, itemId) {
   var cost = getOppPrepItemCost(o, it);
 
   if (itemId === 'duediligence') {
-    if (isOppPrepItemDone(o, 'duediligence')) { showToast('✅', 'La due diligence ya está lista.'); return; }
-    if (p.duediligenceUntil > 0 && Date.now() < p.duediligenceUntil) { showToast('⏳', 'La due diligence ya está en curso.'); return; }
-    if (game.money < cost) { showToast('❌', '¡No tenés suficiente plata!'); return; }
+    if (isOppPrepItemDone(o, 'duediligence')) { showToast('✅', 'The due diligence is already done.'); return; }
+    if (p.duediligenceUntil > 0 && Date.now() < p.duediligenceUntil) { showToast('⏳', 'The due diligence is already in progress.'); return; }
+    if (game.money < cost) { showToast('❌', 'Not enough cash!'); return; }
     game.money -= cost;
     p.duediligenceUntil = Date.now() + o.dueDiligenceSecs * 1000;
-    addLog('🔍 Arrancó la <span class="highlight">due diligence</span> para ' + o.name + '.');
-    showToast('🔍', 'Due diligence iniciada');
+    addLog('🔍 The <span class="highlight">due diligence</span> for ' + o.name + ' began.');
+    showToast('🔍', 'Due diligence started');
   } else {
-    if (p[itemId]) { showToast('✅', '¡Ya lo tenés!'); return; }
-    if (game.money < cost) { showToast('❌', '¡No tenés suficiente plata!'); return; }
+    if (p[itemId]) { showToast('✅', 'You already have it!'); return; }
+    if (game.money < cost) { showToast('❌', 'Not enough cash!'); return; }
     game.money -= cost;
     p[itemId] = true;
-    addLog('✅ Conseguiste <span class="highlight">' + it.name + '</span> para ' + o.name + '. (-' + fmtMoney(cost) + ')');
-    showToast(it.icon, it.name + ' listo');
+    addLog('✅ You got <span class="highlight">' + it.name + '</span> for ' + o.name + '. (-' + fmtMoney(cost) + ')');
+    showToast(it.icon, it.name + ' ready');
   }
   renderCityMap();
   updateUI();
@@ -2604,16 +2604,16 @@ function attemptOpportunity(oId) {
   if (!o) return;
 
   var lock = getOppLockReason(o);
-  if (lock) { showToast('🔒', 'Requisito: ' + lock); return; }
+  if (lock) { showToast('🔒', 'Requirement: ' + lock); return; }
 
   var state = getOppState(oId);
-  if (Date.now() < state.cooldownUntil) { showToast('⏱️', 'Todavía en cooldown.'); return; }
+  if (Date.now() < state.cooldownUntil) { showToast('⏱️', 'Still on cooldown.'); return; }
 
   var p = getOppPrep(oId);
-  if (!p.permisos) { showToast('📋', '¡Necesitás Papeleo y Permisos para entrar!'); return; }
-  if (game.money < o.entryFee) { showToast('❌', 'No tenés para la entrada (' + fmtMoney(o.entryFee) + ').'); return; }
+  if (!p.permisos) { showToast('📋', 'You need Paperwork and Permits to enter!'); return; }
+  if (game.money < o.entryFee) { showToast('❌', "You can't afford the entry fee (" + fmtMoney(o.entryFee) + ').'); return; }
 
-  // ---- Compromiso: se paga la entrada y arranca el cooldown (salga como salga) ----
+  // ---- Commitment: the entry fee is paid and the cooldown starts (whatever happens) ----
   game.money -= o.entryFee;
   state.cooldownUntil = Date.now() + o.cooldown * 1000;
 
@@ -2638,8 +2638,8 @@ function attemptOpportunity(oId) {
     game.dailyTracking.reputationGained += rep;
     result.money = money; result.rep = rep; result.members = members;
 
-    addLog('💼 ¡ÉXITO en <span class="highlight">' + o.name + '</span>! +<span class="money-log">' + fmtMoney(money) + '</span>' + (members ? ' +' + members + ' socios' : ''), 'important');
-    showToast('💰', '¡' + o.name + ' salió bien!');
+    addLog('💼 SUCCESS at <span class="highlight">' + o.name + '</span>! +<span class="money-log">' + fmtMoney(money) + '</span>' + (members ? ' +' + members + ' members' : ''), 'important');
+    showToast('💰', o.name + ' paid off!');
     floatNumber('+' + fmtMoney(money));
   } else {
     var consolationRep = Math.ceil(o.reward.rep * 0.05);
@@ -2649,19 +2649,19 @@ function attemptOpportunity(oId) {
     game.dailyTracking.reputationGained += consolationRep;
     result.rep = consolationRep;
 
-    addLog('💼 <span class="highlight">' + o.name + '</span> no prosperó. Perdiste la entrada.');
-    showToast('😞', o.name + ' falló');
+    addLog('💼 <span class="highlight">' + o.name + '</span> didn\'t pan out. You lost the entry fee.');
+    showToast('😞', o.name + ' failed');
   }
 
-  // ---- Backfire: setback temporal del gimnasio (mitigado por prep + seguro + fama) ----
+  // ---- Backfire: temporary gym setback (mitigated by prep + insurance + fame) ----
   if (backfired) {
     var sb = applyGymSetback(o);
     result.setbackSecs = sb.secs;
     game.stats.gymSetbacks = (game.stats.gymSetbacks || 0) + 1;
-    addLog('🚨 <span class="highlight">' + o.backfire.name + '</span>: ingresos -' + Math.round(o.backfire.incomePenalty * 100) + '% por ~' + fmtTime(sb.secs) + '.', 'important');
+    addLog('🚨 <span class="highlight">' + o.backfire.name + '</span>: income -' + Math.round(o.backfire.incomePenalty * 100) + '% for ~' + fmtTime(sb.secs) + '.', 'important');
   }
 
-  // La preparación se consume
+  // Prep is consumed
   game.oppPrep[oId] = { permisos: false, contactos: false, seguro: false, duediligenceUntil: 0 };
 
   checkLevelUp();
@@ -2674,8 +2674,8 @@ function attemptOpportunity(oId) {
 }
 
 function applyGymSetback(o) {
-  var severity = 0.4 + Math.random() * 0.6;                 // 0.4 - 1.0 (escala la DURACIÓN)
-  if (isOppPrepItemDone(o, 'seguro')) severity *= 0.6;     // el seguro acorta el golpe
+  var severity = 0.4 + Math.random() * 0.6;                 // 0.4 - 1.0 (scales the DURATION)
+  if (isOppPrepItemDone(o, 'seguro')) severity *= 0.6;     // insurance shortens the hit
   severity = Math.max(0.2, Math.min(1, severity));
   var secs = Math.ceil(severity * o.backfire.maxHours * 3600);
   game.gymSetback = {
@@ -2685,18 +2685,18 @@ function applyGymSetback(o) {
   return { secs: secs, severity: severity };
 }
 
-// Tick: avisa cuando el gimnasio se recupera del setback
+// Tick: notifies when the gym recovers from the setback
 function checkGymSetback() {
   if (game.gymSetback && game.gymSetback.active && Date.now() >= game.gymSetback.until) {
     var name = game.gymSetback.name;
     game.gymSetback = { active: false, name: '', icon: '', until: 0, incomeMult: 1 };
-    addLog('💚 Tu gimnasio se recuperó de "' + name + '". Ingresos normalizados.', 'important');
-    showToast('💚', '¡Gimnasio recuperado!');
+    addLog('💚 Your gym recovered from "' + name + '". Income back to normal.', 'important');
+    showToast('💚', 'Gym recovered!');
     if (typeof renderCityMap === 'function') renderCityMap();
   }
 }
 
-// Tick: avisa cuando termina una due diligence
+// Tick: notifies when a due diligence ends
 function checkOppDueDiligence() {
   if (!game.oppPrep) return;
   Object.keys(game.oppPrep).forEach(function(id) {
@@ -2704,7 +2704,7 @@ function checkOppDueDiligence() {
     if (p.duediligenceUntil > 0 && !p._ddDone && Date.now() >= p.duediligenceUntil) {
       p._ddDone = true;
       var o = getOpportunity(id);
-      addLog('🔍 Terminó la due diligence de <span class="highlight">' + (o ? o.name : 'la oportunidad') + '</span>. Preparación lista.');
+      addLog('🔍 Due diligence finished for <span class="highlight">' + (o ? o.name : 'the opportunity') + '</span>. Readiness set.');
       if (typeof renderCityMap === 'function') renderCityMap();
     } else if (p.duediligenceUntil > 0 && Date.now() < p.duediligenceUntil) {
       p._ddDone = false;
@@ -2718,14 +2718,14 @@ function equipChampion(eqId) {
   if (!eq) return;
   if (game.champion.level < eq.reqChampLevel) return;
   if (game.money < eq.cost) {
-    showToast('❌', '¡No tenés suficiente plata!');
+    showToast('❌', 'Not enough cash!');
     return;
   }
 
   game.money -= eq.cost;
   game.champion.equipment[eq.slot] = eq.id;
-  addLog('🏅 Campeón equipó <span class="highlight">' + eq.icon + ' ' + eq.name + '</span>');
-  showToast(eq.icon, '¡' + eq.name + ' equipado!');
+  addLog('🏅 Champion equipped <span class="highlight">' + eq.icon + ' ' + eq.name + '</span>');
+  showToast(eq.icon, eq.name + ' equipped!');
   renderChampion();
   updateUI();
   checkAchievements();
@@ -2743,7 +2743,7 @@ function getPrestigeStars() {
 function doPrestige() {
   // Redirect to city map — old prestige is replaced by branch system
   switchTab('prestige');
-  showToast('🏙️', 'Abrí una nueva sucursal desde el mapa de ciudad');
+  showToast('🏙️', 'Open a new branch from the city map');
 }
 
 // ===== SESSION TIMER =====
@@ -2757,7 +2757,7 @@ function updateGameClock() {
   var hour = Math.floor((totalMinutes / 60 + 6) % 24); // offset to start at 6:00
   var minute = totalMinutes % 60;
   var timeStr = String(hour).padStart(2, '0') + ':' + String(minute).padStart(2, '0');
-  el.textContent = 'Día ' + day + ' — ' + timeStr;
+  el.textContent = 'Day ' + day + ' — ' + timeStr;
 }
 
 // ===== AUTO-MEMBER TICK =====
@@ -2780,7 +2780,7 @@ function autoMemberTick() {
       const prev = game.members;
       game.members = Math.min(game.members + autoAdd, game.maxMembers);
       if (game.members > prev) {
-        addLog('👥 +' + (game.members - prev) + ' nuevos miembros (staff)');
+        addLog('👥 +' + (game.members - prev) + ' new members (staff)');
       }
     }
   }
@@ -2796,9 +2796,9 @@ function repTick() {
   });
   // Decoration reputation bonus
   repGain *= (1 + getDecorationBonus('reputation'));
-  // Fama: boost temporal "Viral en Redes" duplica la generación
+  // Fame: the "Viral on Social" temporary boost doubles generation
   repGain *= getActiveFameBoosts().repMult;
-  // Setback: la mala prensa también frena la reputación mientras dura
+  // Setback: bad press also slows reputation while it lasts
   repGain *= getGymSetbackRepMult();
   if (repGain > 0) {
     game.reputation += repGain;
@@ -2829,11 +2829,11 @@ function classTick() {
       game.dailyTracking.xpEarned += reward.xp;
       game.dailyTracking.reputationGained += reward.rep;
 
-      var logMsg = '🧘 Clase <span class="highlight">' + gc.name + '</span> completada! +<span class="money-log">' + fmtMoney(netIncome) + '</span>';
-      if (commissionAmt > 0) logMsg += ' <span style="color:var(--text-dim);">(comisión: -' + fmtMoney(commissionAmt) + ')</span>';
+      var logMsg = '🧘 <span class="highlight">' + gc.name + '</span> class complete! +<span class="money-log">' + fmtMoney(netIncome) + '</span>';
+      if (commissionAmt > 0) logMsg += ' <span style="color:var(--text-dim);">(commission: -' + fmtMoney(commissionAmt) + ')</span>';
       if (state.autoRestart) logMsg += ' <span style="color:var(--cyan);">🔄 auto</span>';
       addLog(logMsg);
-      showToast(gc.icon, '¡Clase ' + gc.name + ': +' + fmtMoney(netIncome) + '!');
+      showToast(gc.icon, gc.name + ' class: +' + fmtMoney(netIncome) + '!');
       floatNumber('+' + fmtMoney(netIncome));
 
       checkAchievements();
@@ -2877,8 +2877,8 @@ function campaignAlwaysOnTick() {
 
     if (game.money < costPerTick) {
       game.marketing[mc.id].active = false;
-      addLog('⚠️ Campaña <span class="highlight">' + mc.name + '</span> pausada por falta de fondos.');
-      showToast('⚠️', mc.name + ': sin fondos, campaña pausada!');
+      addLog('⚠️ <span class="highlight">' + mc.name + '</span> campaign paused due to lack of funds.');
+      showToast('⚠️', mc.name + ': out of funds, campaign paused!');
       return;
     }
 
@@ -3011,7 +3011,7 @@ function gameTick() {
       });
       var stealPct = Math.min(0.30, stealTotal * 0.0025 * getSkillEffect('rivalStealMult')) * (1 - getFamePerkEffect('retention'));
       if (stealerNames.length > 0 && stealPct > 0) {
-        addLog('🏪 Rivales activos te roban <span class="highlight">' + Math.round(stealPct * 100) + '% de tus miembros</span> (' + stealerNames.join(', ') + '). Hacé promo o derrotalos.');
+        addLog('🏪 Active rivals are stealing <span class="highlight">' + Math.round(stealPct * 100) + '% of your members</span> (' + stealerNames.join(', ') + '). Run a promo or defeat them.');
       }
     }
   }
@@ -3058,7 +3058,7 @@ function manualSave() {
   if (typeof saveCloudSave === 'function' && typeof currentUser !== 'undefined' && currentUser) {
     saveCloudSave();
   }
-  showToast('💾', '¡Partida guardada!');
+  showToast('💾', 'Game saved!');
 }
 
 // ===== OFFLINE PROGRESSION =====
@@ -3202,7 +3202,7 @@ function calculateOfflineProgress(elapsedSeconds) {
         addXp(reward.xp);
         game.reputation += reward.rep;
         game.stats.classesCompleted++;
-        report.classesCompleted.push(gc.name + ': +' + fmtMoney(netIncome) + (commissionAmt > 0 ? ' (comisión: -' + fmtMoney(commissionAmt) + ')' : ''));
+        report.classesCompleted.push(gc.name + ': +' + fmtMoney(netIncome) + (commissionAmt > 0 ? ' (commission: -' + fmtMoney(commissionAmt) + ')' : ''));
         report.xp += reward.xp;
         report.reputation += reward.rep;
         report.money += netIncome;
@@ -3356,10 +3356,10 @@ function showOfflineReport(report) {
   var lines = [];
   lines.push('<div class="offline-report-header">');
   lines.push('<div class="offline-report-icon">💤</div>');
-  lines.push('<h3>Mientras no estabas...</h3>');
+  lines.push('<h3>While you were away...</h3>');
   lines.push('<div class="offline-report-time">' + fmtTime(report.elapsed) + ' offline</div>');
   if (report.offlineRate && report.offlineRate < 1) {
-    lines.push('<div class="offline-report-rate">📉 Tu gym generó el ' + Math.round(report.offlineRate * 100) + '% de sus ganancias sin vos al mando</div>');
+    lines.push('<div class="offline-report-rate">📉 Your gym earned ' + Math.round(report.offlineRate * 100) + '% of its profits without you at the helm</div>');
   }
   lines.push('</div>');
 
@@ -3368,11 +3368,11 @@ function showOfflineReport(report) {
   // Money section
   if (report.money > 0 || report.expenses > 0) {
     lines.push('<div class="offline-section">');
-    lines.push('<div class="offline-section-title">💰 Economía</div>');
-    if (report.money > 0) lines.push('<div class="offline-item positive">Ingresos brutos: +' + fmtMoney(report.money) + '</div>');
-    if (report.expenses > 0) lines.push('<div class="offline-item negative">Gastos (salarios + mantenimiento): -' + fmtMoney(report.expenses) + '</div>');
+    lines.push('<div class="offline-section-title">💰 Economy</div>');
+    if (report.money > 0) lines.push('<div class="offline-item positive">Gross income: +' + fmtMoney(report.money) + '</div>');
+    if (report.expenses > 0) lines.push('<div class="offline-item negative">Expenses (salaries + maintenance): -' + fmtMoney(report.expenses) + '</div>');
     var net = report.money - report.expenses;
-    lines.push('<div class="offline-item ' + (net >= 0 ? 'positive' : 'negative') + ' net">Neto: ' + (net >= 0 ? '+' : '') + fmtMoney(net) + '</div>');
+    lines.push('<div class="offline-item ' + (net >= 0 ? 'positive' : 'negative') + ' net">Net: ' + (net >= 0 ? '+' : '') + fmtMoney(net) + '</div>');
     lines.push('</div>');
   }
 
@@ -3380,10 +3380,10 @@ function showOfflineReport(report) {
   var constructions = [].concat(report.equipUpgraded, report.equipRepaired, report.zonesBuilt, report.staffTrained);
   if (constructions.length > 0 || report.skillResearched) {
     lines.push('<div class="offline-section">');
-    lines.push('<div class="offline-section-title">🏗️ Completado</div>');
-    if (report.skillResearched) lines.push('<div class="offline-item">🔬 Investigación: ' + report.skillResearched + '</div>');
+    lines.push('<div class="offline-section-title">🏗️ Completed</div>');
+    if (report.skillResearched) lines.push('<div class="offline-item">🔬 Research: ' + report.skillResearched + '</div>');
     report.equipUpgraded.forEach(function(e) { lines.push('<div class="offline-item">⬆️ ' + e + '</div>'); });
-    report.equipRepaired.forEach(function(e) { lines.push('<div class="offline-item">🔧 ' + e + ' reparado</div>'); });
+    report.equipRepaired.forEach(function(e) { lines.push('<div class="offline-item">🔧 ' + e + ' repaired</div>'); });
     report.zonesBuilt.forEach(function(e) { lines.push('<div class="offline-item">🏗️ ' + e + '</div>'); });
     report.staffTrained.forEach(function(e) { lines.push('<div class="offline-item">🎓 ' + e + '</div>'); });
     lines.push('</div>');
@@ -3392,7 +3392,7 @@ function showOfflineReport(report) {
   // Classes
   if (report.classesCompleted.length > 0) {
     lines.push('<div class="offline-section">');
-    lines.push('<div class="offline-section-title">🧘 Clases Completadas</div>');
+    lines.push('<div class="offline-section-title">🧘 Classes Completed</div>');
     report.classesCompleted.forEach(function(c) { lines.push('<div class="offline-item">✅ ' + c + '</div>'); });
     lines.push('</div>');
   }
@@ -3401,19 +3401,19 @@ function showOfflineReport(report) {
   if (report.campaignMembers > 0 || report.campaignCosts > 0) {
     lines.push('<div class="offline-section">');
     lines.push('<div class="offline-section-title">📢 Marketing</div>');
-    if (report.campaignCosts > 0) lines.push('<div class="offline-item negative">Costo campañas: -' + fmtMoney(report.campaignCosts) + '</div>');
-    if (report.campaignMembers > 0) lines.push('<div class="offline-item positive">Nuevos miembros: +' + report.campaignMembers + '</div>');
-    if (report.campaignRep > 0) lines.push('<div class="offline-item positive">Reputación: +' + fmt(report.campaignRep) + '</div>');
-    report.burstCampaignsFinished.forEach(function(c) { lines.push('<div class="offline-item">📣 ' + c + ' terminó</div>'); });
+    if (report.campaignCosts > 0) lines.push('<div class="offline-item negative">Campaign cost: -' + fmtMoney(report.campaignCosts) + '</div>');
+    if (report.campaignMembers > 0) lines.push('<div class="offline-item positive">New members: +' + report.campaignMembers + '</div>');
+    if (report.campaignRep > 0) lines.push('<div class="offline-item positive">Reputation: +' + fmt(report.campaignRep) + '</div>');
+    report.burstCampaignsFinished.forEach(function(c) { lines.push('<div class="offline-item">📣 ' + c + ' finished</div>'); });
     lines.push('</div>');
   }
 
   // Members & Rep
   if (report.members > 0 || report.reputation > 0) {
     lines.push('<div class="offline-section">');
-    lines.push('<div class="offline-section-title">👥 Crecimiento</div>');
-    if (report.members > 0) lines.push('<div class="offline-item positive">Miembros (staff): +' + report.members + '</div>');
-    if (report.reputation > 0) lines.push('<div class="offline-item positive">Reputación: +' + fmt(Math.floor(report.reputation)) + '</div>');
+    lines.push('<div class="offline-section-title">👥 Growth</div>');
+    if (report.members > 0) lines.push('<div class="offline-item positive">Members (staff): +' + report.members + '</div>');
+    if (report.reputation > 0) lines.push('<div class="offline-item positive">Reputation: +' + fmt(Math.floor(report.reputation)) + '</div>');
     if (report.xp > 0) lines.push('<div class="offline-item positive">XP: +' + fmt(report.xp) + '</div>');
     lines.push('</div>');
   }
@@ -3421,24 +3421,24 @@ function showOfflineReport(report) {
   // Inactive branches
   if (report.inactiveBranchIncome > 0) {
     lines.push('<div class="offline-section">');
-    lines.push('<div class="offline-section-title">🏙️ Otras Sucursales</div>');
-    lines.push('<div class="offline-item positive">Ingresos pasivos: +' + fmtMoney(report.inactiveBranchIncome) + '</div>');
+    lines.push('<div class="offline-section-title">🏙️ Other Branches</div>');
+    lines.push('<div class="offline-item positive">Passive income: +' + fmtMoney(report.inactiveBranchIncome) + '</div>');
     lines.push('</div>');
   }
 
   // Champion
   if (report.championTrained || report.championFatigue > 0) {
     lines.push('<div class="offline-section">');
-    lines.push('<div class="offline-section-title">🏆 Campeón</div>');
-    if (report.championTrained) lines.push('<div class="offline-item">💪 Entrenamiento completo: ' + report.championTrained + '</div>');
-    if (report.championFatigue > 0) lines.push('<div class="offline-item positive">Fatiga recuperada: -' + report.championFatigue + '</div>');
+    lines.push('<div class="offline-section-title">🏆 Champion</div>');
+    if (report.championTrained) lines.push('<div class="offline-item">💪 Training complete: ' + report.championTrained + '</div>');
+    if (report.championFatigue > 0) lines.push('<div class="offline-item positive">Fatigue recovered: -' + report.championFatigue + '</div>');
     lines.push('</div>');
   }
 
   lines.push('</div>'); // close body
 
   lines.push('<div class="offline-report-footer">');
-  lines.push('<button class="btn btn-buy" onclick="closeOfflineReport()">¡Vamos! 💪</button>');
+  lines.push('<button class="btn btn-buy" onclick="closeOfflineReport()">Let\'s go! 💪</button>');
   lines.push('</div>');
 
   // Show modal
@@ -3510,7 +3510,7 @@ function exportSave() {
   a.download = 'iron-empire-save.json';
   a.click();
   URL.revokeObjectURL(url);
-  showToast('💾', '¡Partida exportada!');
+  showToast('💾', 'Game exported!');
 }
 
 function importSave() {
@@ -3528,9 +3528,9 @@ function importSave() {
         renderAll();
         updateUI();
         saveGame();
-        showToast('📂', '¡Partida importada!');
+        showToast('📂', 'Game imported!');
       } catch (err) {
-        showToast('❌', 'Error al importar');
+        showToast('❌', 'Import error');
       }
     };
     reader.readAsText(file);
@@ -3539,13 +3539,13 @@ function importSave() {
 }
 
 function resetGame() {
-  if (!confirm('¿Estás seguro? Se borra TODO el progreso permanentemente.')) return;
-  if (!confirm('¿Realmente seguro? No hay vuelta atrás.')) return;
-  // Flag PRIMERO — onAuthSuccess lo chequea y saltea todo cloud load al recargar
+  if (!confirm('Are you sure? This permanently deletes ALL progress.')) return;
+  if (!confirm('Really sure? There\'s no going back.')) return;
+  // Flag FIRST — onAuthSuccess checks it and skips all cloud loading on reload
   localStorage.setItem('ironEmpireReset', '1');
   localStorage.removeItem('ironEmpireSave');
   localStorage.removeItem('ironEmpireLastTick');
-  // Fire-and-forget cloud delete (el flag garantiza el reset aunque no llegue a borrarse)
+  // Fire-and-forget cloud delete (the flag guarantees the reset even if the delete doesn't go through)
   if (typeof currentUser !== 'undefined' && currentUser && typeof db !== 'undefined') {
     db.collection('saves').doc(currentUser.uid).delete().catch(function() {});
     db.collection('leaderboard').doc(currentUser.uid).delete().catch(function() {});
@@ -3598,8 +3598,8 @@ function startGame() {
 
   document.getElementById('nameModal').classList.add('hidden');
 
-  addLog('🏋️ ¡<span class="highlight">' + game.gymName + '</span> abrió sus puertas!');
-  showToast('🏋️', '¡' + game.gymName + ' está abierto!');
+  addLog('🏋️ <span class="highlight">' + game.gymName + '</span> opened its doors!');
+  showToast('🏋️', game.gymName + ' is open!');
 
   // Generate first daily missions
   generateDailyMissions();
@@ -3652,9 +3652,9 @@ function updateTabVisibility(isLevelUp) {
     newlyUnlocked.forEach(function(tabId) {
       var item = document.querySelector('.sidebar-item[data-tab="' + tabId + '"]');
       var label = item ? item.querySelector('.item-label') : null;
-      addLog('🔓 Nueva sección desbloqueada: <span class="highlight">' + (label ? label.textContent : tabId) + '</span>!', 'important');
+      addLog('🔓 New section unlocked: <span class="highlight">' + (label ? label.textContent : tabId) + '</span>!', 'important');
     });
-    showToast('🔓', newlyUnlocked.length === 1 ? '¡Nueva sección desbloqueada!' : '¡' + newlyUnlocked.length + ' nuevas secciones!');
+    showToast('🔓', newlyUnlocked.length === 1 ? 'New section unlocked!' : newlyUnlocked.length + ' new sections!');
   }
 }
 
@@ -3687,10 +3687,10 @@ function switchTab(tabId) {
     if (category) category.classList.remove('collapsed-cat');
   }
 
-  // Daily bonus banner: solo en Home (recupera espacio vertical en los demás tabs)
+  // Daily bonus banner: only on Home (recovers vertical space on the other tabs)
   var dbc = document.getElementById('dailyBonusContainer');
   if (dbc) {
-    if (tabId === 'gym') renderDailyBonus(); // renderDailyBonus se auto-oculta si ya reclamaste
+    if (tabId === 'gym') renderDailyBonus(); // renderDailyBonus auto-hides if already claimed
     else dbc.style.display = 'none';
   }
 

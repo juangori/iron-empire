@@ -1,7 +1,7 @@
 # Iron Empire - Gym Tycoon Browser Game
 
 ## Project Overview
-Browser-based idle/tycoon gym game. Free, no pay-to-win. All text in Argentine Spanish.
+Browser-based idle/tycoon gym game. Free, no pay-to-win. All UI text in US English (the game was originally written in Argentine Spanish and fully translated to English).
 Deployed on GitHub Pages with Firebase backend for auth + cloud saves.
 Repo: https://github.com/juangori/iron-empire
 Live: https://ironempiregame.com (custom domain)
@@ -76,7 +76,7 @@ CNAME               - Custom domain config
 2. **Staff** (8 types) - Hire + train levels. Passive bonuses. Can get sick randomly. Multiple copies via extras.
 3. **Competitions** (6 tiers) - Unified in champion tab. Normal competitions before recruiting, 2x rewards with champion. Shared cooldowns.
 4. **Achievements** (76) - Auto-checked conditions, grant XP. Covers all systems.
-5. **City/Franchise** (6 neighborhoods) - Manage ONE main gym; open extra branches in Buenos Aires neighborhoods (Palermo, La Boca, Caballito, Belgrano, Recoleta, San Telmo) as pure PASSIVE income generators (no management, no chaos, no costs). Pricier/higher-level neighborhoods yield more passive income. "Ampliar" invests to raise a branch's income (+25%/level). Franchise stars based on global total earnings (+25% income each).
+5. **City/Franchise** (6 neighborhoods) - Manage ONE main gym; open extra branches in Los Angeles neighborhoods (Venice Beach, East LA, Koreatown, Pasadena, Beverly Hills, Silver Lake — internal IDs are unchanged: `palermo`, `la_boca`, `caballito`, `belgrano`, `recoleta`, `san_telmo`) as pure PASSIVE income generators (no management, no chaos, no costs). Pricier/higher-level neighborhoods yield more passive income. "Ampliar" invests to raise a branch's income (+25%/level). Franchise stars based on global total earnings (+25% income each).
 6. **Daily Bonus** - 7-day streak cycle with escalating rewards
 7. **Daily Missions** (3/day) - Random from pool of 8 types, bonus for all 3
 8. **Random Events** (every 5-10 min) - 39 events with player choices. DECLARATIVE outcomes: each choice specifies signed tier magnitudes (`money`/`rep`/`xp`/`members` = ±1/2/3, or a `gamble:{p,win,lose}`, or `special:'curestaff'|'randomsupp'`). Resolved at runtime by `resolveEventSpec`/`applyEventDeltas`/`fmtEventDeltas` (game.js) so ALL outcomes scale with the player's economy. No hardcoded magic numbers, no effect functions in data.
@@ -171,7 +171,7 @@ CNAME               - Custom domain config
 | Sistema | wiki | 📖 Wiki |
 
 ## Development Conventions
-- Language: All UI text in Argentine Spanish (vos form: "comprá", "mejorá", "elegí")
+- Language: All UI text in US English (the game was translated from the original Argentine Spanish; keep new UI text in English)
 - Functions use camelCase
 - CSS uses BEM-ish naming with kebab-case
 - No external dependencies besides Firebase SDKs (loaded via CDN)
@@ -187,7 +187,7 @@ CNAME               - Custom domain config
 ## Cache Busting
 - Script tags in index.html use `?v=XX` query string (e.g. `js/game.js?v=24`)
 - Increment the version number on every deploy that changes JS/CSS so browsers don't serve stale files
-- Current version: **v=43**
+- Current version: **v=46**
 - Update all 5 script tags together (data, game, ui, systems, auth) + the CSS link (`css/styles.css?v=XX`)
 
 ## Planned Improvements (by priority)

@@ -1,22 +1,22 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Iron Empire - Gym Tycoon</title>
-<meta name="description" content="Construí tu imperio de gimnasios. Browser game idle/tycoon gratuito.">
+<meta name="description" content="Build your gym empire. Free idle/tycoon browser game.">
 <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon.png?v=1">
 <link rel="icon" type="image/png" sizes="512x512" href="assets/icon.png?v=1">
 <link rel="apple-touch-icon" href="assets/icon.png?v=1">
 <meta property="og:title" content="Iron Empire - Gym Tycoon">
-<meta property="og:description" content="Construí tu imperio de gimnasios. Browser game idle/tycoon gratuito.">
+<meta property="og:description" content="Build your gym empire. Free idle/tycoon browser game.">
 <meta property="og:image" content="https://ironempiregame.com/assets/icon.png?v=1">
 <meta property="og:url" content="https://ironempiregame.com">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:image" content="https://ironempiregame.com/assets/icon.png?v=1">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@400;600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=45">
+<link rel="stylesheet" href="css/styles.css?v=46">
 </head>
 <body>
 
@@ -26,91 +26,91 @@
     <div class="auth-logo">
       <img src="assets/logo.png?v=1" alt="Iron Empire" class="auth-logo-img">
       <h1 class="auth-title">IRON EMPIRE</h1>
-      <p class="auth-subtitle">Construí tu imperio de gimnasios</p>
+      <p class="auth-subtitle">Build your gym empire</p>
     </div>
 
     <!-- LOGIN FORM -->
     <div class="auth-form" id="authLoginForm">
-      <h3>Iniciar Sesión</h3>
+      <h3>Sign In</h3>
 
       <div class="auth-social-buttons">
         <button class="auth-btn auth-btn-google" onclick="loginWithGoogle()">
           <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-          Continuar con Google
+          Continue with Google
         </button>
         <button class="auth-btn auth-btn-facebook" onclick="loginWithFacebook()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-          Continuar con Facebook
+          Continue with Facebook
         </button>
       </div>
 
-      <div class="auth-divider"><span>o con email</span></div>
+      <div class="auth-divider"><span>or with email</span></div>
 
       <input type="email" id="loginEmail" class="auth-input" placeholder="Email" autocomplete="email">
-      <input type="password" id="loginPassword" class="auth-input" placeholder="Contraseña" autocomplete="current-password">
+      <input type="password" id="loginPassword" class="auth-input" placeholder="Password" autocomplete="current-password">
 
       <div class="auth-error" id="loginError"></div>
 
-      <button class="auth-btn auth-btn-primary" onclick="loginWithEmail()">INICIAR SESIÓN</button>
+      <button class="auth-btn auth-btn-primary" onclick="loginWithEmail()">SIGN IN</button>
 
       <div class="auth-links">
-        <a href="#" onclick="showResetForm(); return false;">¿Olvidaste tu contraseña?</a>
-        <a href="#" onclick="showRegisterForm(); return false;">Crear cuenta nueva</a>
+        <a href="#" onclick="showResetForm(); return false;">Forgot your password?</a>
+        <a href="#" onclick="showRegisterForm(); return false;">Create a new account</a>
       </div>
     </div>
 
     <!-- REGISTER FORM -->
     <div class="auth-form hidden" id="authRegisterForm">
-      <h3>Crear Cuenta</h3>
+      <h3>Create Account</h3>
 
       <div class="auth-social-buttons">
         <button class="auth-btn auth-btn-google" onclick="loginWithGoogle()">
           <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-          Registrarse con Google
+          Sign up with Google
         </button>
         <button class="auth-btn auth-btn-facebook" onclick="loginWithFacebook()">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-          Registrarse con Facebook
+          Sign up with Facebook
         </button>
       </div>
 
-      <div class="auth-divider"><span>o con email</span></div>
+      <div class="auth-divider"><span>or with email</span></div>
 
-      <input type="text" id="regUsername" class="auth-input" placeholder="Nombre de usuario" maxlength="20" autocomplete="username">
+      <input type="text" id="regUsername" class="auth-input" placeholder="Username" maxlength="20" autocomplete="username">
       <input type="email" id="regEmail" class="auth-input" placeholder="Email" autocomplete="email">
-      <input type="password" id="regPassword" class="auth-input" placeholder="Contraseña (mín. 6 caracteres)" autocomplete="new-password">
-      <input type="password" id="regPassword2" class="auth-input" placeholder="Repetir contraseña" autocomplete="new-password">
+      <input type="password" id="regPassword" class="auth-input" placeholder="Password (min. 6 characters)" autocomplete="new-password">
+      <input type="password" id="regPassword2" class="auth-input" placeholder="Repeat password" autocomplete="new-password">
 
       <div class="auth-error" id="registerError"></div>
 
-      <button class="auth-btn auth-btn-primary" onclick="registerWithEmail()">CREAR CUENTA</button>
+      <button class="auth-btn auth-btn-primary" onclick="registerWithEmail()">CREATE ACCOUNT</button>
 
       <div class="auth-links">
-        <a href="#" onclick="showLoginForm(); return false;">Ya tengo cuenta</a>
+        <a href="#" onclick="showLoginForm(); return false;">I already have an account</a>
       </div>
     </div>
 
     <!-- RESET PASSWORD FORM -->
     <div class="auth-form hidden" id="authResetForm">
-      <h3>Recuperar Contraseña</h3>
-      <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px;">Te enviamos un email para restablecer tu contraseña.</p>
+      <h3>Reset Password</h3>
+      <p style="color:var(--text-dim);font-size:13px;margin-bottom:16px;">We'll send you an email to reset your password.</p>
 
       <input type="email" id="resetEmail" class="auth-input" placeholder="Email" autocomplete="email">
 
       <div class="auth-error" id="resetError"></div>
       <div class="auth-success" id="resetSuccess"></div>
 
-      <button class="auth-btn auth-btn-primary" onclick="resetPassword()">ENVIAR EMAIL</button>
+      <button class="auth-btn auth-btn-primary" onclick="resetPassword()">SEND EMAIL</button>
 
       <div class="auth-links">
-        <a href="#" onclick="showLoginForm(); return false;">Volver a login</a>
+        <a href="#" onclick="showLoginForm(); return false;">Back to login</a>
       </div>
     </div>
 
     <!-- Footer -->
     <div class="auth-guest">
-      <button class="auth-guest-btn" onclick="playAsGuest()">🎮 Jugar como invitado</button>
-      <p class="auth-guest-note">Probá el juego sin cuenta — tu progreso se guarda en este dispositivo. Creá una cuenta cuando quieras para sincronizarlo en la nube.</p>
+      <button class="auth-guest-btn" onclick="playAsGuest()">🎮 Play as guest</button>
+      <p class="auth-guest-note">Try the game without an account — your progress is saved on this device. Create an account whenever you want to sync it to the cloud.</p>
     </div>
   </div>
 </div>
@@ -120,9 +120,9 @@
   <div class="modal">
     <img src="assets/logo.png?v=1" alt="" style="height:80px;margin-bottom:12px;filter:drop-shadow(0 0 14px var(--accent-glow));">
     <h2>Iron Empire</h2>
-    <p>Estás a punto de abrir tu propio gimnasio. ¿Cómo se va a llamar?</p>
-    <input type="text" id="gymNameInput" placeholder="Nombre del gimnasio..." maxlength="24" autofocus>
-    <button class="btn btn-buy" onclick="startGame()" style="font-size:18px;padding:14px;">🚀 ABRIR GIMNASIO</button>
+    <p>You're about to open your own gym. What are you going to call it?</p>
+    <input type="text" id="gymNameInput" placeholder="Gym name..." maxlength="24" autofocus>
+    <button class="btn btn-buy" onclick="startGame()" style="font-size:18px;padding:14px;">🚀 OPEN GYM</button>
   </div>
 </div>
 
@@ -130,12 +130,12 @@
 <div class="modal-overlay hidden" id="accountModal">
   <div class="modal" style="max-width:440px;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <h2 style="margin:0;">👤 Mi Cuenta</h2>
+      <h2 style="margin:0;">👤 My Account</h2>
       <button class="btn btn-small btn-red" onclick="closeAccountSettings()" style="padding:6px 12px;">✕</button>
     </div>
 
     <div class="account-section">
-      <label class="account-label">Método de login</label>
+      <label class="account-label">Login method</label>
       <div class="account-value" id="accountProviders">-</div>
     </div>
 
@@ -145,10 +145,10 @@
     </div>
 
     <div class="account-section">
-      <label class="account-label">Nombre de usuario</label>
+      <label class="account-label">Username</label>
       <div style="display:flex;gap:8px;">
         <input type="text" id="accountUsername" class="auth-input" maxlength="20" style="margin:0;flex:1;">
-        <button class="btn btn-buy btn-small" onclick="saveAccountUsername()">GUARDAR</button>
+        <button class="btn btn-buy btn-small" onclick="saveAccountUsername()">SAVE</button>
       </div>
       <div class="account-error" id="usernameError"></div>
       <div class="account-success" id="usernameSuccess"></div>
@@ -156,18 +156,18 @@
 
     <div id="accountPasswordSection">
       <div class="account-section">
-        <label class="account-label">Cambiar Contraseña</label>
-        <input type="password" id="accountCurrentPass" class="auth-input" placeholder="Contraseña actual">
-        <input type="password" id="accountNewPass" class="auth-input" placeholder="Nueva contraseña (mín. 6)">
-        <input type="password" id="accountNewPass2" class="auth-input" placeholder="Repetir nueva contraseña">
-        <button class="btn btn-purple btn-small" onclick="changeAccountPassword()" style="margin-top:4px;">CAMBIAR CONTRASEÑA</button>
+        <label class="account-label">Change Password</label>
+        <input type="password" id="accountCurrentPass" class="auth-input" placeholder="Current password">
+        <input type="password" id="accountNewPass" class="auth-input" placeholder="New password (min. 6)">
+        <input type="password" id="accountNewPass2" class="auth-input" placeholder="Repeat new password">
+        <button class="btn btn-purple btn-small" onclick="changeAccountPassword()" style="margin-top:4px;">CHANGE PASSWORD</button>
         <div class="account-error" id="passwordError"></div>
         <div class="account-success" id="passwordSuccess"></div>
       </div>
     </div>
 
     <div class="account-section" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
-      <button class="btn btn-red btn-small" onclick="logoutUser()">🚪 CERRAR SESIÓN</button>
+      <button class="btn btn-red btn-small" onclick="logoutUser()">🚪 LOG OUT</button>
     </div>
   </div>
 </div>
@@ -187,7 +187,7 @@
   <div class="tab-walkthrough-card" id="tabWalkthroughCard"></div>
 </div>
 
-<!-- PRIMEROS PASOS OVERLAY -->
+<!-- FIRST STEPS OVERLAY -->
 <div class="event-overlay hidden" id="primerosPasosOverlay">
   <div class="primeros-pasos-card" id="primerosPasosCard"></div>
 </div>
@@ -199,42 +199,42 @@
       <img src="assets/logo.png?v=1" class="logo-icon-img" alt="">
       <span>IRON EMPIRE</span>
     </div>
-    <span class="branch-indicator" id="branchIndicator" onclick="switchTab('prestige')" title="Ver mapa de ciudad"></span>
-    <span class="save-indicator hidden" id="saveIndicator">💾 Guardado</span>
-    <button class="header-settings-btn" onclick="openAccountSettings()" title="Configuración de cuenta">⚙️</button>
+    <span class="branch-indicator" id="branchIndicator" onclick="switchTab('prestige')" title="View city map"></span>
+    <span class="save-indicator hidden" id="saveIndicator">💾 Saved</span>
+    <button class="header-settings-btn" onclick="openAccountSettings()" title="Account settings">⚙️</button>
     <div class="stats-bar">
-      <div class="stat-pill money" title="Dinero disponible para gastar">
+      <div class="stat-pill money" title="Cash available to spend">
         <span class="icon">💰</span>
         <span class="value" id="moneyDisplay">$0</span>
-        <div class="stat-tooltip">Tu plata disponible. Comprá equipos, contratá staff y lanzá campañas.</div>
+        <div class="stat-tooltip">Your available cash. Buy equipment, hire staff, and launch campaigns.</div>
       </div>
-      <div class="stat-pill members" title="Miembros activos de tu gym">
+      <div class="stat-pill members" title="Active members of your gym">
         <span class="icon">👥</span>
         <span class="value" id="membersDisplay">0</span>
-        <div class="stat-tooltip">Miembros activos. Más equipos = más miembros. Más miembros = más ingresos.</div>
+        <div class="stat-tooltip">Active members. More equipment = more members. More members = more income.</div>
       </div>
-      <div class="stat-pill rep" title="Reputación de tu gym">
+      <div class="stat-pill rep" title="Your gym's reputation">
         <span class="icon">⭐</span>
         <span class="value" id="repDisplay">0</span>
-        <div class="stat-tooltip">Reputación. Sube con miembros, campañas y clases. Desbloquea competencias.</div>
+        <div class="stat-tooltip">Reputation. Rises with members, campaigns, and classes. Unlocks competitions.</div>
       </div>
-      <div class="stat-pill" title="Ingresos automáticos por segundo">
+      <div class="stat-pill" title="Automatic income per second">
         <span class="icon">💵</span>
         <span class="value" id="incomeDisplay">$0/s</span>
-        <div class="stat-tooltip">Ingresos por segundo. Generás plata automáticamente cada segundo.</div>
+        <div class="stat-tooltip">Income per second. You earn cash automatically every second.</div>
       </div>
-      <div class="stat-pill time-pill" title="Día y hora del juego">
+      <div class="stat-pill time-pill" title="Game day and time">
         <span class="icon">📅</span>
-        <span class="value" id="gameDayDisplay">Día 1 — 06:00</span>
-        <div class="stat-tooltip">Calendario del gym. Un día de juego = 10 min reales. Los costos y salarios se pagan por día.</div>
+        <span class="value" id="gameDayDisplay">Day 1 — 06:00</span>
+        <div class="stat-tooltip">Gym calendar. One game day = 10 real minutes. Costs and salaries are paid per day.</div>
       </div>
-      <div class="level-display" title="Tu nivel. Subí de nivel ganando XP para desbloquear más contenido.">
-        <div class="level-badge" id="levelBadge">NIVEL 1</div>
+      <div class="level-display" title="Your level. Level up by earning XP to unlock more content.">
+        <div class="level-badge" id="levelBadge">LEVEL 1</div>
         <div class="xp-bar-container">
           <div class="xp-bar-fill" id="xpBar" style="width:0%"></div>
           <span class="xp-bar-text" id="xpBarText">0%</span>
         </div>
-        <div class="stat-tooltip level-tooltip">Nivel y experiencia. Ganás XP comprando equipos, haciendo clases, misiones y más. Cada nivel desbloquea nuevo contenido.</div>
+        <div class="stat-tooltip level-tooltip">Level and experience. You earn XP by buying equipment, running classes, missions, and more. Each level unlocks new content.</div>
       </div>
     </div>
   </div>
@@ -247,7 +247,7 @@
 <div class="app-layout">
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <button class="sidebar-toggle" id="sidebarToggle" title="Colapsar menú">
+      <button class="sidebar-toggle" id="sidebarToggle" title="Collapse menu">
         <span class="sidebar-toggle-icon">◀</span>
       </button>
     </div>
@@ -261,72 +261,72 @@
           <span class="cat-badge hidden" id="cat-badge-general"></span>
         </button>
         <div class="sidebar-category-items">
-          <button class="sidebar-item active" data-tab="gym"><span class="item-icon">🏠</span><span class="item-label">Gimnasio</span></button>
-          <button class="sidebar-item" data-tab="missions"><span class="item-icon">📋</span><span class="item-label">Misiones</span><span class="notification-dot hidden" id="dot-missions"></span><span class="reminder-dot hidden" id="reminder-missions"></span></button>
-          <button class="sidebar-item" data-tab="achievements"><span class="item-icon">🎖️</span><span class="item-label">Logros</span><span class="reminder-dot hidden" id="reminder-achievements"></span></button>
-          <button class="sidebar-item" data-tab="profile"><span class="item-icon">👤</span><span class="item-label">Perfil</span></button>
+          <button class="sidebar-item active" data-tab="gym"><span class="item-icon">🏠</span><span class="item-label">Gym</span></button>
+          <button class="sidebar-item" data-tab="missions"><span class="item-icon">📋</span><span class="item-label">Missions</span><span class="notification-dot hidden" id="dot-missions"></span><span class="reminder-dot hidden" id="reminder-missions"></span></button>
+          <button class="sidebar-item" data-tab="achievements"><span class="item-icon">🎖️</span><span class="item-label">Achievements</span><span class="reminder-dot hidden" id="reminder-achievements"></span></button>
+          <button class="sidebar-item" data-tab="profile"><span class="item-icon">👤</span><span class="item-label">Profile</span></button>
         </div>
       </div>
-      <!-- Operaciones -->
+      <!-- Operations -->
       <div class="sidebar-category" data-category="operations">
         <button class="sidebar-category-btn" data-category-toggle="operations">
           <span class="cat-icon">🏋️</span>
-          <span class="cat-label">Operaciones</span>
+          <span class="cat-label">Operations</span>
           <span class="cat-arrow">▾</span>
           <span class="cat-badge hidden" id="cat-badge-operations"></span>
         </button>
         <div class="sidebar-category-items">
-          <button class="sidebar-item" data-tab="equipment"><span class="item-icon">🏋️</span><span class="item-label">Máquinas</span><span class="reminder-dot hidden" id="reminder-equipment"></span></button>
+          <button class="sidebar-item" data-tab="equipment"><span class="item-icon">🏋️</span><span class="item-label">Equipment</span><span class="reminder-dot hidden" id="reminder-equipment"></span></button>
           <button class="sidebar-item" data-tab="staff"><span class="item-icon">👥</span><span class="item-label">Staff</span><span class="reminder-dot hidden" id="reminder-staff"></span></button>
-          <button class="sidebar-item" data-tab="classes"><span class="item-icon">🧘</span><span class="item-label">Clases</span><span class="notification-dot hidden" id="dot-classes"></span><span class="reminder-dot hidden" id="reminder-classes"></span></button>
-          <button class="sidebar-item" data-tab="supplements"><span class="item-icon">🧃</span><span class="item-label">Suplementos</span><span class="notification-dot hidden" id="dot-supplements"></span><span class="reminder-dot hidden" id="reminder-supplements"></span></button>
+          <button class="sidebar-item" data-tab="classes"><span class="item-icon">🧘</span><span class="item-label">Classes</span><span class="notification-dot hidden" id="dot-classes"></span><span class="reminder-dot hidden" id="reminder-classes"></span></button>
+          <button class="sidebar-item" data-tab="supplements"><span class="item-icon">🧃</span><span class="item-label">Supplements</span><span class="notification-dot hidden" id="dot-supplements"></span><span class="reminder-dot hidden" id="reminder-supplements"></span></button>
         </div>
       </div>
-      <!-- Crecimiento -->
+      <!-- Growth -->
       <div class="sidebar-category" data-category="growth">
         <button class="sidebar-category-btn" data-category-toggle="growth">
           <span class="cat-icon">📈</span>
-          <span class="cat-label">Crecimiento</span>
+          <span class="cat-label">Growth</span>
           <span class="cat-arrow">▾</span>
           <span class="cat-badge hidden" id="cat-badge-growth"></span>
         </button>
         <div class="sidebar-category-items">
           <button class="sidebar-item" data-tab="marketing"><span class="item-icon">📢</span><span class="item-label">Marketing</span><span class="reminder-dot hidden" id="reminder-marketing"></span></button>
-          <button class="sidebar-item" data-tab="expansion"><span class="item-icon">🏗️</span><span class="item-label">Instalaciones</span><span class="reminder-dot hidden" id="reminder-expansion"></span></button>
-          <button class="sidebar-item" data-tab="skills"><span class="item-icon">🔬</span><span class="item-label">Mejoras</span><span class="reminder-dot hidden" id="reminder-skills"></span></button>
-          <button class="sidebar-item" data-tab="fame"><span class="item-icon">🌟</span><span class="item-label">Fama</span><span class="reminder-dot hidden" id="reminder-fame"></span></button>
+          <button class="sidebar-item" data-tab="expansion"><span class="item-icon">🏗️</span><span class="item-label">Facilities</span><span class="reminder-dot hidden" id="reminder-expansion"></span></button>
+          <button class="sidebar-item" data-tab="skills"><span class="item-icon">🔬</span><span class="item-label">Upgrades</span><span class="reminder-dot hidden" id="reminder-skills"></span></button>
+          <button class="sidebar-item" data-tab="fame"><span class="item-icon">🌟</span><span class="item-label">Fame</span><span class="reminder-dot hidden" id="reminder-fame"></span></button>
         </div>
       </div>
-      <!-- Competencia -->
+      <!-- Competition -->
       <div class="sidebar-category" data-category="competition">
         <button class="sidebar-category-btn" data-category-toggle="competition">
           <span class="cat-icon">🏆</span>
-          <span class="cat-label">Competencia</span>
+          <span class="cat-label">Competition</span>
           <span class="cat-arrow">▾</span>
           <span class="cat-badge hidden" id="cat-badge-competition"></span>
         </button>
         <div class="sidebar-category-items">
-          <button class="sidebar-item" data-tab="champion"><span class="item-icon">🏆</span><span class="item-label">Competencias</span><span class="reminder-dot hidden" id="reminder-champion"></span></button>
-          <button class="sidebar-item" data-tab="rivals"><span class="item-icon">🏪</span><span class="item-label">Rivales</span><span class="notification-dot hidden" id="dot-rivals"></span><span class="reminder-dot hidden" id="reminder-rivals"></span></button>
+          <button class="sidebar-item" data-tab="champion"><span class="item-icon">🏆</span><span class="item-label">Competitions</span><span class="reminder-dot hidden" id="reminder-champion"></span></button>
+          <button class="sidebar-item" data-tab="rivals"><span class="item-icon">🏪</span><span class="item-label">Rivals</span><span class="notification-dot hidden" id="dot-rivals"></span><span class="reminder-dot hidden" id="reminder-rivals"></span></button>
           <button class="sidebar-item" data-tab="vip"><span class="item-icon">⭐</span><span class="item-label">VIP</span><span class="notification-dot hidden" id="dot-vip"></span><span class="reminder-dot hidden" id="reminder-vip"></span></button>
         </div>
       </div>
-      <!-- Sistema -->
+      <!-- System -->
       <div class="sidebar-category" data-category="system">
         <button class="sidebar-category-btn" data-category-toggle="system">
           <span class="cat-icon">⚙️</span>
-          <span class="cat-label">Sistema</span>
+          <span class="cat-label">System</span>
           <span class="cat-arrow">▾</span>
         </button>
         <div class="sidebar-category-items">
-          <button class="sidebar-item" data-tab="prestige"><span class="item-icon">🏙️</span><span class="item-label">Ciudad</span></button>
-          <button class="sidebar-item" data-tab="settings"><span class="item-icon">⚙️</span><span class="item-label">Opciones</span></button>
+          <button class="sidebar-item" data-tab="prestige"><span class="item-icon">🏙️</span><span class="item-label">City</span></button>
+          <button class="sidebar-item" data-tab="settings"><span class="item-icon">⚙️</span><span class="item-label">Settings</span></button>
           <button class="sidebar-item" data-tab="wiki" onclick="switchTab('wiki')"><span class="item-icon">📖</span><span class="item-label">Wiki</span></button>
         </div>
       </div>
     </nav>
   </aside>
-  <button class="hamburger-btn" id="hamburgerBtn" title="Menú">☰</button>
+  <button class="hamburger-btn" id="hamburgerBtn" title="Menu">☰</button>
   <div class="sidebar-overlay hidden" id="sidebarOverlay"></div>
   <main class="main">
 
@@ -334,7 +334,7 @@
   <div class="tab-content active" id="tab-gym">
     <div class="gym-scene-container">
       <div class="gym-scene-header">
-        <div class="gym-name-display" id="gymNameBanner">MI GIMNASIO</div>
+        <div class="gym-name-display" id="gymNameBanner">MY GYM</div>
         <div class="gym-tier" id="gymTier">Garage Gym</div>
       </div>
       <div class="gym-scene" id="gymScene">
@@ -351,7 +351,7 @@
         <!-- Decoration layer -->
         <div class="gym-decoration-layer" id="gymDecoLayer"></div>
       </div>
-      <button class="btn btn-small gym-decorate-btn" onclick="toggleDecorationPanel()">🎨 Decorar</button>
+      <button class="btn btn-small gym-decorate-btn" onclick="toggleDecorationPanel()">🎨 Decorate</button>
     </div>
 
     <!-- Decoration Panel (hidden by default) -->
@@ -359,41 +359,41 @@
 
     <div class="stats-grid">
       <div class="stat-box">
-        <div class="stat-box-label">Ingreso Neto / seg</div>
+        <div class="stat-box-label">Net Income / sec</div>
         <div class="stat-box-value" style="color:var(--green);" id="incomeBig">$0</div>
       </div>
       <div class="stat-box">
-        <div class="stat-box-label">Gastos Totales / seg</div>
+        <div class="stat-box-label">Total Expenses / sec</div>
         <div class="stat-box-value" style="color:var(--red);" id="expensesBig">-$0</div>
       </div>
       <div class="stat-box">
-        <div class="stat-box-label">Miembros</div>
+        <div class="stat-box-label">Members</div>
         <div class="stat-box-value" style="color:var(--blue);" id="membersBig">0 / 0</div>
         <div class="stat-box-sub" id="rivalStealSub"></div>
       </div>
       <div class="stat-box">
-        <div class="stat-box-label">Reputación</div>
+        <div class="stat-box-label">Reputation</div>
         <div class="stat-box-value" style="color:var(--purple);" id="repBig">0</div>
       </div>
       <div class="stat-box">
-        <div class="stat-box-label">Total Ganado</div>
+        <div class="stat-box-label">Total Earned</div>
         <div class="stat-box-value" style="color:var(--green);" id="totalEarnedBig">$0</div>
         <div class="stat-box-sub" id="empireStarSub" style="color:var(--accent);"></div>
       </div>
       <div class="stat-box">
-        <div class="stat-box-label">Categoría</div>
+        <div class="stat-box-label">Tier</div>
         <div class="stat-box-value" style="color:var(--accent);font-size:14px;" id="tierBig">🏠 Garage Gym</div>
       </div>
     </div>
     <div class="next-goal-banner" id="nextGoalBanner"></div>
-    <button class="btn btn-small balance-btn" onclick="openBalancePanel()">📊 Balance Contable</button>
+    <button class="btn btn-small balance-btn" onclick="openBalancePanel()">📊 Financial Report</button>
 
     <div class="log-header">
-      <div class="section-title">📋 Registro de Actividad</div>
+      <div class="section-title">📋 Activity Log</div>
       <div class="log-filters">
-        <button class="log-filter-btn active" data-filter="all" onclick="setLogFilter('all')">Todo</button>
-        <button class="log-filter-btn" data-filter="important" onclick="setLogFilter('important')">⭐ Importante</button>
-        <button class="log-filter-btn" data-filter="critical" onclick="setLogFilter('critical')">🔴 Crítico</button>
+        <button class="log-filter-btn active" data-filter="all" onclick="setLogFilter('all')">All</button>
+        <button class="log-filter-btn" data-filter="important" onclick="setLogFilter('important')">⭐ Important</button>
+        <button class="log-filter-btn" data-filter="critical" onclick="setLogFilter('critical')">🔴 Critical</button>
       </div>
     </div>
     <div class="log-container" id="logContainer"></div>
@@ -401,66 +401,66 @@
 
   <!-- EQUIPMENT TAB -->
   <div class="tab-content" id="tab-equipment">
-    <div class="section-title">🏋️ Máquinas</div>
-    <p class="section-subtitle">Comprá y mejorá máquinas para atraer más miembros y generar más ingresos.</p>
+    <div class="section-title">🏋️ Equipment</div>
+    <p class="section-subtitle">Buy and upgrade equipment to attract more members and generate more income.</p>
     <div class="equipment-grid" id="equipmentGrid"></div>
   </div>
 
   <!-- STAFF TAB -->
   <div class="tab-content" id="tab-staff">
-    <div class="section-title">👤 Personal</div>
-    <p class="section-subtitle">Contratá staff para automatizar y mejorar tu gimnasio.</p>
+    <div class="section-title">👤 Staff</div>
+    <p class="section-subtitle">Hire staff to automate and improve your gym.</p>
     <div class="staff-grid" id="staffGrid"></div>
   </div>
 
   <!-- MARKETING TAB -->
   <div class="tab-content" id="tab-marketing">
     <div class="section-title">📢 Marketing</div>
-    <p class="section-subtitle">Campañas continuas que podés activar y pausar, más eventos de impacto para picos de crecimiento.</p>
+    <p class="section-subtitle">Always-on campaigns you can turn on and pause, plus impact events for growth spikes.</p>
     <div class="marketing-tab-container" id="marketingGrid"></div>
   </div>
 
   <!-- SUPPLEMENTS TAB -->
   <div class="tab-content" id="tab-supplements">
-    <div class="section-title">🧃 Suplementos</div>
-    <p class="section-subtitle">Tomá suplementos para activar buffs temporales que potencian tu gym.</p>
+    <div class="section-title">🧃 Supplements</div>
+    <p class="section-subtitle">Take supplements to activate temporary buffs that boost your gym.</p>
     <div class="supplement-grid" id="supplementsGrid"></div>
   </div>
 
   <!-- CLASSES TAB -->
   <div class="tab-content" id="tab-classes">
-    <div class="section-title">🧘 Clases Especiales</div>
-    <p class="section-subtitle">Dictá clases para ganar plata extra, XP y reputación. Cada clase tiene duración y cooldown.</p>
+    <div class="section-title">🧘 Special Classes</div>
+    <p class="section-subtitle">Run classes to earn extra cash, XP, and reputation. Each class has a duration and cooldown.</p>
     <div class="classes-synergy-banner" id="classesSynergyBanner"></div>
     <div class="classes-grid" id="classesGrid"></div>
   </div>
 
   <!-- MISSIONS TAB -->
   <div class="tab-content" id="tab-missions">
-    <div class="section-title">📋 Misiones Diarias</div>
-    <p class="section-subtitle">Completá misiones cada día para ganar rewards. ¡Si completás las 3, bonus extra!</p>
+    <div class="section-title">📋 Daily Missions</div>
+    <p class="section-subtitle">Complete missions every day to earn rewards. Finish all 3 for an extra bonus!</p>
     <div id="missionsContainer"></div>
   </div>
 
   <!-- VIP TAB -->
   <div class="tab-content" id="tab-vip">
-    <div class="section-title">⭐ Miembros VIP</div>
-    <p class="section-subtitle">Miembros especiales que buscan un gym con lo que necesitan. Cumplí sus requisitos para grandes rewards.</p>
+    <div class="section-title">⭐ VIP Members</div>
+    <p class="section-subtitle">Special members looking for a gym with what they need. Meet their requirements for big rewards.</p>
     <div id="vipContainer"></div>
   </div>
 
   <!-- COMPETITIONS TAB -->
   <!-- CHAMPION & COMPETITIONS TAB -->
   <div class="tab-content" id="tab-champion">
-    <div class="section-title">🏆 Competencias & Campeón</div>
-    <p class="section-subtitle">Competí por premios y gloria. Reclutá tu campeón para ganar el doble.</p>
+    <div class="section-title">🏆 Competitions & Champion</div>
+    <p class="section-subtitle">Compete for prizes and glory. Recruit your champion to earn double.</p>
     <div id="championContainer"></div>
   </div>
 
   <!-- RIVALS TAB -->
   <div class="tab-content" id="tab-rivals">
-    <div class="section-title">🏪 Gimnasios Rivales</div>
-    <p class="section-subtitle">Otros gyms compiten por tus miembros. Lanzá promociones para neutralizarlos o superalos definitivamente.</p>
+    <div class="section-title">🏪 Rival Gyms</div>
+    <p class="section-subtitle">Other gyms compete for your members. Launch promotions to neutralize them or beat them for good.</p>
     <div class="rival-grid" id="rivalsGrid"></div>
   </div>
 
@@ -471,22 +471,22 @@
 
   <!-- SKILLS TAB -->
   <div class="tab-content" id="tab-skills">
-    <div class="section-title">🔬 Árbol de Mejoras</div>
-    <p class="section-subtitle">Investigá mejoras permanentes para tu gym. Las mejoras aplican a todas tus sucursales.</p>
+    <div class="section-title">🔬 Upgrade Tree</div>
+    <p class="section-subtitle">Research permanent upgrades for your gym. Upgrades apply to all your branches.</p>
     <div id="skillTreeContainer"></div>
   </div>
 
   <!-- EXPANSION TAB -->
   <div class="tab-content" id="tab-expansion">
-    <div class="section-title">🏗️ Instalaciones</div>
-    <p class="section-subtitle">Construí nuevas zonas para aumentar capacidad, ingresos y desbloquear nuevas posibilidades.</p>
+    <div class="section-title">🏗️ Facilities</div>
+    <p class="section-subtitle">Build new zones to increase capacity, income, and unlock new possibilities.</p>
     <div id="expansionContainer"></div>
   </div>
 
   <!-- ACHIEVEMENTS TAB -->
   <div class="tab-content" id="tab-achievements">
-    <div class="section-title">🎖️ Logros</div>
-    <p class="section-subtitle">Desbloqueá logros para ganar bonus de XP. ¡Intentá conseguirlos todos!</p>
+    <div class="section-title">🎖️ Achievements</div>
+    <p class="section-subtitle">Unlock achievements to earn XP bonuses. Try to get them all!</p>
     <div class="achievement-grid" id="achievementGrid"></div>
   </div>
 
@@ -498,7 +498,7 @@
   <!-- CITY / FRANCHISE TAB -->
   <div class="tab-content" id="tab-prestige">
     <div class="city-header">
-      <div class="section-title">🏙️ Tu Imperio</div>
+      <div class="section-title">🏙️ Your Empire</div>
       <div class="empire-stats" id="empireStats"></div>
     </div>
     <div class="city-grid" id="cityGrid"></div>
@@ -506,54 +506,54 @@
     <div id="opportunitiesContainer"></div>
 
     <div class="leaderboard-section">
-      <div class="section-title">🏆 Ranking Global</div>
-      <p class="section-subtitle">Los mejores imperios del mundo. Tu progreso se sincroniza automáticamente.</p>
+      <div class="section-title">🏆 Global Ranking</div>
+      <p class="section-subtitle">The best empires in the world. Your progress syncs automatically.</p>
       <div id="leaderboardContainer"></div>
     </div>
   </div>
 
   <!-- SETTINGS TAB -->
   <div class="tab-content" id="tab-settings">
-    <div class="section-title">⚙️ Opciones</div>
+    <div class="section-title">⚙️ Settings</div>
     <div style="display:flex;flex-direction:column;gap:16px;max-width:500px;">
 
       <div class="stat-box" style="text-align:left;">
-        <div class="stat-box-label" style="margin-bottom:4px;">Cuenta</div>
+        <div class="stat-box-label" style="margin-bottom:4px;">Account</div>
         <div id="accountBtnContainer" style="display:flex;gap:8px;flex-wrap:wrap;"></div>
       </div>
 
       <div class="stat-box" style="text-align:left;">
-        <div class="stat-box-label" style="margin-bottom:4px;">Guardar / Cargar</div>
-        <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">Tu progreso se guarda automáticamente cada 30 segundos.</p>
+        <div class="stat-box-label" style="margin-bottom:4px;">Save / Load</div>
+        <p style="font-size:13px;color:var(--text-dim);margin-bottom:12px;">Your progress is saved automatically every 30 seconds.</p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn btn-buy btn-small" onclick="manualSave()">💾 GUARDAR</button>
-          <button class="btn btn-cyan btn-small" onclick="exportSave()">📤 EXPORTAR</button>
-          <button class="btn btn-purple btn-small" onclick="importSave()">📥 IMPORTAR</button>
+          <button class="btn btn-buy btn-small" onclick="manualSave()">💾 SAVE</button>
+          <button class="btn btn-cyan btn-small" onclick="exportSave()">📤 EXPORT</button>
+          <button class="btn btn-purple btn-small" onclick="importSave()">📥 IMPORT</button>
         </div>
       </div>
 
       <div class="stat-box" style="text-align:left;">
-        <div class="stat-box-label" style="margin-bottom:4px;">Estadísticas</div>
-        <p style="font-size:13px;color:var(--text-dim);margin:0;">Tus estadísticas completas están en el <strong>tab Perfil</strong> 👤</p>
+        <div class="stat-box-label" style="margin-bottom:4px;">Statistics</div>
+        <p style="font-size:13px;color:var(--text-dim);margin:0;">Your full statistics are in the <strong>Profile tab</strong> 👤</p>
       </div>
 
       <div class="stat-box" style="text-align:left;">
         <div class="stat-box-label" style="margin-bottom:4px;">Tutorial</div>
-        <button class="btn btn-buy btn-small" onclick="startTutorial()">🎓 REPETIR TUTORIAL</button>
+        <button class="btn btn-buy btn-small" onclick="startTutorial()">🎓 REPLAY TUTORIAL</button>
       </div>
 
       <div class="stat-box" style="text-align:left;">
-        <div class="stat-box-label" style="margin-bottom:4px;color:var(--red);">Zona Peligrosa</div>
-        <button class="btn btn-red btn-small" onclick="resetGame()">🗑️ BORRAR TODO</button>
+        <div class="stat-box-label" style="margin-bottom:4px;color:var(--red);">Danger Zone</div>
+        <button class="btn btn-red btn-small" onclick="resetGame()">🗑️ DELETE EVERYTHING</button>
       </div>
     </div>
   </div>
 
   <!-- WIKI TAB -->
   <div class="tab-content" id="tab-wiki">
-    <div class="section-title">📖 Wiki — Guía del Juego</div>
-    <p class="section-subtitle">Todo lo que necesitás saber para dominar Iron Empire.</p>
-    <input class="wiki-search" id="wikiSearch" type="text" placeholder="🔍 Buscar en la wiki..." oninput="searchWiki(this.value)">
+    <div class="section-title">📖 Wiki — Game Guide</div>
+    <p class="section-subtitle">Everything you need to know to master Iron Empire.</p>
+    <input class="wiki-search" id="wikiSearch" type="text" placeholder="🔍 Search the wiki..." oninput="searchWiki(this.value)">
     <div id="wikiContainer"></div>
   </div>
 
@@ -563,7 +563,7 @@
 <!-- TOAST -->
 <div class="toast" id="toast">
   <span class="toast-icon" id="toastIcon">🎉</span>
-  <span class="toast-text" id="toastText">¡Logro desbloqueado!</span>
+  <span class="toast-text" id="toastText">Achievement unlocked!</span>
 </div>
 
 <!-- FIREBASE SDKs (compat mode - no bundler needed) -->
@@ -572,11 +572,11 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
 <!-- GAME SCRIPTS -->
-<script src="js/data.js?v=45"></script>
-<script src="js/game.js?v=45"></script>
-<script src="js/ui.js?v=45"></script>
-<script src="js/systems.js?v=45"></script>
-<script src="js/auth.js?v=45"></script>
+<script src="js/data.js?v=46"></script>
+<script src="js/game.js?v=46"></script>
+<script src="js/ui.js?v=46"></script>
+<script src="js/systems.js?v=46"></script>
+<script src="js/auth.js?v=46"></script>
 
 <!-- Profile refresh -->
 <script>

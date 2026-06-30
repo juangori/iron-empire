@@ -24,7 +24,7 @@ function renderLog() {
   }
 
   if (entries.length === 0) {
-    container.innerHTML = '<div class="log-empty">No hay eventos de este tipo aún.</div>';
+    container.innerHTML = '<div class="log-empty">No events of this type yet.</div>';
     return;
   }
 
@@ -57,10 +57,10 @@ function renderEquipment() {
       // Broken - show repair button
       var repairCost = getRepairCost(eq, state.level);
       var canAffordRepair = game.money >= repairCost;
-      var repairTitle = canAffordRepair ? '' : ' title="Necesitás ' + fmtMoney(repairCost - game.money) + ' más para reparar"';
-      breakdownHTML = '<div class="equip-broken-badge">⚠️ FUERA DE SERVICIO</div>';
+      var repairTitle = canAffordRepair ? '' : ' title="Need ' + fmtMoney(repairCost - game.money) + ' more to repair"';
+      breakdownHTML = '<div class="equip-broken-badge">⚠️ OUT OF SERVICE</div>';
       btnHTML = '<button class="btn btn-red" ' + (canAffordRepair ? '' : 'disabled') + repairTitle +
-        ' onclick="repairEquipment(\'' + eq.id + '\')">🔧 REPARAR — ' + fmtMoney(repairCost) + '</button>';
+        ' onclick="repairEquipment(\'' + eq.id + '\')">🔧 REPAIR — ' + fmtMoney(repairCost) + '</button>';
     } else if (repairing) {
       // Repairing - show progress bar
       var duration = getRepairDuration(state.level) * 1000;
@@ -70,9 +70,9 @@ function renderEquipment() {
       var remaining = Math.max(0, Math.ceil((state.brokenUntil - Date.now()) / 1000));
       var mins = Math.floor(remaining / 60);
       var secs = remaining % 60;
-      breakdownHTML = '<div class="equip-broken-badge repairing">🔧 REPARANDO</div>';
+      breakdownHTML = '<div class="equip-broken-badge repairing">🔧 REPAIRING</div>';
       btnHTML = '<div class="equip-repair-bar"><div class="equip-repair-fill" style="width:' + pct + '%"></div></div>' +
-        '<div class="equip-repair-time">Listo en ' + mins + ':' + (secs < 10 ? '0' : '') + secs + '</div>';
+        '<div class="equip-repair-time">Ready in ' + mins + ':' + (secs < 10 ? '0' : '') + secs + '</div>';
     } else if (upgrading) {
       // Upgrading - show construction progress bar
       var upgDuration = getEquipUpgradeDuration(state.level) * 1000;
@@ -82,19 +82,19 @@ function renderEquipment() {
       var upgRemaining = Math.max(0, Math.ceil((state.upgradingUntil - Date.now()) / 1000));
       var upgMins = Math.floor(upgRemaining / 60);
       var upgSecs = upgRemaining % 60;
-      breakdownHTML = '<div class="equip-upgrade-badge">🏗️ MEJORANDO A LVL ' + (state.level + 1) + '</div>';
+      breakdownHTML = '<div class="equip-upgrade-badge">🏗️ UPGRADING TO LVL ' + (state.level + 1) + '</div>';
       btnHTML = '<div class="equip-repair-bar"><div class="equip-upgrade-fill" style="width:' + upgPct + '%"></div></div>' +
-        '<div class="equip-upgrade-time">Listo en ' + upgMins + ':' + (upgSecs < 10 ? '0' : '') + upgSecs + '</div>';
+        '<div class="equip-upgrade-time">Ready in ' + upgMins + ':' + (upgSecs < 10 ? '0' : '') + upgSecs + '</div>';
     } else if (locked) {
-      btnHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;margin-top:8px;">🔒 Requiere Nivel ' + eq.reqLevel + '</div>';
+      btnHTML = '<div style="text-align:center;color:var(--text-muted);font-size:12px;margin-top:8px;">🔒 Requires Level ' + eq.reqLevel + '</div>';
     } else if (atLevelCap && state.level > 0) {
-      btnHTML = '<div style="text-align:center;color:var(--text-dim);font-size:12px;margin-top:8px;">🔝 Tope para tu nivel · subí de nivel para mejorar</div>';
+      btnHTML = '<div style="text-align:center;color:var(--text-dim);font-size:12px;margin-top:8px;">🔝 Max for your level · level up to upgrade</div>';
     } else {
-      var buyTitle = canAfford ? '' : ' title="Necesitás ' + fmtMoney(cost - game.money) + ' más"';
+      var buyTitle = canAfford ? '' : ' title="Need ' + fmtMoney(cost - game.money) + ' more"';
       btnHTML = '<button class="btn ' + (isNew ? 'btn-buy' : 'btn-upgrade') + '" ' +
         (canAfford ? '' : 'disabled') + buyTitle +
         ' onclick="buyEquipment(\'' + eq.id + '\')">' +
-        (isNew ? '🛒 COMPRAR' : '⬆️ MEJORAR') + ' — ' + fmtMoney(cost) +
+        (isNew ? '🛒 BUY' : '⬆️ UPGRADE') + ' — ' + fmtMoney(cost) +
       '</button>';
     }
 
@@ -141,9 +141,9 @@ function renderStaff() {
 
   var totalSalary = getTotalStaffSalaryPerDay();
   var summaryHTML = '<div class="staff-summary">' +
-    '<div class="staff-summary-stat"><span class="staff-summary-label">Personal activo</span><span class="staff-summary-value">' + totalHired + '</span></div>' +
-    '<div class="staff-summary-stat"><span class="staff-summary-label">Sueldos (por día)</span><span class="staff-summary-value" style="color:var(--red);">-' + fmtMoney(totalSalary) + '</span></div>' +
-    '<div class="staff-summary-stat"><span class="staff-summary-label">Sueldos (por seg)</span><span class="staff-summary-value" style="color:var(--red);">-' + fmtMoney(totalSalary / 600) + '/s</span></div>' +
+    '<div class="staff-summary-stat"><span class="staff-summary-label">Active staff</span><span class="staff-summary-value">' + totalHired + '</span></div>' +
+    '<div class="staff-summary-stat"><span class="staff-summary-label">Salaries (per day)</span><span class="staff-summary-value" style="color:var(--red);">-' + fmtMoney(totalSalary) + '</span></div>' +
+    '<div class="staff-summary-stat"><span class="staff-summary-label">Salaries (per sec)</span><span class="staff-summary-value" style="color:var(--red);">-' + fmtMoney(totalSalary / 600) + '/s</span></div>' +
   '</div>';
 
   var cardsHTML = STAFF.map(function(s) {
@@ -155,10 +155,10 @@ function renderStaff() {
     // Build hire or status section
     var btnHTML = '';
     if (locked) {
-      btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;margin-top:8px;">🔒 Requiere Nivel ' + s.reqLevel + '</div>';
+      btnHTML = '<div style="color:var(--text-muted);font-size:12px;text-align:center;margin-top:8px;">🔒 Requires Level ' + s.reqLevel + '</div>';
     } else if (!state.hired) {
-      var hireTitle = canAfford ? '' : ' title="Necesitás ' + fmtMoney(cost - game.money) + ' más"';
-      btnHTML = '<button class="btn btn-purple" ' + (canAfford ? '' : 'disabled') + hireTitle + ' onclick="hireStaff(\'' + s.id + '\')">CONTRATAR — ' + fmtMoney(cost) + '</button>';
+      var hireTitle = canAfford ? '' : ' title="Need ' + fmtMoney(cost - game.money) + ' more"';
+      btnHTML = '<button class="btn btn-purple" ' + (canAfford ? '' : 'disabled') + hireTitle + ' onclick="hireStaff(\'' + s.id + '\')">HIRE — ' + fmtMoney(cost) + '</button>';
     }
 
     // If hired, show main copy + extras
@@ -179,11 +179,11 @@ function renderStaff() {
         if (game.level >= reqLvl) {
           var extraCost = getStaffCost(s, extraCount);
           var canAffordExtra = game.money >= extraCost;
-          var extraTitle = canAffordExtra ? '' : ' title="Necesitás ' + fmtMoney(extraCost - game.money) + ' más"';
+          var extraTitle = canAffordExtra ? '' : ' title="Need ' + fmtMoney(extraCost - game.money) + ' more"';
           copiesHTML += '<button class="btn btn-cyan btn-small" style="margin-top:6px;width:100%;" ' + (canAffordExtra ? '' : 'disabled') + extraTitle +
-            ' onclick="hireExtraStaff(\'' + s.id + '\')">➕ CONTRATAR #' + nextCopyNum + ' — ' + fmtMoney(extraCost) + '</button>';
+            ' onclick="hireExtraStaff(\'' + s.id + '\')">➕ HIRE #' + nextCopyNum + ' — ' + fmtMoney(extraCost) + '</button>';
         } else {
-          copiesHTML += '<div style="color:var(--text-muted);font-size:11px;margin-top:6px;text-align:center;">🔒 #' + nextCopyNum + ' en Nivel ' + reqLvl + '</div>';
+          copiesHTML += '<div style="color:var(--text-muted);font-size:11px;margin-top:6px;text-align:center;">🔒 #' + nextCopyNum + ' at Level ' + reqLvl + '</div>';
         }
       }
     }
@@ -191,9 +191,9 @@ function renderStaff() {
     var salaryText = '';
     if (state.hired && s.salary) {
       var lvl = state.level || 1;
-      salaryText = fmtMoney(getStaffSalaryAtLevel(s.salary, lvl)) + '/día';
+      salaryText = fmtMoney(getStaffSalaryAtLevel(s.salary, lvl)) + '/day';
     } else if (s.salary) {
-      salaryText = fmtMoney(s.salary) + '/día';
+      salaryText = fmtMoney(s.salary) + '/day';
     }
 
     return (
@@ -225,15 +225,15 @@ function _renderStaffCopy(staffDef, copyState, copyIdx) {
   html += '<span class="staff-level-badge">LVL ' + level + '</span>';
 
   if (isSick) {
-    html += '<span class="staff-copy-label" style="color:var(--orange);">🤒 Enfermo</span>';
+    html += '<span class="staff-copy-label" style="color:var(--orange);">🤒 Sick</span>';
   } else if (isTraining) {
-    html += '<span class="staff-copy-label" style="color:var(--cyan);">⏳ Entrenando</span>';
+    html += '<span class="staff-copy-label" style="color:var(--cyan);">⏳ Training</span>';
   } else {
-    html += '<span class="staff-copy-label">' + (copyIdx === 0 ? '✅ Activo' : '✅ #' + (copyIdx + 1)) + '</span>';
+    html += '<span class="staff-copy-label">' + (copyIdx === 0 ? '✅ Active' : '✅ #' + (copyIdx + 1)) + '</span>';
   }
 
   if (!isTraining && !isSick) {
-    html += '<span class="staff-copy-salary">💵 ' + fmtMoney(getStaffSalaryAtLevel(staffDef.salary, level)) + '/día</span>';
+    html += '<span class="staff-copy-salary">💵 ' + fmtMoney(getStaffSalaryAtLevel(staffDef.salary, level)) + '/day</span>';
   }
   html += '</div>';
 
@@ -242,11 +242,11 @@ function _renderStaffCopy(staffDef, copyState, copyIdx) {
     var remaining = Math.max(0, Math.ceil((copyState.sickUntil - Date.now()) / 1000));
     var mins = Math.floor(remaining / 60);
     var secs = remaining % 60;
-    html += '<div class="staff-sick-time">Se recupera en ' + mins + ':' + (secs < 10 ? '0' : '') + secs + '</div>';
+    html += '<div class="staff-sick-time">Recovers in ' + mins + ':' + (secs < 10 ? '0' : '') + secs + '</div>';
     var healCost = getHealCost(staffDef, level);
     var canAffordHeal = game.money >= healCost;
     html += '<button class="btn btn-red btn-small staff-train-btn" ' + (canAffordHeal ? '' : 'disabled') +
-      ' onclick="healStaff(\'' + staffDef.id + '\',' + copyIdx + ')">💊 CURAR — ' + fmtMoney(healCost) + '</button>';
+      ' onclick="healStaff(\'' + staffDef.id + '\',' + copyIdx + ')">💊 HEAL — ' + fmtMoney(healCost) + '</button>';
   }
 
   // Training progress bar
@@ -259,7 +259,7 @@ function _renderStaffCopy(staffDef, copyState, copyIdx) {
     var mins = Math.floor(remaining / 60);
     var secs = remaining % 60;
     html += '<div class="staff-training-bar"><div class="staff-training-fill" style="width:' + pct + '%"></div></div>';
-    html += '<div class="staff-training-time">→ LVL ' + (level + 1) + ' en ' + mins + ':' + (secs < 10 ? '0' : '') + secs + '</div>';
+    html += '<div class="staff-training-time">→ LVL ' + (level + 1) + ' in ' + mins + ':' + (secs < 10 ? '0' : '') + secs + '</div>';
   }
 
   // Train button (if not training, not sick, and not max level)
@@ -267,9 +267,9 @@ function _renderStaffCopy(staffDef, copyState, copyIdx) {
     var trainCost = getTrainingCost(staffDef, level);
     var canAfford = game.money >= trainCost;
     html += '<button class="btn btn-buy btn-small staff-train-btn" ' + (canAfford ? '' : 'disabled') +
-      ' onclick="trainStaff(\'' + staffDef.id + '\',' + copyIdx + ')">📚 ENTRENAR → LVL ' + (level + 1) + ' — ' + fmtMoney(trainCost) + '</button>';
+      ' onclick="trainStaff(\'' + staffDef.id + '\',' + copyIdx + ')">📚 TRAIN → LVL ' + (level + 1) + ' — ' + fmtMoney(trainCost) + '</button>';
   } else if (!isTraining && !isSick && level >= STAFF_MAX_LEVEL) {
-    html += '<div class="staff-max-level">⭐ NIVEL MÁXIMO</div>';
+    html += '<div class="staff-max-level">⭐ MAX LEVEL</div>';
   }
 
   html += '</div>';
@@ -299,8 +299,8 @@ function checkAchievements() {
   ACHIEVEMENTS.forEach(function(a) {
     if (!game.achievements[a.id] && a.check()) {
       game.achievements[a.id] = true;
-      showToast(a.icon, '¡Logro: ' + a.name + '!');
-      addLog('🎖️ Logro desbloqueado: <span class="highlight">' + a.name + '</span>', 'important');
+      showToast(a.icon, 'Achievement: ' + a.name + '!');
+      addLog('🎖️ Achievement unlocked: <span class="highlight">' + a.name + '</span>', 'important');
       addXp(50);
       game.dailyTracking.xpEarned += 50;
     }
@@ -335,7 +335,7 @@ function renderNextGoal() {
   el.innerHTML =
     '<span class="next-goal-pin">📌</span>' +
     '<span class="next-goal-text">' + goal.text + '</span>' +
-    (goal.tab ? '<button class="btn btn-small btn-cyan next-goal-btn" onclick="switchTab(\'' + goal.tab + '\')">Ver →</button>' : '');
+    (goal.tab ? '<button class="btn btn-small btn-cyan next-goal-btn" onclick="switchTab(\'' + goal.tab + '\')">View →</button>' : '');
 }
 
 function _getNextGoal() {
@@ -346,17 +346,17 @@ function _getNextGoal() {
   if (unowned.length > 0) {
     var eq = unowned[0];
     if (game.money >= eq.baseCost) {
-      return { text: 'Comprá <strong>' + eq.name + '</strong> ' + eq.icon + ' para +' + fmtMoney(eq.incomePerLevel) + '/s', tab: 'equipment' };
+      return { text: 'Buy <strong>' + eq.name + '</strong> ' + eq.icon + ' for +' + fmtMoney(eq.incomePerLevel) + '/s', tab: 'equipment' };
     }
     if (game.money >= eq.baseCost * 0.5) {
-      return { text: 'Ahorrando para <strong>' + eq.name + '</strong> — faltan ' + fmtMoney(eq.baseCost - game.money), tab: 'equipment' };
+      return { text: 'Saving up for <strong>' + eq.name + '</strong> — ' + fmtMoney(eq.baseCost - game.money) + ' to go', tab: 'equipment' };
     }
   }
 
   // 2. No staff at all
   if (!STAFF.some(function(s) { return game.staff[s.id] && game.staff[s.id].hired; })) {
     var s = STAFF.find(function(st) { return game.level >= st.reqLevel; });
-    if (s) return { text: 'Contratá <strong>' + s.name + '</strong> para potenciar tus máquinas', tab: 'staff' };
+    if (s) return { text: 'Hire <strong>' + s.name + '</strong> to boost your equipment', tab: 'staff' };
   }
 
   // 3. No always-on marketing active
@@ -366,7 +366,7 @@ function _getNextGoal() {
       var st = game.marketing[mc.id];
       return st && st.activeUntil && Date.now() < st.activeUntil;
     });
-    if (!hasMarketing) return { text: 'Activá una campaña de marketing para atraer más miembros', tab: 'marketing' };
+    if (!hasMarketing) return { text: 'Turn on a marketing campaign to attract more members', tab: 'marketing' };
   }
 
   // 4. Affordable equipment upgrade
@@ -379,7 +379,7 @@ function _getNextGoal() {
     var cost = getEquipCost(e, st.level);
     if (game.money >= cost) upgradeTarget = { name: e.name, nextLevel: st.level + 1 };
   });
-  if (upgradeTarget) return { text: 'Mejorá <strong>' + upgradeTarget.name + '</strong> a Nivel ' + upgradeTarget.nextLevel, tab: 'equipment' };
+  if (upgradeTarget) return { text: 'Upgrade <strong>' + upgradeTarget.name + '</strong> to Level ' + upgradeTarget.nextLevel, tab: 'equipment' };
 
   // 5. XP close to level-up
   var xpPct = Math.round((game.xp / game.xpToNext) * 100);
@@ -387,8 +387,8 @@ function _getNextGoal() {
     var nextLvl = game.level + 1;
     var unlockTab = typeof TAB_UNLOCK_LEVELS !== 'undefined' ?
       Object.keys(TAB_UNLOCK_LEVELS).find(function(t) { return TAB_UNLOCK_LEVELS[t] === nextLvl; }) : null;
-    var hint = unlockTab ? ' · desbloquea <strong>' + unlockTab + '</strong>' : '';
-    return { text: '¡Casi Nivel ' + nextLvl + '! (' + xpPct + '% XP)' + hint };
+    var hint = unlockTab ? ' · unlocks <strong>' + unlockTab + '</strong>' : '';
+    return { text: 'Almost Level ' + nextLvl + '! (' + xpPct + '% XP)' + hint };
   }
 
   // 6. Zone buildable
@@ -397,8 +397,8 @@ function _getNextGoal() {
       return z.id !== 'ground_floor' && !game.zones[z.id] && !game.zoneBuilding[z.id] && game.level >= (z.reqLevel || 1);
     });
     if (nextZone) {
-      if (game.money >= nextZone.cost) return { text: 'Construí <strong>' + nextZone.name + '</strong> para expandir capacidad', tab: 'expansion' };
-      if (game.money >= nextZone.cost * 0.4) return { text: 'Ahorrando para <strong>' + nextZone.name + '</strong> — faltan ' + fmtMoney(nextZone.cost - game.money), tab: 'expansion' };
+      if (game.money >= nextZone.cost) return { text: 'Build <strong>' + nextZone.name + '</strong> to expand capacity', tab: 'expansion' };
+      if (game.money >= nextZone.cost * 0.4) return { text: 'Saving up for <strong>' + nextZone.name + '</strong> — ' + fmtMoney(nextZone.cost - game.money) + ' to go', tab: 'expansion' };
     }
   }
 
@@ -463,7 +463,7 @@ function updateUI() {
   var rivalStealEl = document.getElementById('rivalStealSub');
   if (rivalStealEl) {
     var rs = typeof getRivalStealInfo === 'function' ? getRivalStealInfo() : { lost: 0, pct: 0 };
-    rivalStealEl.textContent = rs.lost > 0 ? '-' + rs.lost + ' socios por rivales (' + (rs.pct * 100).toFixed(1) + '%)' : '';
+    rivalStealEl.textContent = rs.lost > 0 ? '-' + rs.lost + ' members from rivals (' + (rs.pct * 100).toFixed(1) + '%)' : '';
   }
   el = document.getElementById('repBig');
   if (el) {
@@ -482,14 +482,14 @@ function updateUI() {
     var starStr = '';
     for (var s = 0; s < stars; s++) starStr += '⭐';
     if (stars >= 10) {
-      empireStarEl.textContent = starStr + ' · ¡Máximo de estrellas!';
+      empireStarEl.textContent = starStr + ' · Max stars!';
     } else {
       var nextStarAt = (stars + 1) * (stars + 1) * 8000000;
       var remaining = Math.max(0, nextStarAt - game.totalMoneyEarned);
       if (stars === 0) {
-        empireStarEl.textContent = '⭐ Primera estrella: te faltan ' + fmtMoney(remaining);
+        empireStarEl.textContent = '⭐ First star: ' + fmtMoney(remaining) + ' to go';
       } else {
-        empireStarEl.textContent = starStr + ' · Próxima: ' + fmtMoney(remaining);
+        empireStarEl.textContent = starStr + ' · Next: ' + fmtMoney(remaining);
       }
     }
   }
@@ -497,7 +497,7 @@ function updateUI() {
   if (el) el.textContent = getGymTier();
 
   // Level
-  document.getElementById('levelBadge').textContent = 'NIVEL ' + game.level;
+  document.getElementById('levelBadge').textContent = 'LEVEL ' + game.level;
   var xpPct = Math.floor((game.xp / game.xpToNext) * 100);
   document.getElementById('xpBar').style.width = xpPct + '%';
   var xpText = document.getElementById('xpBarText');
@@ -511,8 +511,8 @@ function updateUI() {
   if (el) el.textContent = currentTier;
   // Detect tier-up
   if (_prevTier && _prevTier !== currentTier) {
-    showToast('🏆', '¡Nuevo nivel de gym: ' + currentTier + '!');
-    addLog('🏆 ¡Tu gym ascendió a <span class="highlight">' + currentTier + '</span>!', 'critical');
+    showToast('🏆', 'New gym rank: ' + currentTier + '!');
+    addLog('🏆 Your gym ranked up to <span class="highlight">' + currentTier + '</span>!', 'critical');
   }
   _prevTier = currentTier;
 
@@ -546,7 +546,7 @@ function updateUI() {
     var mtomorrow = new Date(mnow);
     mtomorrow.setHours(24, 0, 0, 0);
     var msecsLeft = Math.floor((mtomorrow - mnow) / 1000);
-    mtimerEl.textContent = '⏰ Nuevas misiones en: ' + fmtTime(msecsLeft);
+    mtimerEl.textContent = '⏰ New missions in: ' + fmtTime(msecsLeft);
   }
 }
 
@@ -574,8 +574,8 @@ function renderGymScene() {
   var tier = getGymTier();
   container.className = 'gym-scene-container';
   if      (tier.indexOf('Garage') >= 0)                                               container.classList.add('tier-garage');
-  else if (tier.indexOf('Principiante') >= 0 || tier.indexOf('Crecimiento') >= 0)    container.classList.add('tier-barrio');
-  else if (tier.indexOf('Establecido') >= 0  || tier.indexOf('Profesional') >= 0)    container.classList.add('tier-comercial');
+  else if (tier.indexOf('Rookie') >= 0       || tier.indexOf('Growing') >= 0)        container.classList.add('tier-barrio');
+  else if (tier.indexOf('Established') >= 0   || tier.indexOf('Pro') >= 0)            container.classList.add('tier-comercial');
   else if (tier.indexOf('VIP') >= 0          || tier.indexOf('Premium') >= 0)        container.classList.add('tier-premium');
   else if (tier.indexOf('Elite') >= 0)                                                container.classList.add('tier-elite');
   else                                                                                container.classList.add('tier-imperio');
@@ -589,7 +589,7 @@ function renderGymScene() {
 
     // Empty state
     if (ownedEquip.length === 0) {
-      equipLayer.innerHTML = '<div class="gym-empty-state">Comprá tu primera máquina<br>para ver el gym cobrar vida 🏋️</div>';
+      equipLayer.innerHTML = '<div class="gym-empty-state">Buy your first piece of equipment<br>to see the gym come to life 🏋️</div>';
     } else {
       // Pre-defined positions for equipment (spread across the scene)
       var positions = [
@@ -624,7 +624,7 @@ function renderGymScene() {
           stateClass = ' is-upgrading';
         }
 
-        return '<div class="gym-equip-item' + sizeClass + stateClass + '" style="left:' + pos.left + ';top:' + pos.top + ';" title="' + eq.name + ' Nv.' + lvl + (stateClass === ' is-broken' ? ' — ROTO' : stateClass === ' is-upgrading' ? ' — MEJORANDO' : '') + '">' +
+        return '<div class="gym-equip-item' + sizeClass + stateClass + '" style="left:' + pos.left + ';top:' + pos.top + ';" title="' + eq.name + ' Lv.' + lvl + (stateClass === ' is-broken' ? ' — BROKEN' : stateClass === ' is-upgrading' ? ' — UPGRADING' : '') + '">' +
           eq.icon + '<span class="equip-lvl">' + lvl + '</span></div>';
       }).join('');
     }
@@ -666,7 +666,7 @@ function renderGymScene() {
     }).join('');
 
     // Member count badge
-    peopleHTML += '<div class="gym-member-count">👥 <span>' + game.members + '</span> miembros</div>';
+    peopleHTML += '<div class="gym-member-count">👥 <span>' + game.members + '</span> members</div>';
     peopleLayer.innerHTML = peopleHTML;
   }
 
